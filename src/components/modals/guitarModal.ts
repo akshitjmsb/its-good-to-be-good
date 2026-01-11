@@ -1,17 +1,15 @@
-import { ai, getOrGenerateDynamicContent } from "../../api/perplexity";
+import { ai, getOrGenerateDynamicContent, type ResponseSchema } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadGuitarRecentPicks, saveGuitarRecentPick } from "../../core/supabase-persistence";
 import { DEFAULT_USER_ID } from "../../core/default-user";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowGuitarTab(activeContentDate: Date) {
-    const modal = document.getElementById('guitar-modal');
-    const contentEl = document.getElementById('guitar-content');
-    if (!modal || !contentEl) return;
+    const elements = getModalElements(MODAL_CONFIGS.guitar);
+    if (!elements) return;
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    contentEl.innerHTML = `<p>Loading today&apos;s guitar pick...</p>`;
+    showModalWithLoading(elements, MODAL_CONFIGS.guitar.loadingMessage);
 
     let data: {
         title: string;
@@ -31,7 +29,7 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
 
         // Load recent picks from Supabase
         const recent = await loadGuitarRecentPicks(DEFAULT_USER_ID);
-        
+
         let songPool: Array<{ title: string; artist: string }> = [];
         try {
             const pool = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'classic-rock-500', activeContentDate);
@@ -58,56 +56,58 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
         const prompt = pickedTitle && pickedArtist
             ? `Create a concise guitar lesson for the specific classic rock song below. Return JSON ONLY with these exact fields. Do not add extra text.\n\nSong: "${pickedTitle}" by "${pickedArtist}"\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`
             : `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
+        const responseSchema: ResponseSchema = {
+            type: "OBJECT",
+            properties: {
+                title: { type: "STRING" },
+                artist: { type: "STRING" },
+                key: { type: "STRING" },
+                tuning: { type: "STRING" },
+                lyricsWithChords: { type: "STRING" },
+                chordChanges: { type: "STRING" },
+                inspiration: { type: "STRING" },
+                youtubeLessonTitle: { type: "STRING" },
+                youtubeLessonUrl: { type: "STRING" },
+                spotifyUrl: { type: "STRING" }
+            },
+            required: [
+                'title',
+                'artist',
+                'key',
+                'tuning',
+                'lyricsWithChords',
+                'chordChanges',
+                'inspiration',
+                'youtubeLessonTitle',
+                'youtubeLessonUrl',
+                'spotifyUrl'
+            ]
+        };
+
         const response = await ai.models.generateContent({
             model: 'sonar-pro',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        title: { type: "STRING" },
-                        artist: { type: "STRING" },
-                        key: { type: "STRING" },
-                        tuning: { type: "STRING" },
-                        lyricsWithChords: { type: "STRING" },
-                        chordChanges: { type: "STRING" },
-                        inspiration: { type: "STRING" },
-                        youtubeLessonTitle: { type: "STRING" },
-                        youtubeLessonUrl: { type: "STRING" },
-                        spotifyUrl: { type: "STRING" },
-                    },
-                    required: [
-                        'title',
-                        'artist',
-                        'key',
-                        'tuning',
-                        'lyricsWithChords',
-                        'chordChanges',
-                        'inspiration',
-                        'youtubeLessonTitle',
-                        'youtubeLessonUrl',
-                        'spotifyUrl',
-                    ],
-                } as any,
-            },
+                responseSchema
+            }
         });
 
         try {
             data = JSON.parse(response.text);
         } catch (jsonError) {
             console.error('Failed to parse JSON for guitar feature:', jsonError);
-            contentEl.innerHTML = `<p>Could not parse the guitar pick. Please try again later.</p>`;
+            showModalError(elements, 'Could not parse the guitar pick. Please try again later.');
             return;
         }
     } catch (error) {
         console.error('Error fetching Guitar feature:', error);
-        contentEl.innerHTML = `<p>Could not retrieve a guitar pick at this time.</p>`;
+        showModalError(elements, 'Could not retrieve a guitar pick at this time.');
         return;
     }
 
     if (!data) {
-        contentEl.innerHTML = `<p>No data returned for this guitar pick.</p>`;
+        showModalError(elements, 'No data returned for this guitar pick.');
         return;
     }
 
@@ -136,7 +136,7 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
         : `Search YouTube for ${data.title} ${data.artist} guitar lesson`;
     const chosenSpotifyUrl = isValidSpotifyTrackUrl(data.spotifyUrl) ? data.spotifyUrl : spSearchUrl;
 
-    contentEl.innerHTML = `
+    const html = `
         <div class="space-y-4">
             <h4 class="font-bold text-md">${safe(data.title)} — ${safe(data.artist)}</h4>
 
@@ -175,4 +175,8 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
             </div>
         </div>
     `;
+    setModalContent(elements, html);
+
+    // Save session for history
+    saveSessionContent('guitar', data, `${data.title} — ${data.artist}`);
 }

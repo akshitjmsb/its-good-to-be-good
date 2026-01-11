@@ -1,62 +1,53 @@
-import { getOrGenerateDynamicContent, generateWeeklyExerciseContent } from "../../api/perplexity";
-import { isContentReadyForPreview } from "../../core/time";
-import { ErrorHandler, ErrorType } from "../../utils/errorHandling";
+import { generateWeeklyExerciseContent } from "../../api/perplexity";
+import { ErrorHandler } from "../../utils/errorHandling";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { createSafeHtml } from "../../utils/escapeHtml";
-
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, saveSessionContent, MODAL_CONFIGS } from "./factory";
 
 // Exercise modal with 4-day workout schedule and swipable cards
-// Deployed to Vercel from base-app-development branch
 
 export async function showExerciseModal(
     mode: 'today' | 'tomorrow' | 'archive',
     dates: { active: Date, preview: Date, archive?: Date }
 ) {
-    const modal = document.getElementById('exercise-modal');
-    if (!modal) return;
-
-    const titleEl = modal.querySelector('#exercise-modal-title') as HTMLElement;
-    const contentEl = modal.querySelector('#exercise-content') as HTMLElement;
-
-    if (!titleEl || !contentEl) return;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    const elements = getModalElements(MODAL_CONFIGS.exercise);
+    if (!elements) return;
 
     const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-    
+
     if (mode === 'archive' && !dates.archive) {
         console.error('Archive mode requested but archive data not available');
-        contentEl.innerHTML = '<div class="p-4">Archive functionality not available.</div>';
+        showModalWithLoading(elements, MODAL_CONFIGS.exercise.loadingMessage);
+        setModalContent(elements, '<div class="p-4">Archive functionality not available.</div>');
         return;
     }
 
-    if (mode === 'tomorrow' && !isContentReadyForPreview(date)) {
-        titleEl.textContent = 'Exercise Plan';
-        contentEl.innerHTML = '<p>The exercise plan for tomorrow will be available after 5 PM.</p>';
-        return;
-    }
-
-    titleEl.textContent = "Weekly Exercise Plan";
-    contentEl.innerHTML = '<p>Loading weekly exercise plan...</p>';
+    showModalWithLoading(elements, MODAL_CONFIGS.exercise.loadingMessage);
+    setModalTitle(elements, "Weekly Exercise Plan");
 
     try {
         // Get the start of the week (Sunday) for the given date
-        const startOfWeek = getStartOfWeek(date);
+        const startOfWeek = getStartOfWeek(date!);
         const weeklyData = await generateWeeklyExerciseContent(DEFAULT_USER_ID, startOfWeek);
-        
+
         if (!weeklyData) {
-            contentEl.innerHTML = '<p>Weekly exercise plan not available. Please try again later.</p>';
+            showModalError(elements, 'Weekly exercise plan not available. Please try again later.');
             return;
         }
 
-        renderWeeklyExerciseContent(contentEl, weeklyData, date);
+        renderWeeklyExerciseContent(elements.content, weeklyData, date!);
+
+        // Save session for history (only for new content, not archive)
+        if (mode !== 'archive') {
+            const weekStart = startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            saveSessionContent('exercise', weeklyData, `Weekly Exercise - ${weekStart}`);
+        }
 
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Exercise modal (${mode})`);
         ErrorHandler.logError(appError);
         ErrorHandler.showUserError(appError);
-        contentEl.innerHTML = '<p>Could not load the exercise plan.</p>';
+        showModalError(elements, 'Could not load the exercise plan.');
     }
 }
 
@@ -111,7 +102,7 @@ function renderWeeklyExerciseContent(container: HTMLElement, weeklyData: any, cu
 function getWorkoutTypeAbbreviation(workoutType: string): string {
     const abbreviations: { [key: string]: string } = {
         'push': 'Push',
-        'pull': 'Pull', 
+        'pull': 'Pull',
         'legs': 'Legs',
         'upper': 'Upper',
         'rest': 'Rest'
@@ -141,42 +132,6 @@ function renderRestDayContent(dayData: any): string {
             ${dayData.notes ? `<p class="rest-notes">${createSafeHtml(dayData.notes)}</p>` : ''}
         </div>
     `;
-}
-
-function renderExerciseContent(container: HTMLElement, data: any, date: Date) {
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const weekDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
-
-    // Determine workout type based on day of week
-    const workoutType = getWorkoutType(dayOfWeek);
-    const workoutData = data[workoutType] || data;
-
-    container.innerHTML = `
-        <div class="exercise-container">
-            <div class="exercise-header">
-                <h3 class="text-lg font-bold mb-2">${weekDay} - ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)} Day</h3>
-                <div class="workout-type-badge ${workoutType}-badge">
-                    ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)}
-                </div>
-            </div>
-
-            <div class="exercise-content">
-                ${renderWorkoutCards(workoutData)}
-                ${renderMinimalSchedule()}
-            </div>
-        </div>
-    `;
-
-    // Initialize card navigation
-    initializeCardNavigation(workoutData);
-}
-
-function getWorkoutType(dayOfWeek: number): string {
-    // 4-day schedule: Monday, Wednesday, Friday, Saturday
-    // Monday: Push, Wednesday: Pull, Friday: Legs, Saturday: Upper Body
-    // Tuesday, Thursday, Sunday: Rest days
-    const schedule = ['rest', 'push', 'rest', 'pull', 'rest', 'legs', 'upper'];
-    return schedule[dayOfWeek];
 }
 
 function renderWorkoutCards(workoutData: any): string {
@@ -292,36 +247,11 @@ function getMuscleWikiUrl(exerciseName: string): string {
         'mountain climber': 'mountain-climber',
         'burpee': 'burpee'
     };
-    
+
     const normalizedName = exerciseName.toLowerCase().trim();
     const muscleWikiSlug = exerciseMap[normalizedName] || normalizedName.replace(/\s+/g, '-');
-    
-    return `https://musclewiki.com/exercises/${muscleWikiSlug}`;
-}
 
-function renderMinimalSchedule(): string {
-    return `
-        <div class="minimal-schedule">
-            <div class="schedule-workouts">
-                <span class="workout-type">Push</span>
-                <span class="workout-type">Rest</span>
-                <span class="workout-type">Pull</span>
-                <span class="workout-type">Rest</span>
-                <span class="workout-type">Legs</span>
-                <span class="workout-type">Upper</span>
-                <span class="workout-type">Rest</span>
-            </div>
-            <div class="schedule-days">
-                <span class="day-letter">(M)</span>
-                <span class="day-letter">(T)</span>
-                <span class="day-letter">(W)</span>
-                <span class="day-letter">(T)</span>
-                <span class="day-letter">(F)</span>
-                <span class="day-letter">(S)</span>
-                <span class="day-letter">(S)</span>
-            </div>
-        </div>
-    `;
+    return `https://musclewiki.com/exercises/${muscleWikiSlug}`;
 }
 
 function initializeCardNavigation(workoutData: any) {
@@ -332,7 +262,7 @@ function initializeCardNavigation(workoutData: any) {
     const cards = document.querySelectorAll('.exercise-card');
     const indicators = document.querySelectorAll('.indicator');
     const counter = document.querySelector('.exercise-counter');
-    
+
     if (cards.length === 0 || indicators.length === 0 || !counter) {
         return;
     }
@@ -409,7 +339,7 @@ function initializeCardNavigation(workoutData: any) {
         // Update current card
         cards[currentIndex].classList.remove('active');
         cards[currentIndex].classList.add('prev');
-        
+
         // Update new card
         cards[index].classList.remove('prev');
         cards[index].classList.add('active');

@@ -1,20 +1,19 @@
-import { ai } from "../../api/perplexity";
+import { ai, type ResponseSchema } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
-import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../core/persistence";
+import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../core/supabase-persistence";
+import { DEFAULT_USER_ID } from "../../core/default-user";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowPoetry(activeContentDate: Date) {
-    const modal = document.getElementById('poetry-modal');
-    const contentEl = document.getElementById('poetry-content');
-    if (!modal || !contentEl) return;
+    const elements = getModalElements(MODAL_CONFIGS.poetry);
+    if (!elements) return;
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    contentEl.innerHTML = '<p>Generating beautiful poetry for you...</p>';
+    showModalWithLoading(elements, MODAL_CONFIGS.poetry.loadingMessage);
 
     try {
         const dayOfYear = getDayOfYear(activeContentDate);
-        const poetryRecents = await loadPoetryRecents();
+        const poetryRecents = await loadPoetryRecents(DEFAULT_USER_ID);
         const recentPoets = poetryRecents.map(r => r.poet).filter(Boolean);
         const recentLanguages = poetryRecents.map(r => r.language).filter(Boolean);
 
@@ -40,24 +39,26 @@ Rules:
 - Respect the do-not-repeat lists for poet and language.
 - Respond ONLY as strict JSON matching the provided schema.`;
 
+        const responseSchema: ResponseSchema = {
+            type: "OBJECT",
+            properties: {
+                scene: { type: "STRING" },
+                couplet: { type: "STRING" },
+                transliteration: { type: "STRING" },
+                translation: { type: "STRING" },
+                aboutWriter: { type: "STRING" },
+                poet: { type: "STRING" },
+                language: { type: "STRING" }
+            },
+            required: ["scene", "couplet", "transliteration", "translation", "aboutWriter", "poet", "language"]
+        };
+
         const response = await ai.models.generateContent({
             model: 'sonar-pro',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        scene: { type: "STRING" },
-                        couplet: { type: "STRING" },
-                        transliteration: { type: "STRING" },
-                        translation: { type: "STRING" },
-                        aboutWriter: { type: "STRING" },
-                        poet: { type: "STRING" },
-                        language: { type: "STRING" }
-                    },
-                    required: ["scene", "couplet", "transliteration", "translation", "aboutWriter", "poet", "language"]
-                } as any,
+                responseSchema
             }
         });
 
@@ -88,7 +89,10 @@ Rules:
                 const poetName = typeof data.poet === 'string' ? data.poet : '';
                 const langName = typeof data.language === 'string' ? data.language : '';
                 const updatedRecents = recordPoetrySelection(poetryRecents, poetName, langName);
-                await savePoetryRecents(updatedRecents);
+                await savePoetryRecents(DEFAULT_USER_ID, updatedRecents);
+
+                // Save session for history
+                saveSessionContent('poetry', data, `${poetName} - ${langName}`);
             } catch (parseError) {
                 html += `<div class="mb-6">`;
                 html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;
@@ -98,13 +102,14 @@ Rules:
                 html += `</div>`;
             }
         } else {
-            html += `<p>Could not generate poetry at this time.</p>`;
+            showModalError(elements, 'Could not generate poetry at this time.');
+            return;
         }
 
-        contentEl.innerHTML = html;
+        setModalContent(elements, html);
 
     } catch (error) {
         console.error("Error fetching Poetry:", error);
-        contentEl.innerHTML = '<p>An API Error occurred. Could not generate poetry at this time.</p>';
+        showModalError(elements, 'An API Error occurred. Could not generate poetry at this time.');
     }
 }

@@ -1,13 +1,11 @@
 import { ai } from "../../api/perplexity";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowTennisMatches() {
-    const modal = document.getElementById('tennis-modal');
-    const contentEl = document.getElementById('tennis-content');
-    if (!modal || !contentEl) return;
+    const elements = getModalElements(MODAL_CONFIGS.tennis);
+    if (!elements) return;
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    contentEl.innerHTML = '<p>Searching the web for latest match information...</p>';
+    showModalWithLoading(elements, MODAL_CONFIGS.tennis.loadingMessage);
 
     try {
         const prompt = `CRITICAL: Use Google Search to find the MOST RECENT and CURRENT ATP & WTA singles matches for yesterday, today, and tomorrow. Double-check all dates to ensure you're providing the latest information. Focus on major tournaments and current events.
@@ -68,39 +66,21 @@ Use actual current tournament data and highlight Canadian players with <strong> 
             model: 'sonar-pro',
             contents: prompt,
             config: {
-                tools: [{googleSearch: {}}],
+                tools: [{ googleSearch: {} }],
             }
         });
 
-        let html = '';
-
         if (response.text) {
-            html += `<div class="mb-4">${response.text}</div>`;
+            setModalContent(elements, `<div class="mb-4">${response.text}</div>`);
+
+            // Save session for history
+            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            saveSessionContent('tennis', { matches: response.text }, `Tennis Matches - ${today}`);
         } else {
-            html += `<p>Could not retrieve any tennis data at this time.</p>`;
+            showModalError(elements, 'Could not retrieve any tennis data at this time.');
         }
-
-        // Note: Perplexity API doesn't provide grounding metadata in the same format as Gemini
-        // Sources are typically included in the response text itself
-        const uniqueSources: any[] = [];
-        if (uniqueSources.length > 0) {
-            html += '<hr class="my-4 border-gray-300">';
-            html += '<h4 class="text-md font-bold mb-2">Sources:</h4>';
-            html += '<ul class="list-disc pl-5 text-sm space-y-1">';
-
-            uniqueSources.forEach(chunk => {
-                if (chunk && typeof chunk === 'object' && 'web' in chunk && chunk.web && typeof chunk.web === 'object' && 'uri' in chunk.web) {
-                    const webChunk = chunk.web as { uri: string; title?: string };
-                    html += `<li><a href="${webChunk.uri}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${webChunk.title || webChunk.uri}</a></li>`;
-                }
-            });
-            html += '</ul>';
-        }
-
-        contentEl.innerHTML = html;
-
     } catch (error) {
         console.error("Error fetching Tennis data:", error);
-        contentEl.innerHTML = '<p>An API Error occurred. Could not fetch tennis information at this time.</p>';
+        showModalError(elements, 'An API Error occurred. Could not fetch tennis information at this time.');
     }
 }

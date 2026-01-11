@@ -1,4 +1,4 @@
-import { ai } from "../../api/perplexity";
+import { ai, type ResponseSchema } from "../../api/perplexity";
 import { escapeHtml } from "../../utils/escapeHtml";
 
 export async function getSolutionExplanation(questionPrompt: string, questionSolution: string): Promise<string> {
@@ -25,7 +25,7 @@ Your task is to explain this to the junior engineer. Provide a response in JSON 
 2.  **professionalApproach**: Describe how a professional cloud analytics engineer would think about and approach solving this problem. Discuss best practices, potential edge cases, performance considerations, or alternative methods they might consider.
 3.  **formattedSolution**: Present the original solution code, correctly formatted.`;
 
-        const responseSchema = {
+        const responseSchema: ResponseSchema = {
             type: "OBJECT",
             properties: {
                 problemExplanation: {
@@ -49,8 +49,8 @@ Your task is to explain this to the junior engineer. Provide a response in JSON 
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: responseSchema as any, // Cast to any to avoid type errors with the SDK
-            },
+                responseSchema
+            }
         });
 
         const data = JSON.parse(response.text);

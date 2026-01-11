@@ -1,68 +1,44 @@
-// Removed @google/genai import - now using Perplexity API
-
-import { escapeHtml } from "./utils/escapeHtml";
-import { getDayOfYear } from "./utils/date";
-import { getCanonicalTime, isContentReadyForPreview, isDayMode, isNightMode } from "./core/time";
-import { Task, PoetrySelection } from "./types";
-import { loadTasks as loadTasksFromSupabase, saveTasks as saveTasksToSupabase, loadPoetryRecents as loadPoetryRecentsFromSupabase, savePoetryRecents as savePoetryRecentsToSupabase, recordPoetrySelection } from "./core/supabase-persistence";
+import { getCanonicalTime } from "./core/time";
+import { loadTasks as loadTasksFromSupabase } from "./core/supabase-persistence";
 import { initializeQuantumTimer } from "./components/quantumTimer";
-import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, refreshTasksFromCloud, attachTaskListeners } from "./components/tasks";
-import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/perplexity";
+import { initializeTaskForms, renderTasks, attachTaskListeners } from "./components/tasks";
+import { ai } from "./api/perplexity";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
-import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, getReflectionPrompt, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
-import { hasGenerationFlag, setGenerationFlag, getCachedContent } from "./core/supabase-content-cache";
+import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
 import { DEFAULT_USER_ID } from "./core/default-user";
+import { initializeHistoryBrowser, showHistoryBrowser } from "./components/HistoryBrowser";
+import { SessionContentType, getSession } from "./core/learning-sessions";
+import { displaySavedSessionContent, getModalNameForContentType } from "./components/modals/factory";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DEFAULT USER ID (No authentication required) ---
     const currentUserId: string = DEFAULT_USER_ID;
 
     // --- STATE & DERIVED DATA ---
-    let todayKey: string, tomorrowKey: string, tomorrowDay: number;
-    let activeContentDate: Date, previewContentDate: Date;
+    let todayKey: string;
+    let activeContentDate: Date;
     let todaysQuote: { quote: string; author: string } | null = null;
-    let isAutoGenerating = false;
-    let lastApiCall = 0;
-    const API_RATE_LIMIT = 1000; // 1 second between calls
 
     async function updateDateDerivedData() {
-        const { now, hour } = getCanonicalTime();
+        const { now } = getCanonicalTime();
 
-        // Determine the active content date based on the time.
-        // From midnight to 5:59 AM, the "active day" is still considered the previous calendar day.
-        if (hour < 6) {
-            activeContentDate = new Date(now);
-            activeContentDate.setDate(now.getDate() - 1);
-        } else {
-            activeContentDate = new Date(now);
-        }
-
-        // The preview date is always the day after the active content date.
-        previewContentDate = new Date(activeContentDate);
-        previewContentDate.setDate(activeContentDate.getDate() + 1);
-
-        // Derive keys and other data from these canonical dates.
+        // Use current date as active content date
+        activeContentDate = new Date(now);
         todayKey = activeContentDate.toISOString().split('T')[0];
-        tomorrowKey = previewContentDate.toISOString().split('T')[0];
-        tomorrowDay = previewContentDate.getDay();
-        
+
         // Load philosophical quote instantly (no API call blocking)
         todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
-        
+
         // Optionally generate AI quote in background for future use
         if (ai) {
-            // Show loading indicator
             showQuoteLoadingIndicator();
-            
+
             generateAIPhilosophicalQuote(activeContentDate).then(aiQuote => {
-                // Hide loading indicator
                 hideQuoteLoadingIndicator();
-                
-                // Update the quote if AI generation was successful
+
                 if (aiQuote && aiQuote.quote !== todaysQuote?.quote) {
                     todaysQuote = aiQuote;
-                    // Re-render the quote display
                     const lifePointerEl = document.getElementById('life-pointer-display-day');
                     if (lifePointerEl) {
                         lifePointerEl.innerHTML = `
@@ -72,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }).catch(error => {
-                // Hide loading indicator on error
                 hideQuoteLoadingIndicator();
                 console.log("Background AI quote generation failed, using curated quote:", error);
             });
@@ -80,12 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     let tasks: { text: string; completed: boolean }[] = [];
-
-    // Active chat state for the modal UI
-    // Chat functionality removed for simplicity
-
-    // Chat functionality removed for simplicity
-
 
     // --- DATA PERSISTENCE ---
 
@@ -109,63 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Proactively generates the next day's content during Night mode.
-     * This function is triggered on app load and periodically to "warm the cache",
-     * creating the experience of an autonomous sync process for the user.
-     */
-    async function triggerAutoContentGeneration() {
-        if (isAutoGenerating) {
-            return; // Generation is already in progress.
-        }
-
-        updateDateDerivedData(); 
-        
-        const dateForGeneration = previewContentDate;
-        const dateKeyForGeneration = dateForGeneration.toISOString().split('T')[0];
-
-        // Check if we are in Night mode to generate tomorrow's content
-        if (!isNightMode()) {
-            return; // Not time to generate yet.
-        }
-
-        // This key prevents re-triggering the generation process every 5 minutes during Night mode.
-        // Using default user ID - no check needed
-        
-        const hasFlag = await hasGenerationFlag(currentUserId, 'auto-generation-attempted', dateKeyForGeneration);
-        if (hasFlag) {
-            return; // We've already run auto-generation for this date.
-        }
-
-        isAutoGenerating = true;
-        showSyncStatus('⚙️ Synchronizing next day\'s content...');
-        console.log(`It's Night mode. Triggering background content generation for ${dateKeyForGeneration}...`);
-        
-        try {
-            // We "warm the cache" by calling the generation functions.
-            // They will check existing caches first and only generate/fetch if the content is missing.
-            const promises = [
-                getOrGeneratePlanForDate(currentUserId, dateForGeneration, tomorrowKey),
-                getOrGenerateDynamicContent(currentUserId, 'french-sound', dateForGeneration),
-                getOrGenerateDynamicContent(currentUserId, 'analytics', dateForGeneration),
-                getOrGenerateDynamicContent(currentUserId, 'transportation-physics', dateForGeneration)
-            ];
-
-            await Promise.all(promises);
-            
-            console.log(`Background content generation for ${dateKeyForGeneration} complete.`);
-            
-            // Mark that we've successfully attempted generation for this date.
-            await setGenerationFlag(currentUserId, 'auto-generation-attempted', dateKeyForGeneration);
-            showSyncStatus('✅ Sync complete. Tomorrow\'s preview is ready.', true);
-
-        } catch (error) {
-            console.error("An error occurred during background content generation:", error);
-            showSyncStatus('⚠️ Error synchronizing content. Will try again later.', true);
-        } finally {
-            isAutoGenerating = false;
-        }
-    }
 
 
     // --- FOOD PLAN & CORE DATA LOGIC ---
@@ -184,40 +96,33 @@ document.addEventListener('DOMContentLoaded', () => {
     
     
     async function mainRender() {
-        // Using default user ID - no check needed
-        
-        // Recalculate time-sensitive variables each time render is called
-        await updateDateDerivedData(); 
-        const { hour } = getCanonicalTime(); // Use canonical hour
+        // Recalculate date variables each time render is called
+        await updateDateDerivedData();
 
         await loadCoreData();
-        tasks = await loadTasksFromSupabase(currentUserId); // Load the latest tasks from storage to sync on each 5min interval.
+        tasks = await loadTasksFromSupabase(currentUserId);
 
-        // Always show day module (now our single dynamic module)
+        // Always show day module
         const dayModule = document.getElementById('day-module') as HTMLElement;
         if (dayModule) dayModule.classList.add('active');
-        
-        // Update dynamic icon based on time
-        updateDynamicIcon(hour);
-        
+
+        // Update dynamic icon
+        updateDynamicIcon();
+
         // Render navigation icons
         renderNavigationIcons();
-        
-        // Always render day content for now
+
+        // Render content
         await renderDayModule();
     }
 
-    function updateDynamicIcon(hour: number) {
+    function updateDynamicIcon() {
         const iconEl = document.getElementById('dynamic-time-icon') as HTMLElement;
         if (!iconEl) return;
-        
-        if (isDayMode()) {
-            iconEl.textContent = '☀️';
-            iconEl.className = 'theme-icon day-mode';
-        } else {
-            iconEl.textContent = '🌙';
-            iconEl.className = 'theme-icon night-mode';
-        }
+
+        // Simple sparkle icon for Mr. Mojo Rising
+        iconEl.textContent = '✨';
+        iconEl.className = 'theme-icon';
     }
 
     // Error boundary function
@@ -246,16 +151,35 @@ document.addEventListener('DOMContentLoaded', () => {
             await updateDateDerivedData(); // Ensure date-derived data is available
             initializeQuantumTimer();
 
+            // Initialize history browser with handler for session clicks
+            initializeHistoryBrowser(async (sessionId: string, contentType: SessionContentType) => {
+                // When user clicks on a past session, load and display it
+                const session = await getSession(currentUserId, sessionId);
+                if (session) {
+                    const modalName = getModalNameForContentType(contentType);
+                    if (modalName) {
+                        displaySavedSessionContent(
+                            modalName,
+                            session.content,
+                            session.title
+                        );
+                    }
+                }
+            });
+
+            // Show history browser on page load
+            showHistoryBrowser('timeline');
+
             const appContainer = document.getElementById('app-container');
             if (appContainer) {
                 const modalDependencies = {
                     dates: {
                         active: activeContentDate,
-                        preview: previewContentDate,
+                        preview: activeContentDate, // Use same date for now
                     },
                     keys: {
                         today: todayKey,
-                        tomorrow: tomorrowKey,
+                        tomorrow: todayKey, // Use same key for now
                     },
                 };
                 initializeModalManager(appContainer, modalDependencies);
@@ -303,210 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- MODULE EDITING FUNCTIONALITY REMOVED ---
     // All edit module names functionality has been removed for cleaner design
 
-    // --- ENHANCED CONTENT FLOW SYSTEM ---
-    
-    /**
-     * Enhanced content generation specifically for Night Mode (6 PM - 6 AM)
-     */
-    async function triggerNightContentGeneration(): Promise<void> {
-        const { hour, now } = getCanonicalTime();
-        
-        // Only generate during Night Mode (6 PM - 6 AM)
-        if (!isNightMode()) {
-            console.log(`⏰ Night: Not in Night time window (current hour: ${hour})`);
-            return;
-        }
-        
-        // Using default user ID - no check needed
-        
-        const todayKey = new Date().toISOString().split('T')[0];
-        
-        // Check if we've already generated content for tomorrow today
-        const hasFlag = await hasGenerationFlag(currentUserId, 'night-generation', todayKey);
-        if (hasFlag) {
-            console.log('🔄 Night: Content already generated for tomorrow');
-            return;
-        }
-        
-        console.log('🚀 Night: Starting content generation for tomorrow...', {
-            currentTime: now.toISOString(),
-            todayKey: todayKey,
-            hour: hour,
-            previewContentDate: previewContentDate.toISOString()
-        });
-        showSyncStatus('🔄 Generating tomorrow\'s content...', false);
-        
-        try {
-            // Generate all content types for tomorrow
-            const promises = [
-                getOrGeneratePlanForDate(currentUserId, previewContentDate, tomorrowKey),
-                getOrGenerateDynamicContent(currentUserId, 'french-sound', previewContentDate),
-                getOrGenerateDynamicContent(currentUserId, 'analytics', previewContentDate),
-                getOrGenerateDynamicContent(currentUserId, 'transportation-physics', previewContentDate)
-            ];
-            
-            await Promise.all(promises);
-            
-            // Mark that we've generated content for tomorrow
-            await setGenerationFlag(currentUserId, 'night-generation', todayKey);
-            console.log('✅ Night: Content generation completed for tomorrow');
-            showSyncStatus('✅ Tomorrow\'s content generated successfully!', true);
-            
-        } catch (error) {
-            console.error('❌ Night: Content generation failed', error);
-            showSyncStatus('⚠️ Content generation failed. Will retry.', true);
-        }
-    }
-    
-    /**
-     * Archives today's content during Day Mode (6 AM - 6 PM)
-     */
-    async function archiveTodaysContent(): Promise<void> {
-        const { hour, now } = getCanonicalTime();
-        
-        // Only archive during Day Mode (6 AM - 6 PM)
-        if (!isDayMode()) {
-            console.log(`⏰ Day: Not in Day time window (current hour: ${hour})`);
-            return;
-        }
-        
-        // Using default user ID - no check needed
-        
-        const todayKey = new Date().toISOString().split('T')[0];
-        
-        // Check if we've already archived today's content
-        const hasFlag = await hasGenerationFlag(currentUserId, 'archived', todayKey);
-        if (hasFlag) {
-            console.log('🔄 Day: Content already archived for today');
-            return;
-        }
-        
-        console.log('📦 Day: Archiving today\'s content...', {
-            currentTime: now.toISOString(),
-            todayKey: todayKey,
-            hour: hour,
-            activeContentDate: activeContentDate.toISOString()
-        });
-        
-        try {
-            // Collect all of today's content
-            const archiveData = {
-                date: todayKey,
-                archivedAt: new Date().toISOString(),
-                foodPlan: await getOrGeneratePlanForDate(currentUserId, activeContentDate, todayKey),
-                frenchContent: await getOrGenerateDynamicContent(currentUserId, 'french-sound', activeContentDate),
-                analyticsContent: await getOrGenerateDynamicContent(currentUserId, 'analytics', activeContentDate),
-                transportationContent: await getOrGenerateDynamicContent(currentUserId, 'transportation-physics', activeContentDate),
-                lifePointer: todaysQuote
-            };
-            
-            // Save to archive in Supabase
-            const { saveCachedContent } = await import('./core/supabase-content-cache');
-            await saveCachedContent(currentUserId, 'archive', todayKey, archiveData);
-            await setGenerationFlag(currentUserId, 'archived', todayKey);
-            console.log('✅ Day: Content archived successfully for today');
-            
-        } catch (error) {
-            console.error('❌ Day: Content archiving failed', error);
-        }
-    }
-    
-    /**
-     * Loads archived content for display
-     */
-    async function getArchivedContent(dateKey: string): Promise<any> {
-        // Using default user ID - no check needed
-        
-        try {
-            const archivedData = await getCachedContent(currentUserId, 'archive', dateKey);
-            return archivedData;
-        } catch (error) {
-            console.error('Error loading archived content:', error);
-            return null;
-        }
-    }
-    
-    // --- ARCHIVED CONTENT MODAL FUNCTIONS ---
-    
-    function showArchivedFrenchModal(archivedContent: any) {
-        const modal = document.getElementById('frenchy-modal');
-        if (!modal) return;
-        
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        
-        const titleEl = modal.querySelector('#modal-frenchy-title') as HTMLElement;
-        const tableBodyEl = modal.querySelector('#modal-frenchy-table-body') as HTMLElement;
-        
-        titleEl.textContent = `French (Archived - ${archivedContent.date})`;
-        
-        if (archivedContent.frenchContent && archivedContent.frenchContent.sound && archivedContent.frenchContent.words) {
-            const { sound, words } = archivedContent.frenchContent;
-            tableBodyEl.innerHTML = `
-                <tr>
-                    <td class="p-3 border-b">${escapeHtml(sound)}</td>
-                    <td class="p-3 border-b">${escapeHtml(words.join(', '))}</td>
-                    <td class="p-3 border-b">Archived</td>
-                </tr>
-            `;
-        } else {
-            tableBodyEl.innerHTML = `<tr><td colspan="3" class="text-center p-4">No archived French content available.</td></tr>`;
-        }
-    }
-    
-    function showArchivedFoodModal(archivedContent: any) {
-        const modal = document.getElementById('food-modal');
-        if (!modal) return;
-        
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        
-        const titleEl = modal.querySelector('#modal-food-title') as HTMLElement;
-        const contentEl = modal.querySelector('#modal-food-content') as HTMLElement;
-        
-        titleEl.textContent = `Food Plan (Archived - ${archivedContent.date})`;
-        contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.foodPlan || 'No archived food plan available.')}</div>`;
-    }
-    
-    function showArchivedAnalyticsModal(archivedContent: any) {
-        const modal = document.getElementById('analytics-modal');
-        if (!modal) return;
-        
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        
-        const titleEl = modal.querySelector('#modal-analytics-title') as HTMLElement;
-        const contentEl = modal.querySelector('#modal-analytics-content') as HTMLElement;
-        
-        titleEl.textContent = `Analytics (Archived - ${archivedContent.date})`;
-        
-        if (archivedContent.analyticsContent && archivedContent.analyticsContent.insights) {
-            contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.analyticsContent.insights)}</div>`;
-        } else {
-            contentEl.innerHTML = `<div class="p-4">No archived analytics content available.</div>`;
-        }
-    }
-    
-    function showArchivedHoodModal(archivedContent: any) {
-        const modal = document.getElementById('hood-modal');
-        if (!modal) return;
-        
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        
-        const titleEl = modal.querySelector('#modal-hood-title') as HTMLElement;
-        const contentEl = modal.querySelector('#modal-hood-content') as HTMLElement;
-        
-        titleEl.textContent = `Transportation Physics (Archived - ${archivedContent.date})`;
-        
-        if (archivedContent.transportationContent && archivedContent.transportationContent.physics) {
-            contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.transportationContent.physics)}</div>`;
-        } else {
-            contentEl.innerHTML = `<div class="p-4">No archived transportation physics content available.</div>`;
-        }
-    }
-
-    // --- ENHANCED MODULE RENDERING FUNCTIONS ---
+    // --- MODULE RENDERING FUNCTIONS ---
     
     async function renderDayModule() {
         // Display philosophical quote
@@ -517,19 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="quote-author">— ${todaysQuote.author}</div>
             `;
         }
-        
+
         const reflectionPromptEl = document.getElementById('reflection-prompt-display-day');
         if (reflectionPromptEl) reflectionPromptEl.textContent = '';
 
         renderTasks(tasks, 'tasks-list-day');
-        
-        if (isDayMode()) {
-            // Day Mode: Use today's content
-            console.log('☀️ Day Mode: Using today\'s content');
-        } else {
-            // Night Mode: Generate tomorrow's content and show preview
-            await triggerNightContentGeneration();
-            console.log('🌙 Night Mode: Generating tomorrow\'s content, showing preview');
-        }
     }
 });

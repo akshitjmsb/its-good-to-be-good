@@ -1,5 +1,6 @@
 import { ai } from "../../api/perplexity";
-import { saveChatHistory } from "../../core/persistence";
+import { saveChatHistory } from "../../core/supabase-persistence";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 import { ChatMessage } from "../../types";
 
 let chatHistory: ChatMessage[] = [];
@@ -59,7 +60,7 @@ export async function askPerplexity(prompt: string) {
         }
 
         mainChatHistory = [...chatHistory];
-        await saveChatHistory(mainChatHistory);
+        await saveChatHistory(DEFAULT_USER_ID, mainChatHistory);
 
     } catch (error) {
          console.error("Perplexity API Error:", error);

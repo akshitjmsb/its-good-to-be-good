@@ -4,12 +4,13 @@
 @import './modals.css';
 @import './analytics.css';
 @import './exercise.css';
+@import './topics.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Mobile Responsive Foundation for Night Divides the Day */
+/* Mobile Responsive Foundation for Mr. Mojo Rising */
 
 /* Mobile-first base styles */
 @media (max-width: 768px) {

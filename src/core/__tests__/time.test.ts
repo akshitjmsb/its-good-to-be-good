@@ -1,15 +1,14 @@
 /**
  * Tests for the time utility functions
- * 
+ *
  * Note: These tests are designed to run in a test environment with Jest or similar.
  * For now, they serve as documentation of expected behavior.
  */
 
-import { 
-    getCanonicalTime, 
-    isDayMode, 
-    isNightMode, 
-    isContentReadyForPreview 
+import {
+    getCanonicalTime,
+    getTodayKey,
+    getActiveContentDate
 } from '../time';
 
 // Mock test framework functions (replace with actual test framework)
@@ -58,6 +57,11 @@ const expect = (actual: any) => ({
         if (actual > expected) {
             throw new Error(`Expected ${actual} to be less than or equal to ${expected}`);
         }
+    },
+    toMatch: (pattern: RegExp) => {
+        if (!pattern.test(actual)) {
+            throw new Error(`Expected ${actual} to match ${pattern}`);
+        }
     }
 });
 
@@ -77,56 +81,17 @@ describe('getCanonicalTime', () => {
     });
 });
 
-describe('isDayMode', () => {
-    it('should return true for hours 6-17', () => {
-        // Mock the time for testing
-        const originalDate = Date;
-        global.Date = class extends Date {
-            constructor(...args: any[]) {
-                if (args.length === 0) {
-                    super(2024, 0, 15, 10, 0, 0); // 10 AM
-                } else {
-                    // @ts-ignore - Spread args for Date constructor in test environment
-                    super(...args);
-                }
-            }
-        } as any;
-
-        // This would need to be tested with proper mocking
-        console.log('  Note: Day mode test requires proper time mocking');
-        
-        global.Date = originalDate;
-    });
-
-    it('should return false for hours 18-23 and 0-5', () => {
-        // Similar mocking would be needed
-        console.log('  Note: Night mode test requires proper time mocking');
+describe('getTodayKey', () => {
+    it('should return a date string in YYYY-MM-DD format', () => {
+        const result = getTodayKey();
+        expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 });
 
-describe('isNightMode', () => {
-    it('should be opposite of isDayMode', () => {
-        // This test would verify that isNightMode() === !isDayMode()
-        console.log('  Note: Night mode test requires proper time mocking');
-    });
-});
-
-describe('isContentReadyForPreview', () => {
-    it('should return true for dates after 6 PM the day before', () => {
-        // Mock date to be after 6 PM
-        const previewDate = new Date('2024-01-16T00:00:00.000Z'); // Jan 16
-        const mockNow = new Date('2024-01-15T23:00:00.000Z'); // Jan 15, 6 PM EST
-        
-        // This would need proper mocking of getCanonicalTime
-        console.log('  Note: Content preview test requires proper time mocking');
-    });
-
-    it('should return false for dates before 6 PM the day before', () => {
-        // Mock date to be before 6 PM
-        const previewDate = new Date('2024-01-16T00:00:00.000Z'); // Jan 16
-        const mockNow = new Date('2024-01-15T17:00:00.000Z'); // Jan 15, 12 PM EST
-        
-        console.log('  Note: Content preview test requires proper time mocking');
+describe('getActiveContentDate', () => {
+    it('should return a Date object', () => {
+        const result = getActiveContentDate();
+        expect(result).toBeInstanceOf(Date);
     });
 });
 

@@ -1,5 +1,5 @@
 /**
- * Centralized error handling utilities for the Night Divides the Day application
+ * Centralized error handling utilities for the Mr. Mojo Rising application
  */
 
 export enum ErrorType {

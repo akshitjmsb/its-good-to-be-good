@@ -1,8 +1,8 @@
 import { getOrGenerateDynamicContent } from "../../api/perplexity";
-import { isContentReadyForPreview } from "../../core/time";
 import { getSolutionExplanation } from "./solutionExplanation";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { DEFAULT_USER_ID } from "../../core/default-user";
+import { getModalElements, showModalWithLoading, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
 
 // Global state for card navigation
 let currentCardIndex = 0;
@@ -28,48 +28,44 @@ export async function showAnalyticsModal(
     mode: 'today' | 'tomorrow' | 'archive',
     dates: { active: Date, preview: Date, archive?: Date }
 ) {
-    const modal = document.getElementById('analytics-engineer-modal');
-    const cardsWrapper = document.getElementById('analytics-cards-wrapper');
+    const elements = getModalElements(MODAL_CONFIGS.analytics);
+    if (!elements) return;
+
+    // Analytics modal has additional required elements
     const indicatorsContainer = document.getElementById('card-indicators');
     const prevBtn = document.getElementById('prev-card-btn');
     const nextBtn = document.getElementById('next-card-btn');
-    
-    if (!modal || !cardsWrapper || !indicatorsContainer || !prevBtn || !nextBtn) return;
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
+    if (!indicatorsContainer || !prevBtn || !nextBtn) {
+        console.error('Analytics modal: Missing navigation elements');
+        return;
+    }
+
+    showModalWithLoading(elements, MODAL_CONFIGS.analytics.loadingMessage);
+
     const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-    
+
     if (mode === 'archive' && !dates.archive) {
         console.error('Archive mode requested but archive data not available');
-        cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>Archive functionality not available.</p></div>';
+        setModalContent(elements, '<div class="analytics-card flex items-center justify-center"><p>Archive functionality not available.</p></div>');
         return;
     }
-
-    if (mode === 'tomorrow' && !isContentReadyForPreview(date)) {
-        cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>Topics for tomorrow will be available after 5 PM.</p></div>';
-        return;
-    }
-
-    // Show loading state
-    cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>Loading analytics topics...</p></div>';
 
     try {
         analyticsData = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'analytics', date);
         if (!analyticsData) {
-            cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>Content is not available. Please try again later.</p></div>';
+            setModalContent(elements, '<div class="analytics-card flex items-center justify-center"><p>Content is not available. Please try again later.</p></div>');
             return;
         }
 
         // Create cards from the data
         const topics = [
-            { type: 'SQL', data: analyticsData.sql, isQuestion: true, icon: '🗄️' },
-            { type: 'DAX', data: analyticsData.dax, isQuestion: true, icon: '📊' },
-            { type: 'Snowflake', data: analyticsData.snowflake, isQuestion: true, icon: '❄️' },
-            { type: 'dbt', data: analyticsData.dbt, isQuestion: true, icon: '🔧' },
-            { type: 'Data Management', data: analyticsData.dataManagement, icon: '📋' },
-            { type: 'Data Quality', data: analyticsData.dataQuality, icon: '✅' }
+            { type: 'SQL', data: analyticsData.sql, isQuestion: true, icon: '' },
+            { type: 'DAX', data: analyticsData.dax, isQuestion: true, icon: '' },
+            { type: 'Snowflake', data: analyticsData.snowflake, isQuestion: true, icon: '' },
+            { type: 'dbt', data: analyticsData.dbt, isQuestion: true, icon: '' },
+            { type: 'Data Management', data: analyticsData.dataManagement, icon: '' },
+            { type: 'Data Quality', data: analyticsData.dataQuality, icon: '' }
         ];
 
         // Filter out topics without data
@@ -78,10 +74,10 @@ export async function showAnalyticsModal(
         currentCardIndex = 0;
 
         // Generate cards HTML
-        cardsWrapper.innerHTML = validTopics.map((topic, index) => createCardHTML(topic, index)).join('');
-        
+        setModalContent(elements, validTopics.map((topic, index) => createCardHTML(topic, index)).join(''));
+
         // Generate indicators
-        indicatorsContainer.innerHTML = validTopics.map((_, index) => 
+        indicatorsContainer.innerHTML = validTopics.map((_, index) =>
             `<div class="card-indicator ${index === 0 ? 'active' : ''}" data-index="${index}"></div>`
         ).join('');
 
@@ -92,9 +88,15 @@ export async function showAnalyticsModal(
         // Update navigation state
         updateNavigationState();
 
+        // Save session for history (only for new content, not archive)
+        if (mode !== 'archive') {
+            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            saveSessionContent('analytics', analyticsData, `Analytics Topics - ${today}`);
+        }
+
     } catch (error) {
         console.error("Error showing analytics modal:", error);
-        cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>An error occurred while fetching analytics content.</p></div>';
+        setModalContent(elements, '<div class="analytics-card flex items-center justify-center"><p>An error occurred while fetching analytics content.</p></div>');
     }
 }
 
@@ -102,7 +104,7 @@ function createCardHTML(topic: any, index: number): string {
     if (!topic.data) return '';
 
     const cardId = `analytics-card-${index}`;
-    
+
     if (topic.isQuestion) {
         const encodedPrompt = btoa(topic.data.prompt);
         const encodedSolution = btoa(topic.data.solution);
@@ -117,8 +119,8 @@ function createCardHTML(topic: any, index: number): string {
                     <div class="analytics-card-question">
                         <p class="text-sm leading-relaxed">${topic.data.prompt.replace(/\n/g, '<br>')}</p>
                     </div>
-                    <button class="analytics-card-solution-btn" 
-                            data-prompt="${encodedPrompt}" 
+                    <button class="analytics-card-solution-btn"
+                            data-prompt="${encodedPrompt}"
                             data-solution="${encodedSolution}"
                             data-card-id="${cardId}">
                         Show Solution
@@ -221,16 +223,16 @@ function setupCardNavigation() {
 
     cardsWrapper.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        
+
         currentX = e.touches[0].clientX;
         const diffX = startX - currentX;
         const diffY = startY - e.touches[0].clientY;
-        
+
         // Determine if this is a horizontal swipe gesture
         if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
             isSwipeGesture = true;
             e.preventDefault();
-            
+
             // Add visual feedback during swipe
             const translateX = -currentCardIndex * 100 + (diffX / window.innerWidth) * 100;
             cardsWrapper.style.transform = `translateX(${translateX}%)`;
@@ -287,14 +289,14 @@ function setupCardNavigation() {
 
     cardsWrapper.addEventListener('mousemove', (e) => {
         if (!isMouseDown) return;
-        
+
         mouseCurrentX = e.clientX;
         const diffX = mouseStartX - mouseCurrentX;
-        
+
         if (Math.abs(diffX) > 10) {
             isMouseDrag = true;
             e.preventDefault();
-            
+
             // Add visual feedback during drag
             const translateX = -currentCardIndex * 100 + (diffX / window.innerWidth) * 100;
             cardsWrapper.style.transform = `translateX(${translateX}%)`;
@@ -374,7 +376,7 @@ function updateCardPosition() {
 
     const translateX = -currentCardIndex * 100;
     cardsWrapper.style.transform = `translateX(${translateX}%)`;
-    
+
     // Ensure smooth transition is enabled
     if (!cardsWrapper.style.transition || cardsWrapper.style.transition === 'none') {
         cardsWrapper.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
@@ -421,7 +423,7 @@ function setupCardInteractions() {
             if (solutionEl && !solutionEl.classList.contains('show')) {
                 solutionEl.innerHTML = '<p>Generating detailed explanation...</p>';
                 solutionEl.classList.add('show');
-                
+
                 try {
                     const explanation = await getSolutionExplanation(prompt, solution);
                     solutionEl.innerHTML = explanation;
