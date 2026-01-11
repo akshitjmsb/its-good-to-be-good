@@ -311,6 +311,10 @@ function renderSavedContent(modalName: string, content: Record<string, unknown>)
             return renderFoodContent(content);
         case 'hood':
             return renderHoodContent(content);
+        case 'analytics':
+            return renderAnalyticsContent(content);
+        case 'exercise':
+            return renderExerciseContent(content);
         default:
             return `<div class="p-4"><pre>${JSON.stringify(content, null, 2)}</pre></div>`;
     }
@@ -437,6 +441,58 @@ function renderFoodContent(data: Record<string, unknown>): string {
 function renderHoodContent(data: Record<string, unknown>): string {
     const explanation = String(data.explanation || '');
     return explanation.replace(/\n/g, '<br>');
+}
+
+function renderAnalyticsContent(data: Record<string, unknown>): string {
+    const title = String(data.title || 'Analytics Lesson');
+    const concept = String(data.concept || '');
+    const explanation = String(data.explanation || '');
+    const example = String(data.example || '');
+
+    return `
+        <h4 class="font-bold text-md mb-2">${escapeHtmlString(title)}</h4>
+        ${concept ? `<p class="text-sm font-medium mb-2">${escapeHtmlString(concept)}</p>` : ''}
+        <p class="text-base mb-4">${escapeHtmlString(explanation)}</p>
+        ${example ? `<pre class="bg-gray-100 p-3 rounded text-sm overflow-x-auto">${escapeHtmlString(example)}</pre>` : ''}
+    `;
+}
+
+function renderExerciseContent(data: Record<string, unknown>): string {
+    const title = String(data.title || 'Exercise Plan');
+    const exercises = Array.isArray(data.exercises) ? data.exercises : [];
+    const description = String(data.description || '');
+
+    let html = `<h4 class="font-bold text-md mb-4">${escapeHtmlString(title)}</h4>`;
+
+    if (description) {
+        html += `<p class="text-sm mb-4">${escapeHtmlString(description)}</p>`;
+    }
+
+    if (exercises.length > 0) {
+        html += '<div class="space-y-3">';
+        for (const ex of exercises) {
+            const name = String(ex.name || ex.exercise || '');
+            const sets = String(ex.sets || '');
+            const reps = String(ex.reps || '');
+            const notes = String(ex.notes || '');
+            html += `
+                <div class="border-l-2 border-gray-300 pl-3">
+                    <p class="font-medium">${escapeHtmlString(name)}</p>
+                    ${sets && reps ? `<p class="text-sm text-gray-600">${escapeHtmlString(sets)} sets × ${escapeHtmlString(reps)} reps</p>` : ''}
+                    ${notes ? `<p class="text-xs text-gray-500">${escapeHtmlString(notes)}</p>` : ''}
+                </div>
+            `;
+        }
+        html += '</div>';
+    } else {
+        // Fallback: render raw content if no exercises array
+        const rawContent = String(data.content || data.plan || '');
+        if (rawContent) {
+            html += `<div class="text-sm">${rawContent.replace(/\n/g, '<br>')}</div>`;
+        }
+    }
+
+    return html;
 }
 
 /**
