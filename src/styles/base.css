@@ -3,6 +3,7 @@
 body { 
     font-family: 'Special Elite', monospace; 
     background-color: #f4f4f4; 
+    color: #374151; /* Default text color - dark grey for good contrast */
     display: flex; 
     justify-content: center; 
     align-items: center; 
@@ -45,18 +46,18 @@ body {
 .module.active { display: block; }
 
 h1, h2, h3 { font-family: 'Special Elite', monospace; }
-h1 { font-size: 1.5rem; }
-h2 { font-size: 1.25rem; margin-top: 1rem; }
-h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+h1 { font-size: 1.5rem; color: #374151; /* Dark grey for good contrast - matches brand guidelines */ }
+h2 { font-size: 1.25rem; margin-top: 1rem; color: #374151; }
+h3 { font-size: 1rem; margin-bottom: 0.5rem; color: #374151; }
 
 /* Responsive typography */
 @media (min-width: 640px) {
-    h1 { font-size: 1.75rem; }
-    h2 { font-size: 1.5rem; margin-top: 1.5rem; }
-    h3 { font-size: 1.1rem; }
+    h1 { font-size: 1.75rem; color: #374151; }
+    h2 { font-size: 1.5rem; margin-top: 1.5rem; color: #374151; }
+    h3 { font-size: 1.1rem; color: #374151; }
 }
 
-.logo-container { margin-bottom: 0.5rem; }
+.logo-container { margin-bottom: 0.5rem; color: #374151; /* Ensure text color for logo container */ }
 .logo-svg {
     width: 50px;
     height: auto;
@@ -76,3 +77,8 @@ h3 { font-size: 1rem; margin-bottom: 0.5rem; }
 }
 .theme-icon.day-mode { color: #f59e0b; }
 .theme-icon.night-mode { color: #6366f1; }
+
+/* Paragraph and text element colors */
+p { color: #374151; }
+div { color: inherit; /* Inherit from parent, but ensure parent has color */ }
+.text-xs { color: #374151; /* Ensure small text is visible */ }
