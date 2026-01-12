@@ -4,164 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To Do - Mr. Mojo Rising</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="src/styles/index.css">
-    <link rel="stylesheet" href="src/styles/base.css">
-    <link rel="stylesheet" href="src/styles/components.css">
-    <link rel="stylesheet" href="src/styles/modals.css">
-    <link rel="stylesheet" href="src/styles/analytics.css">
-    <link rel="stylesheet" href="src/styles/exercise.css">
 </head>
-<body class="bg-white text-gray-900 font-sans">
-    <div class="min-h-screen bg-white">
+<body>
+    <div id="app-container" class="app-container">
         <!-- Header -->
-        <header class="todo-page-header px-4 py-6">
-            <div class="max-w-4xl mx-auto flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <a href="index.html" class="text-gray-600 hover:text-gray-900 transition-colors flex items-center space-x-2">
-                        <span>←</span>
-                        <span>Back to Dashboard</span>
-                    </a>
-                </div>
-                <h1 class="text-3xl font-bold font-['Special_Elite'] text-gray-900">To Do</h1>
-                <div class="w-20"></div> <!-- Spacer for centering -->
+        <header class="text-center mb-6">
+            <div class="logo-container flex justify-center">
+                <svg class="logo-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+                    <title>Mr. Mojo Rising Logo</title>
+                    <path d="M70,35 C 72,50 68,65 65,68" />
+                    <path d="M60,25 C 62,45 58,68 55,70" />
+                    <path d="M50,23 C 52,43 48,70 45,72" />
+                    <path d="M40,28 C 42,48 38,68 35,70" />
+                </svg>
             </div>
+            <div class="flex justify-center items-center">
+                <h1>To Do</h1>
+                <span class="theme-icon">📝</span>
+            </div>
+            <p class="text-xs mt-2">Task management</p>
         </header>
 
-        <!-- Main Content -->
-        <main class="max-w-4xl mx-auto px-4 py-8">
-            <!-- Task List -->
-            <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                <div id="tasks-list-todo" class="mb-6"></div>
-                
-                <!-- Add Task Form -->
-                <form id="add-task-form-todo" class="add-task-form flex">
-                    <input type="text" placeholder="Add a new task..." class="flex-grow p-3 border border-gray-300 rounded-l-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <button type="submit" class="add-btn-icon ml-2">➕</button>
-                </form>
-            </div>
+        <!-- Navigation -->
+        <nav class="text-center mb-6">
+            <a href="index.html" class="todo-toggle-button">
+                <h2>← Back to Dashboard</h2>
+            </a>
+        </nav>
 
-            <!-- Task Statistics -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="todo-stats-card bg-gray-50 rounded-lg p-4 text-center">
-                    <div class="text-2xl font-bold text-gray-900" id="total-tasks">0</div>
-                    <div class="text-sm text-gray-600">Total Tasks</div>
+        <!-- Task Section -->
+        <section class="mobile-section">
+            <h2 class="text-center mb-4">Tasks</h2>
+            <div id="tasks-list-todo" class="mb-4"></div>
+
+            <!-- Add Task Form -->
+            <form id="add-task-form-todo" class="add-task-form flex">
+                <input type="text" placeholder="Add a new task..." class="flex-grow p-3 border border-gray-300 rounded-l-md text-sm focus:outline-none">
+                <button type="submit" class="add-btn-icon ml-2">➕</button>
+            </form>
+        </section>
+
+        <!-- Statistics Section -->
+        <section class="mobile-section">
+            <h2 class="text-center mb-4">Statistics</h2>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="preview-card text-center">
+                    <div class="text-2xl font-bold text-gray-700" id="total-tasks">0</div>
+                    <div class="text-xs text-gray-600">Total</div>
                 </div>
-                <div class="todo-stats-card bg-green-50 rounded-lg p-4 text-center">
+                <div class="preview-card text-center">
                     <div class="text-2xl font-bold text-green-600" id="completed-tasks">0</div>
-                    <div class="text-sm text-gray-600">Completed</div>
+                    <div class="text-xs text-gray-600">Completed</div>
                 </div>
-                <div class="todo-stats-card bg-blue-50 rounded-lg p-4 text-center">
+                <div class="preview-card text-center">
                     <div class="text-2xl font-bold text-blue-600" id="pending-tasks">0</div>
-                    <div class="text-sm text-gray-600">Pending</div>
+                    <div class="text-xs text-gray-600">Pending</div>
                 </div>
             </div>
+        </section>
 
-            <!-- Quick Actions -->
-            <div class="flex flex-wrap gap-2 mb-6">
-                <button id="clear-completed" class="todo-quick-action px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm">
-                    Clear Completed
+        <!-- Quick Actions Section -->
+        <section class="mobile-section">
+            <h2 class="text-center mb-4">Quick Actions</h2>
+            <div class="grid grid-cols-1 gap-3">
+                <button id="clear-completed" class="todo-toggle-button">
+                    <h2>Clear Completed</h2>
                 </button>
-                <button id="mark-all-complete" class="todo-quick-action px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
-                    Mark All Complete
-                </button>
-                <button id="export-tasks" class="todo-quick-action px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
-                    Export Tasks
+                <button id="mark-all-complete" class="todo-toggle-button">
+                    <h2>Mark All Complete</h2>
                 </button>
             </div>
-        </main>
+        </section>
     </div>
 
-    <!-- Scripts -->
-    <script type="module" src="src/index.tsx"></script>
-    <script>
-        // Todo page specific functionality
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Todo page loaded');
-            
-            // Initialize todo page functionality
-            initializeTodoPage();
-        });
-
-        async function initializeTodoPage() {
-            // Load tasks and render
-            const tasks = await loadTasks();
-            renderTasks(tasks, 'tasks-list-todo');
-            updateTaskStatistics(tasks);
-            
-            // Initialize form
-            const form = document.getElementById('add-task-form-todo');
-            if (form) {
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const input = form.querySelector('input[type="text"]');
-                    const taskText = input.value.trim();
-                    
-                    if (taskText) {
-                        const tasks = await loadTasks();
-                        tasks.push({ text: taskText, completed: false });
-                        await saveTasks(tasks);
-                        
-                        renderTasks(tasks, 'tasks-list-todo');
-                        updateTaskStatistics(tasks);
-                        input.value = '';
-                    }
-                });
-            }
-            
-            // Initialize quick actions
-            initializeQuickActions();
-        }
-
-        function updateTaskStatistics(tasks) {
-            const total = tasks.length;
-            const completed = tasks.filter(t => t.completed).length;
-            const pending = total - completed;
-            
-            document.getElementById('total-tasks').textContent = total;
-            document.getElementById('completed-tasks').textContent = completed;
-            document.getElementById('pending-tasks').textContent = pending;
-        }
-
-        function initializeQuickActions() {
-            // Clear completed tasks
-            document.getElementById('clear-completed')?.addEventListener('click', async () => {
-                const tasks = await loadTasks();
-                const filteredTasks = tasks.filter(t => !t.completed);
-                await saveTasks(filteredTasks);
-                renderTasks(filteredTasks, 'tasks-list-todo');
-                updateTaskStatistics(filteredTasks);
-            });
-            
-            // Mark all complete
-            document.getElementById('mark-all-complete')?.addEventListener('click', async () => {
-                const tasks = await loadTasks();
-                tasks.forEach(t => t.completed = true);
-                await saveTasks(tasks);
-                renderTasks(tasks, 'tasks-list-todo');
-                updateTaskStatistics(tasks);
-            });
-            
-            // Export tasks
-            document.getElementById('export-tasks')?.addEventListener('click', async () => {
-                const tasks = await loadTasks();
-                const exportData = {
-                    exportDate: new Date().toISOString(),
-                    tasks: tasks
-                };
-                
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `tasks-${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-            });
-        }
-    </script>
+    <script type="module" src="src/todo.tsx"></script>
 </body>
 </html>
