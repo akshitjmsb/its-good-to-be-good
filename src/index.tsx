@@ -7,9 +7,6 @@ import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
 import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
 import { DEFAULT_USER_ID } from "./core/default-user";
-import { initializeHistoryBrowser, showHistoryBrowser } from "./components/HistoryBrowser";
-import { SessionContentType, getSession } from "./core/learning-sessions";
-import { displaySavedSessionContent, getModalNameForContentType } from "./components/modals/factory";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DEFAULT USER ID (No authentication required) ---
@@ -150,25 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             await updateDateDerivedData(); // Ensure date-derived data is available
             initializeQuantumTimer();
-
-            // Initialize history browser with handler for session clicks
-            initializeHistoryBrowser(async (sessionId: string, contentType: SessionContentType) => {
-                // When user clicks on a past session, load and display it
-                const session = await getSession(currentUserId, sessionId);
-                if (session) {
-                    const modalName = getModalNameForContentType(contentType);
-                    if (modalName) {
-                        displaySavedSessionContent(
-                            modalName,
-                            session.content,
-                            session.title
-                        );
-                    }
-                }
-            });
-
-            // Show history browser on page load
-            showHistoryBrowser('timeline');
 
             const appContainer = document.getElementById('app-container');
             if (appContainer) {
