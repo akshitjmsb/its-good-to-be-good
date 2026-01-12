@@ -15,8 +15,15 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         rollupOptions: {
-          // Remove external configuration for @google/genai since it's used client-side
-          // The import map in HTML will handle the external dependency
+          input: {
+            main: path.resolve(__dirname, 'index.html'),
+            todo: path.resolve(__dirname, 'todo.html'),
+            health: path.resolve(__dirname, 'health.html'),
+            meditate: path.resolve(__dirname, 'meditate.html'),
+            money: path.resolve(__dirname, 'money.html'),
+            quantum: path.resolve(__dirname, 'quantum.html'),
+            travel: path.resolve(__dirname, 'travel.html'),
+          }
         }
       }
     };
