@@ -82,17 +82,14 @@ export async function getSession(
             .select('*')
             .eq('user_id', userId)
             .eq('id', sessionId)
-            .single();
+            .maybeSingle();
 
         if (error) {
-            if (error.code === 'PGRST116') {
-                return null;
-            }
             console.error('Error getting session:', error);
             return null;
         }
 
-        return data as LearningSession;
+        return data as LearningSession | null;
     } catch (error) {
         console.error('Error getting session:', error);
         return null;
@@ -114,13 +111,14 @@ export async function getLatestSession(
             .eq('content_type', contentType)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
         if (error) {
-            if (error.code === 'PGRST116') {
-                return null;
-            }
             console.error('Error getting latest session:', error);
+            return null;
+        }
+
+        if (!data) {
             return null;
         }
 
