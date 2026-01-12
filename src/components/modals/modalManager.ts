@@ -113,10 +113,18 @@ function openModalForTopic(
  * Show session prompt for a topic (checks for existing sessions)
  */
 async function showPromptForTopic(topic: SessionContentType): Promise<void> {
-    const latestSession = await getLatestSession(DEFAULT_USER_ID, topic);
-    const hasExistingSession = latestSession !== null;
+    try {
+        const latestSession = await getLatestSession(DEFAULT_USER_ID, topic);
+        const hasExistingSession = latestSession !== null;
 
-    showSessionPrompt(topic, hasExistingSession, handleSessionChoice);
+        showSessionPrompt(topic, hasExistingSession, handleSessionChoice);
+    } catch (error) {
+        console.error('Error showing session prompt:', error);
+        // Fallback: open modal directly without session prompt
+        if (storedDependencies) {
+            openModalForTopic(topic, storedDependencies.dates, storedDependencies.keys);
+        }
+    }
 }
 
 /**
@@ -145,28 +153,29 @@ export function initializeModalManager(
     storedDependencies = dependencies;
 
     appContainer.addEventListener('click', async (e) => {
-        const target = e.target as HTMLElement;
+        try {
+            const target = e.target as HTMLElement;
 
-        // Modal Closers
-        const activeModal = target.closest('.fixed.flex');
-        if (activeModal && (target.closest('.modal-close-btn') || target === activeModal)) {
-            activeModal.classList.add('hidden');
-            activeModal.classList.remove('flex');
+            // Modal Closers
+            const activeModal = target.closest('.fixed.flex');
+            if (activeModal && (target.closest('.modal-close-btn') || target === activeModal)) {
+                activeModal.classList.add('hidden');
+                activeModal.classList.remove('flex');
 
-            // Clean up analytics modal event listeners if it's the analytics modal
-            if (activeModal.id === 'analytics-engineer-modal') {
-                cleanupAnalyticsEventListeners();
+                // Clean up analytics modal event listeners if it's the analytics modal
+                if (activeModal.id === 'analytics-engineer-modal') {
+                    cleanupAnalyticsEventListeners();
+                }
+                return;
             }
-            return;
-        }
 
-        // Check if clicking on a topic card
-        const topic = getTopicFromClickTarget(target);
-        if (topic) {
-            e.preventDefault();
-            await showPromptForTopic(topic);
-            return;
-        }
+            // Check if clicking on a topic card
+            const topic = getTopicFromClickTarget(target);
+            if (topic) {
+                e.preventDefault();
+                await showPromptForTopic(topic);
+                return;
+            }
 
         // Legacy crossover/night handlers (no session prompt for these)
         const { dates, keys } = dependencies;
@@ -209,6 +218,9 @@ export function initializeModalManager(
         }
         if (target.closest('#poetry-clickable-crossover') || target.closest('#poetry-clickable-night')) {
             return fetchAndShowPoetry(dates.active);
+        }
+        } catch (error) {
+            console.error('Error in modal manager click handler:', error);
         }
     });
 }
