@@ -1,5 +1,4 @@
 import { showFoodModal } from './foodModal';
-import { showFrenchModal } from './frenchModal';
 import { showAnalyticsModal, cleanupAnalyticsEventListeners } from './analyticsModal';
 import { showHoodModal } from './hoodModal';
 import { showExerciseModal } from './exerciseModal';
@@ -47,7 +46,8 @@ export function initializeModalManager(
             return showFoodModal('today', dates, keys);
         }
         if (target.closest('#frenchy-clickable-day')) {
-            return showFrenchModal('today', dates);
+            window.open('https://french-gray.vercel.app', '_blank');
+            return;
         }
         if (target.closest('#analytics-clickable-day')) {
             return showAnalyticsModal('today', dates);
@@ -82,7 +82,8 @@ export function initializeModalManager(
             return showFoodModal('tomorrow', dates, keys);
         }
         if (target.closest('#frenchy-preview-clickable-crossover') || target.closest('#frenchy-preview-clickable-night')) {
-            return showFrenchModal('tomorrow', dates);
+            window.open('https://french-gray.vercel.app', '_blank');
+            return;
         }
         if (target.closest('#analytics-preview-clickable-crossover') || target.closest('#analytics-preview-clickable-night')) {
             return showAnalyticsModal('tomorrow', dates);
