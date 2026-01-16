@@ -5,7 +5,7 @@ import { initializeTaskForms, renderTasks, attachTaskListeners } from "./compone
 import { ai } from "./api/perplexity";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
-import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
+import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, showQuoteLoadingIndicator, hideQuoteLoadingIndicator, MultilingualQuote } from "./components/reflection";
 import { DEFAULT_USER_ID } from "./core/default-user";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- STATE & DERIVED DATA ---
     let todayKey: string;
     let activeContentDate: Date;
-    let todaysQuote: { quote: string; author: string } | null = null;
+    let todaysQuote: MultilingualQuote | null = null;
 
     async function updateDateDerivedData() {
         const { now } = getCanonicalTime();
@@ -38,8 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     todaysQuote = aiQuote;
                     const lifePointerEl = document.getElementById('life-pointer-display-day');
                     if (lifePointerEl) {
+                        const isMultilingual = aiQuote.language !== 'en' && (aiQuote.transliteration || aiQuote.translation);
                         lifePointerEl.innerHTML = `
-                            <div class="quote-text">"${aiQuote.quote}"</div>
+                            <div class="quote-original ${isMultilingual ? 'multilingual' : ''}" lang="${aiQuote.language}">
+                                "${aiQuote.quote}"
+                            </div>
+                            ${aiQuote.transliteration ? `<div class="quote-transliteration">${aiQuote.transliteration}</div>` : ''}
+                            ${aiQuote.translation ? `<div class="quote-translation">"${aiQuote.translation}"</div>` : ''}
                             <div class="quote-author">— ${aiQuote.author}</div>
                         `;
                     }
@@ -207,14 +212,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- MODULE RENDERING FUNCTIONS ---
     
+    function renderQuoteHTML(quote: MultilingualQuote): string {
+        const isMultilingual = quote.language !== 'en' && (quote.transliteration || quote.translation);
+        return `
+            <div class="quote-original ${isMultilingual ? 'multilingual' : ''}" lang="${quote.language}">
+                "${quote.quote}"
+            </div>
+            ${quote.transliteration ? `<div class="quote-transliteration">${quote.transliteration}</div>` : ''}
+            ${quote.translation ? `<div class="quote-translation">"${quote.translation}"</div>` : ''}
+            <div class="quote-author">— ${quote.author}</div>
+        `;
+    }
+
     async function renderDayModule() {
         // Display philosophical quote
         const lifePointerEl = document.getElementById('life-pointer-display-day');
         if (lifePointerEl && todaysQuote) {
-            lifePointerEl.innerHTML = `
-                <div class="quote-text">"${todaysQuote.quote}"</div>
-                <div class="quote-author">— ${todaysQuote.author}</div>
-            `;
+            lifePointerEl.innerHTML = renderQuoteHTML(todaysQuote);
         }
 
         const reflectionPromptEl = document.getElementById('reflection-prompt-display-day');
