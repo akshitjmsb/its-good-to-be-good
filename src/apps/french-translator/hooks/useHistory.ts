@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, DEFAULT_USER_ID } from '../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import { HistoryEntry, TranslationResponse, TranslationMode } from '../types';
+
+const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export function useHistory() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);

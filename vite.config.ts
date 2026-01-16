@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
             money: path.resolve(__dirname, 'money.html'),
             quantum: path.resolve(__dirname, 'quantum.html'),
             travel: path.resolve(__dirname, 'travel.html'),
+            french: path.resolve(__dirname, 'french.html'),
           }
         }
       }

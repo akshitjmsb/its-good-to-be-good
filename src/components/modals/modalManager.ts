@@ -46,7 +46,7 @@ export function initializeModalManager(
             return showFoodModal('today', dates, keys);
         }
         if (target.closest('#frenchy-clickable-day')) {
-            window.open('https://french-gray.vercel.app', '_blank');
+            window.location.href = 'french.html';
             return;
         }
         if (target.closest('#analytics-clickable-day')) {
@@ -82,7 +82,7 @@ export function initializeModalManager(
             return showFoodModal('tomorrow', dates, keys);
         }
         if (target.closest('#frenchy-preview-clickable-crossover') || target.closest('#frenchy-preview-clickable-night')) {
-            window.open('https://french-gray.vercel.app', '_blank');
+            window.location.href = 'french.html';
             return;
         }
         if (target.closest('#analytics-preview-clickable-crossover') || target.closest('#analytics-preview-clickable-night')) {
