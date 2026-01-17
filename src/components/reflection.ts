@@ -11,7 +11,7 @@ export interface MultilingualQuote {
 
 // Cache for philosophical quotes to avoid repeated API calls
 const quoteCache = new Map<string, MultilingualQuote & { timestamp: number }>();
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
 // English Rebellion Poetry Quotes (30)
 const ENGLISH_QUOTES: MultilingualQuote[] = [
@@ -151,12 +151,15 @@ const PUNJABI_QUOTES: MultilingualQuote[] = [
 // Combine all quotes
 const ALL_QUOTES: MultilingualQuote[] = [...ENGLISH_QUOTES, ...HINDI_QUOTES, ...URDU_QUOTES, ...PUNJABI_QUOTES];
 
-// Get a multilingual quote based on date - rotates through languages
+// Get a multilingual quote - shuffles every 15 minutes
 function getMultilingualQuote(date: Date): MultilingualQuote {
-    const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    // Calculate 15-minute intervals since start of year
+    const startOfYear = new Date(date.getFullYear(), 0, 1).getTime();
+    const intervalMs = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const intervalIndex = Math.floor((date.getTime() - startOfYear) / intervalMs);
 
     // Rotate through languages: 0=English, 1=Hindi, 2=Urdu, 3=Punjabi
-    const languageIndex = dayOfYear % 4;
+    const languageIndex = intervalIndex % 4;
     const languages = ['en', 'hi', 'ur', 'pa'] as const;
     const selectedLanguage = languages[languageIndex];
 
@@ -164,17 +167,25 @@ function getMultilingualQuote(date: Date): MultilingualQuote {
     const languageQuotes = ALL_QUOTES.filter(q => q.language === selectedLanguage);
 
     // Select quote within that language pool
-    const quoteIndex = Math.floor(dayOfYear / 4) % languageQuotes.length;
+    const quoteIndex = Math.floor(intervalIndex / 4) % languageQuotes.length;
 
     return languageQuotes[quoteIndex];
 }
 
+// Get cache key based on 15-minute interval
+function getIntervalCacheKey(date: Date): string {
+    const startOfYear = new Date(date.getFullYear(), 0, 1).getTime();
+    const intervalMs = 15 * 60 * 1000;
+    const intervalIndex = Math.floor((date.getTime() - startOfYear) / intervalMs);
+    return `${date.getFullYear()}-${intervalIndex}`;
+}
+
 // Instant quote loading - returns immediately with curated content
 export function getPhilosophicalQuoteInstant(date: Date): MultilingualQuote {
-    const dateKey = date.toISOString().split('T')[0];
+    const cacheKey = getIntervalCacheKey(date);
 
     // Check cache first
-    const cached = quoteCache.get(dateKey);
+    const cached = quoteCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
         const { timestamp, ...quote } = cached;
         return quote;
@@ -186,10 +197,10 @@ export function getPhilosophicalQuoteInstant(date: Date): MultilingualQuote {
 
 // Background AI quote generation - doesn't block the UI
 export async function generateAIPhilosophicalQuote(date: Date): Promise<MultilingualQuote> {
-    const dateKey = date.toISOString().split('T')[0];
+    const cacheKey = getIntervalCacheKey(date);
 
     // Check cache first
-    const cached = quoteCache.get(dateKey);
+    const cached = quoteCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
         const { timestamp, ...quote } = cached;
         return quote;
@@ -224,7 +235,7 @@ Make it different from common quotes and choose something that would make someon
             const quote: MultilingualQuote = { quote: quoteText, author, language: 'en' };
 
             // Cache the result
-            quoteCache.set(dateKey, {
+            quoteCache.set(cacheKey, {
                 ...quote,
                 timestamp: Date.now()
             });
