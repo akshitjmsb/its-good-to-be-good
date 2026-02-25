@@ -4,7 +4,7 @@
  */
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
-const apiKey = (import.meta.env.VITE_PERPLEXITY_API_KEY || import.meta.env.VITE_API_KEY) as string;
+const apiKey = import.meta.env.VITE_PERPLEXITY_API_KEY as string;
 
 export let hasApiKey = false;
 
