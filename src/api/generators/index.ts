@@ -12,7 +12,8 @@ import {
     getFallbackFrench,
     getFallbackExercisePlan,
     getFallbackFoodPlan,
-    getFallbackWeeklyExercise
+    getFallbackWeeklyExercise,
+    getFallbackClassicRockPool
 } from "../fallbacks";
 
 export type ContentType = 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan';
@@ -115,6 +116,8 @@ function getFallbackContent(contentType: ContentType, dateKey: string): any {
             return getFallbackPhysics();
         case 'french-sound':
             return getFallbackFrench();
+        case 'classic-rock-500':
+            return getFallbackClassicRockPool();
         case 'exercise-plan':
             return getFallbackExercisePlan();
         default:
@@ -198,19 +201,6 @@ Return as JSON:
 }`;
 }
 
-// Food plan generation
-async function fetchServerContent(dateKey: string): Promise<{ summary?: string } | null> {
-    try {
-        const res = await fetch(`/api/content?date=${encodeURIComponent(dateKey)}`);
-        if (!res.ok) return null;
-        const json = await res.json();
-        return json?.data ?? null;
-    } catch (e) {
-        console.warn('Server content fetch failed', e);
-        return null;
-    }
-}
-
 export async function getOrGeneratePlanForDate(userId: string, date: Date, dateKey: string): Promise<string> {
     // 1. Check Supabase cache
     const cachedPlan = await getCachedFoodPlan(userId, dateKey);
@@ -218,18 +208,7 @@ export async function getOrGeneratePlanForDate(userId: string, date: Date, dateK
         return cachedPlan;
     }
 
-    // 2. Check server KV via API (legacy fallback)
-    try {
-        const server = await fetchServerContent(dateKey);
-        if (server && typeof server.summary === 'string') {
-            await saveFoodPlan(userId, dateKey, server.summary);
-            return server.summary;
-        }
-    } catch (e) {
-        console.warn('Could not fetch from server content API.', e);
-    }
-
-    // 3. Generate new plan
+    // 2. Generate new plan
     console.log(`Generating new food plan for ${dateKey} as it was not found in cache.`);
     const newPlan = await generateFoodPlanForDate(date);
 
@@ -266,7 +245,7 @@ export async function generateFoodPlanForDate(date: Date): Promise<string> {
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, 'Food plan generation');
         ErrorHandler.logError(appError);
-        return "Could not generate a food plan at this time.";
+        return getFallbackFoodPlan(date);
     }
 }
 

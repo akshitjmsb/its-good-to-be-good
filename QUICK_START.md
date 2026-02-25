@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with Night Divides the Day in 5 minutes.
+Get up and running with Night Divides the Day locally in a few minutes.
 
 ## 1. Install Supabase CLI
 
@@ -16,74 +16,46 @@ scoop install supabase
 supabase --version
 ```
 
-## 2. Login to Supabase
-
-```bash
-# Option A: Using access token (faster)
-export SUPABASE_ACCESS_TOKEN="sbp_1f3a4cf6d81da3b010bc2bafad807932a15c150d"
-supabase login --token "$SUPABASE_ACCESS_TOKEN"
-
-# Option B: Interactive login
-supabase login
-
-# Or use the setup script
-./setup-supabase.sh
-```
-
-## 3. Create and Link Project
-
-```bash
-# Option A: Create new project
-supabase projects create night-divides-the-day --org-id your-org-id --region us-east-1 --db-password your-secure-password
-supabase link --project-ref your-project-ref
-
-# Option B: Link existing project
-supabase link --project-ref your-existing-project-ref
-```
-
-## 4. Run Migrations
-
-```bash
-supabase db push
-```
-
-This creates all database tables, indexes, and security policies.
-
-## 5. Get Credentials
-
-1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
-2. Select your project
-3. Go to **Settings** → **API**
-4. Copy:
-   - Project URL
-   - anon/public key
-
-## 6. Set Environment Variables
-
-Create `.env` file:
-
-```bash
-VITE_SUPABASE_URL=https://xxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_GEMINI_API_KEY=AIza...  # Optional
-```
-
-## 7. Install Dependencies & Run
+## 2. Install Dependencies
 
 ```bash
 npm install
+```
+
+## 3. Start Local Supabase + Apply Migrations
+
+```bash
+npm run supabase:setup
+```
+
+This script:
+- starts local Supabase
+- applies migrations with `supabase db push --local`
+- prints your local `API_URL` and `PUBLISHABLE_KEY`
+
+## 4. Configure Local Environment
+
+```bash
+cp .env.example .env.local
+```
+
+Set the values in `.env.local`:
+- `VITE_SUPABASE_URL=http://127.0.0.1:54321`
+- `VITE_SUPABASE_ANON_KEY=<local publishable key from supabase status>`
+- `VITE_PERPLEXITY_API_KEY=<optional local key>`
+
+## 5. Start Development Server
+
+```bash
 npm run dev
 ```
 
-## 8. Open App
+Open [http://localhost:5173](http://localhost:5173).
 
-Navigate to `http://localhost:5173` and sign up!
+## Notes
 
----
+- The app uses a single local anonymous user ID: `00000000-0000-0000-0000-000000000000`.
+- Content generation order is `Supabase cache -> Perplexity -> local fallback`.
+- Never commit `.env.local` or real API keys/tokens.
 
-**That's it!** Your app is now running with Supabase backend.
-
-For detailed instructions, see:
-- [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) - Complete Supabase setup
-- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Deploy to Vercel
-
+For deeper setup details, see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md).

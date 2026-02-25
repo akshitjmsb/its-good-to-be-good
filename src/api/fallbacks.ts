@@ -62,6 +62,56 @@ export interface WeeklyExerciseContent {
     saturday: { type: string; exercises: Exercise[]; notes: string };
 }
 
+export interface GuitarPoolItem {
+    title: string;
+    artist: string;
+}
+
+export function getFallbackClassicRockPool(): GuitarPoolItem[] {
+    return [
+        { title: "Stairway to Heaven", artist: "Led Zeppelin" },
+        { title: "Hotel California", artist: "Eagles" },
+        { title: "Sweet Child O' Mine", artist: "Guns N' Roses" },
+        { title: "Back in Black", artist: "AC/DC" },
+        { title: "Smoke on the Water", artist: "Deep Purple" },
+        { title: "Wish You Were Here", artist: "Pink Floyd" },
+        { title: "Comfortably Numb", artist: "Pink Floyd" },
+        { title: "Sultans of Swing", artist: "Dire Straits" },
+        { title: "Free Bird", artist: "Lynyrd Skynyrd" },
+        { title: "Layla", artist: "Derek and the Dominos" },
+        { title: "Another Brick in the Wall, Pt. 2", artist: "Pink Floyd" },
+        { title: "Black Dog", artist: "Led Zeppelin" },
+        { title: "Paranoid", artist: "Black Sabbath" },
+        { title: "Crazy Train", artist: "Ozzy Osbourne" },
+        { title: "Whole Lotta Love", artist: "Led Zeppelin" },
+        { title: "Bohemian Rhapsody", artist: "Queen" },
+        { title: "Dream On", artist: "Aerosmith" },
+        { title: "More Than a Feeling", artist: "Boston" },
+        { title: "Born to Be Wild", artist: "Steppenwolf" },
+        { title: "Life in the Fast Lane", artist: "Eagles" },
+        { title: "Carry on Wayward Son", artist: "Kansas" },
+        { title: "All Right Now", artist: "Free" },
+        { title: "You Really Got Me", artist: "The Kinks" },
+        { title: "Sunshine of Your Love", artist: "Cream" },
+        { title: "Purple Haze", artist: "Jimi Hendrix" },
+        { title: "Little Wing", artist: "Jimi Hendrix" },
+        { title: "Johnny B. Goode", artist: "Chuck Berry" },
+        { title: "Tush", artist: "ZZ Top" },
+        { title: "La Grange", artist: "ZZ Top" },
+        { title: "Roundabout", artist: "Yes" },
+        { title: "Baba O'Riley", artist: "The Who" },
+        { title: "Won't Get Fooled Again", artist: "The Who" },
+        { title: "Rebel Rebel", artist: "David Bowie" },
+        { title: "The Boys Are Back in Town", artist: "Thin Lizzy" },
+        { title: "Runnin' with the Devil", artist: "Van Halen" },
+        { title: "Panama", artist: "Van Halen" },
+        { title: "The Trooper", artist: "Iron Maiden" },
+        { title: "Breaking the Law", artist: "Judas Priest" },
+        { title: "Highway to Hell", artist: "AC/DC" },
+        { title: "Rock You Like a Hurricane", artist: "Scorpions" }
+    ];
+}
+
 export function getFallbackAnalytics(): AnalyticsContent {
     return {
         sql: {

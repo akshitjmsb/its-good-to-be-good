@@ -1,4 +1,5 @@
-import { ai, getOrGenerateDynamicContent, type ResponseSchema } from "../../api/perplexity";
+import { ai, hasApiKey, getOrGenerateDynamicContent, type ResponseSchema } from "../../api/perplexity";
+import { getFallbackClassicRockPool } from "../../api/fallbacks";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadGuitarRecentPicks, saveGuitarRecentPick } from "../../core/supabase-persistence";
@@ -41,6 +42,9 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
         } catch (e) {
             console.warn('Could not load classic-rock-500 pool. Falling back to AI-random.', e);
         }
+        if (songPool.length === 0) {
+            songPool = getFallbackClassicRockPool();
+        }
 
         let pickedTitle = '';
         let pickedArtist = '';
@@ -52,53 +56,75 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
             pickedTitle = picked.title; pickedArtist = picked.artist;
             await saveGuitarRecentPick(DEFAULT_USER_ID, picked.title, picked.artist);
         }
+        if (!pickedTitle || !pickedArtist) {
+            pickedTitle = 'Smoke on the Water';
+            pickedArtist = 'Deep Purple';
+        }
 
-        const prompt = pickedTitle && pickedArtist
-            ? `Create a concise guitar lesson for the specific classic rock song below. Return JSON ONLY with these exact fields. Do not add extra text.\n\nSong: "${pickedTitle}" by "${pickedArtist}"\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`
-            : `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
-        const responseSchema: ResponseSchema = {
-            type: "OBJECT",
-            properties: {
-                title: { type: "STRING" },
-                artist: { type: "STRING" },
-                key: { type: "STRING" },
-                tuning: { type: "STRING" },
-                lyricsWithChords: { type: "STRING" },
-                chordChanges: { type: "STRING" },
-                inspiration: { type: "STRING" },
-                youtubeLessonTitle: { type: "STRING" },
-                youtubeLessonUrl: { type: "STRING" },
-                spotifyUrl: { type: "STRING" }
-            },
-            required: [
-                'title',
-                'artist',
-                'key',
-                'tuning',
-                'lyricsWithChords',
-                'chordChanges',
-                'inspiration',
-                'youtubeLessonTitle',
-                'youtubeLessonUrl',
-                'spotifyUrl'
-            ]
-        };
+        if (!hasApiKey) {
+            const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${pickedTitle} ${pickedArtist} guitar lesson`)}`;
+            const spotifySearch = `https://open.spotify.com/search/${encodeURIComponent(`${pickedTitle} ${pickedArtist}`)}`;
+            data = {
+                title: pickedTitle,
+                artist: pickedArtist,
+                key: 'E minor',
+                tuning: 'Standard E A D G B E',
+                lyricsWithChords: `Em   C   G   D\n[Practice groove for ${pickedTitle}]`,
+                chordChanges: 'Verse: Em-C-G-D | Chorus: G-D-Em-C',
+                inspiration: `Start with a slow, steady tempo and focus on clean chord transitions for "${pickedTitle}".`,
+                youtubeLessonTitle: `Search YouTube for ${pickedTitle} ${pickedArtist} guitar lesson`,
+                youtubeLessonUrl: youtubeSearch,
+                spotifyUrl: spotifySearch
+            };
+        } else {
 
-        const response = await ai.models.generateContent({
-            model: 'sonar-pro',
-            contents: prompt,
-            config: {
-                responseMimeType: 'application/json',
-                responseSchema
+            const prompt = pickedTitle && pickedArtist
+                ? `Create a concise guitar lesson for the specific classic rock song below. Return JSON ONLY with these exact fields. Do not add extra text.\n\nSong: "${pickedTitle}" by "${pickedArtist}"\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`
+                : `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
+            const responseSchema: ResponseSchema = {
+                type: "OBJECT",
+                properties: {
+                    title: { type: "STRING" },
+                    artist: { type: "STRING" },
+                    key: { type: "STRING" },
+                    tuning: { type: "STRING" },
+                    lyricsWithChords: { type: "STRING" },
+                    chordChanges: { type: "STRING" },
+                    inspiration: { type: "STRING" },
+                    youtubeLessonTitle: { type: "STRING" },
+                    youtubeLessonUrl: { type: "STRING" },
+                    spotifyUrl: { type: "STRING" }
+                },
+                required: [
+                    'title',
+                    'artist',
+                    'key',
+                    'tuning',
+                    'lyricsWithChords',
+                    'chordChanges',
+                    'inspiration',
+                    'youtubeLessonTitle',
+                    'youtubeLessonUrl',
+                    'spotifyUrl'
+                ]
+            };
+
+            const response = await ai.models.generateContent({
+                model: 'sonar-pro',
+                contents: prompt,
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema
+                }
+            });
+
+            try {
+                data = JSON.parse(response.text);
+            } catch (jsonError) {
+                console.error('Failed to parse JSON for guitar feature:', jsonError);
+                showModalError(elements, 'Could not parse the guitar pick. Please try again later.');
+                return;
             }
-        });
-
-        try {
-            data = JSON.parse(response.text);
-        } catch (jsonError) {
-            console.error('Failed to parse JSON for guitar feature:', jsonError);
-            showModalError(elements, 'Could not parse the guitar pick. Please try again later.');
-            return;
         }
     } catch (error) {
         console.error('Error fetching Guitar feature:', error);

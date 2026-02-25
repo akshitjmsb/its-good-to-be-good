@@ -20,7 +20,7 @@
     "build-storybook": "storybook build",
     "chromatic": "npx chromatic --project-token=chpt_d3c795517d59821",
     "supabase:setup": "./setup-supabase.sh",
-    "supabase:push": "supabase db push",
+    "supabase:push": "supabase db push --local",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:types": "supabase gen types typescript --local > src/types/supabase.ts",
@@ -63,7 +63,6 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "@vercel/kv": "^2.0.0",
     "lucide-react": "^0.294.0"
   }
 }

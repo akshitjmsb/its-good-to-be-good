@@ -1,64 +1,58 @@
-// Test script to debug content generation issues
-// Run with: node test-content-generation.js
+#!/usr/bin/env node
 
-const BASE_URL = 'https://night-divides-the-day.vercel.app';
+// Local runtime smoke test
+// Usage:
+// 1) Start app: npm run dev
+// 2) Run: node test-content-generation.js
 
-async function testEndpoint(endpoint, method = 'GET', body = null) {
-  console.log(`\n🔍 Testing ${method} ${endpoint}...`);
-  
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
+
+const pages = [
+  '/',
+  '/todo.html',
+  '/french.html',
+  '/health.html',
+  '/travel.html'
+];
+
+async function testPage(path) {
+  const url = `${BASE_URL}${path}`;
   try {
-    const options = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-    
-    if (body) {
-      options.body = JSON.stringify(body);
-    }
-    
-    const response = await fetch(`${BASE_URL}${endpoint}`, options);
-    const data = await response.json();
-    
-    console.log(`✅ Status: ${response.status}`);
-    console.log(`📄 Response:`, JSON.stringify(data, null, 2));
-    
-    return { success: response.ok, data, status: response.status };
-  } catch (error) {
-    console.log(`❌ Error:`, error.message);
-    return { success: false, error: error.message };
+    const res = await fetch(url);
+    const ok = res.status >= 200 && res.status < 400;
+    console.log(`${ok ? 'PASS' : 'FAIL'} ${res.status} ${url}`);
+    return ok;
+  } catch (err) {
+    console.log(`FAIL ERR ${url} -> ${err.message}`);
+    return false;
   }
 }
 
-async function runTests() {
-  console.log('🚀 Starting content generation tests...\n');
-  
-  const today = new Date().toISOString().split('T')[0];
-  console.log(`📅 Today's date: ${today}`);
-  
-  // Test 1: Check if content exists for today
-  console.log('\n=== Test 1: Check existing content ===');
-  await testEndpoint(`/api/content?date=${today}`);
-  
-  // Test 2: Try manual content generation for today
-  console.log('\n=== Test 2: Manual content generation ===');
-  await testEndpoint(`/api/manual-trigger?date=${today}`, 'POST');
-  
-  // Test 3: Check content again after generation
-  console.log('\n=== Test 3: Verify content was generated ===');
-  await testEndpoint(`/api/content?date=${today}`);
-  
-  // Test 4: Test with tomorrow's date
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
-  
-  console.log('\n=== Test 4: Test tomorrow\'s content ===');
-  await testEndpoint(`/api/content?date=${tomorrowStr}`);
-  
-  console.log('\n✅ Tests completed!');
+async function run() {
+  console.log(`Testing local app at ${BASE_URL}`);
+  let firstConnectionError = false;
+  let passCount = 0;
+
+  for (const path of pages) {
+    const ok = await testPage(path);
+    if (!ok && path === '/') {
+      firstConnectionError = true;
+    }
+    if (ok) passCount += 1;
+  }
+
+  if (firstConnectionError) {
+    console.log('\nTip: Start the dev server first with `npm run dev`.');
+  }
+
+  console.log(`\nSummary: ${passCount}/${pages.length} pages reachable`);
+
+  if (passCount !== pages.length) {
+    process.exit(1);
+  }
 }
 
-// Run the tests
-runTests().catch(console.error);
+run().catch((err) => {
+  console.error('Unexpected error:', err);
+  process.exit(1);
+});
