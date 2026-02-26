@@ -2,7 +2,7 @@ import { getOrGenerateDynamicContent } from "../../api/perplexity";
 import { getSolutionExplanation } from "./solutionExplanation";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { DEFAULT_USER_ID } from "../../core/default-user";
-import { getModalElements, showModalWithLoading, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, setModalContent, MODAL_CONFIGS } from "./factory";
 
 // Global state for card navigation
 let currentCardIndex = 0;
@@ -87,12 +87,6 @@ export async function showAnalyticsModal(
 
         // Update navigation state
         updateNavigationState();
-
-        // Save session for history (only for new content, not archive)
-        if (mode !== 'archive') {
-            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            saveSessionContent('analytics', analyticsData, `Analytics Topics - ${today}`);
-        }
 
     } catch (error) {
         console.error("Error showing analytics modal:", error);

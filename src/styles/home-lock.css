@@ -1,0 +1,51 @@
+/*
+ * Home Design Lock
+ * This stylesheet intentionally preserves the vintage, minimal black-and-white
+ * look for the home page. Keep these tokens stable unless the user explicitly
+ * asks for a visual direction change.
+ */
+
+body.home-vintage-lock {
+    --home-font-family: 'Special Elite', monospace;
+    --home-bg: #f4f4f4;
+    --home-surface: #ffffff;
+    --home-text: #374151;
+    --home-ink: #111111;
+    --home-muted: #6b7280;
+    --home-border: #e5e7eb;
+    --home-card-bg: #f8f9fa;
+
+    font-family: var(--home-font-family);
+    background-color: var(--home-bg);
+    color: var(--home-text);
+}
+
+body.home-vintage-lock .app-container {
+    background-color: var(--home-surface);
+}
+
+body.home-vintage-lock h1,
+body.home-vintage-lock h2,
+body.home-vintage-lock h3 {
+    font-family: var(--home-font-family);
+    color: var(--home-text);
+}
+
+body.home-vintage-lock .logo-svg {
+    stroke: var(--home-ink);
+}
+
+body.home-vintage-lock .preview-card,
+body.home-vintage-lock .life-pointer {
+    background-color: var(--home-card-bg);
+    border-color: var(--home-border);
+}
+
+body.home-vintage-lock .module-icon svg {
+    color: var(--home-text);
+}
+
+body.home-vintage-lock .quote-author,
+body.home-vintage-lock .text-xs {
+    color: var(--home-muted);
+}

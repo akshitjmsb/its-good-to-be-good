@@ -4,7 +4,7 @@ import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadGuitarRecentPicks, saveGuitarRecentPick } from "../../core/supabase-persistence";
 import { DEFAULT_USER_ID } from "../../core/default-user";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowGuitarTab(activeContentDate: Date) {
     const elements = getModalElements(MODAL_CONFIGS.guitar);
@@ -202,7 +202,4 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
         </div>
     `;
     setModalContent(elements, html);
-
-    // Save session for history
-    saveSessionContent('guitar', data, `${data.title} — ${data.artist}`);
 }

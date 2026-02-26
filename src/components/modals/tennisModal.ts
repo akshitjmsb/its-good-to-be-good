@@ -1,5 +1,5 @@
 import { ai } from "../../api/perplexity";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowTennisMatches() {
     const elements = getModalElements(MODAL_CONFIGS.tennis);
@@ -72,10 +72,6 @@ Use actual current tournament data and highlight Canadian players with <strong> 
 
         if (response.text) {
             setModalContent(elements, `<div class="mb-4">${response.text}</div>`);
-
-            // Save session for history
-            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            saveSessionContent('tennis', { matches: response.text }, `Tennis Matches - ${today}`);
         } else {
             showModalError(elements, 'Could not retrieve any tennis data at this time.');
         }

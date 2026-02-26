@@ -1,7 +1,7 @@
 import { ai, type ResponseSchema } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowCoffeeTip(activeContentDate: Date) {
     const elements = getModalElements(MODAL_CONFIGS.coffee);
@@ -66,8 +66,6 @@ export async function fetchAndShowCoffeeTip(activeContentDate: Date) {
             `;
             setModalContent(elements, html);
 
-            // Save session for history
-            saveSessionContent('coffee', coffeeData, coffeeData.title);
         } else {
             showModalError(elements, 'Could not retrieve a coffee lesson. The response was empty.');
         }

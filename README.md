@@ -2,6 +2,29 @@
 
 Personal dashboard application with task management, modal-based daily content, and a French translator module.
 
+## Problem Statement
+
+This project is a light, fun philosophical space you can step into from time to time to:
+- reflect
+- act
+- learn
+- enjoy
+
+Long-term direction: build it in phases so any person can create their own version of this space.
+
+## Home Design Lock
+
+The home page visual language is intentionally locked to:
+- `Special Elite` typography
+- vintage black-and-white minimal palette
+- clean, low-noise card layout
+
+Implementation lock points:
+- [index.html](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/index.html): `body.home-vintage-lock`
+- [home-lock.css](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/src/styles/home-lock.css): home-specific style tokens and guardrails
+
+Do not change these unless there is an explicit product decision to change the home visual direction.
+
 ## Local-Only Setup (Supabase)
 
 This repository is configured for local Supabase development.

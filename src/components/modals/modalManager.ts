@@ -6,7 +6,6 @@ import { fetchAndShowWorldOrder } from './worldOrderModal';
 import { fetchAndShowTennisMatches } from './tennisModal';
 import { fetchAndShowCoffeeTip } from './coffeeModal';
 import { fetchAndShowGuitarTab } from './guitarModal';
-import { fetchAndShowHistory } from './historyModal';
 import { fetchAndShowPoetry } from './poetryModal';
 
 type ModalDependencies = {
@@ -70,9 +69,6 @@ export function initializeModalManager(
         if (target.closest('#guitar-clickable')) {
             return fetchAndShowGuitarTab(dates.active);
         }
-        if (target.closest('#history-clickable')) {
-            return fetchAndShowHistory();
-        }
         if (target.closest('#poetry-clickable')) {
             return fetchAndShowPoetry(dates.active);
         }
@@ -105,9 +101,6 @@ export function initializeModalManager(
         }
         if (target.closest('#guitar-clickable-crossover') || target.closest('#guitar-clickable-night')) {
             return fetchAndShowGuitarTab(dates.active);
-        }
-        if (target.closest('#history-clickable-crossover') || target.closest('#history-clickable-night')) {
-            return fetchAndShowHistory();
         }
         if (target.closest('#poetry-clickable-crossover') || target.closest('#poetry-clickable-night')) {
             return fetchAndShowPoetry(dates.active);

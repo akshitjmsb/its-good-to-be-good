@@ -1,7 +1,7 @@
 import { getOrGenerateDynamicContent } from "../../api/perplexity";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { escapeHtml } from "../../utils/escapeHtml";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
 
 export async function showHoodModal(
     mode: 'today' | 'tomorrow' | 'archive',
@@ -32,11 +32,6 @@ export async function showHoodModal(
 
         setModalTitle(elements, `Under the Hood: ${escapeHtml(data.title)}`);
         setModalContent(elements, data.explanation.replace(/\n/g, '<br>'));
-
-        // Save session for history (only for new content, not archive)
-        if (mode !== 'archive') {
-            saveSessionContent('hood', data, data.title);
-        }
     } catch (error) {
         console.error("Error showing under the hood modal:", error);
         setModalTitle(elements, 'Error');

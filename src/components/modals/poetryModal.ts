@@ -3,7 +3,7 @@ import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../core/supabase-persistence";
 import { DEFAULT_USER_ID } from "../../core/default-user";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowPoetry(activeContentDate: Date) {
     const elements = getModalElements(MODAL_CONFIGS.poetry);
@@ -90,9 +90,6 @@ Rules:
                 const langName = typeof data.language === 'string' ? data.language : '';
                 const updatedRecents = recordPoetrySelection(poetryRecents, poetName, langName);
                 await savePoetryRecents(DEFAULT_USER_ID, updatedRecents);
-
-                // Save session for history
-                saveSessionContent('poetry', data, `${poetName} - ${langName}`);
             } catch (parseError) {
                 html += `<div class="mb-6">`;
                 html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;

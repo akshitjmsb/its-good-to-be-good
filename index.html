@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Nastaliq+Urdu&family=Noto+Sans+Gurmukhi:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="src/styles/index.css">
+    <link rel="stylesheet" href="src/styles/home-lock.css">
     
     <script type="importmap">
     {
@@ -19,7 +20,7 @@
 
     <!-- All styles moved to external CSS files -->
 </head>
-<body>
+<body class="home-vintage-lock">
 
     <div id="app-container" class="app-container">
         <!-- Main App Header -->
@@ -127,56 +128,47 @@
             <section class="mobile-section">
                 <h2>Learn</h2>
                 <div class="category-grid grid grid-cols-3 gap-3 sm:gap-2 mt-3">
-                    <div id="geopolitics-clickable" class="preview-card module-card" data-module="geopolitics">
+                    <button id="geopolitics-clickable" type="button" class="preview-card module-card" data-module="geopolitics" aria-label="Open World Order module" title="Open World Order module">
                         <div class="module-icon" id="world-order-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">World Order</h3>
-                    </div>
-                    <div id="tennis-clickable" class="preview-card module-card" data-module="tennis">
+                    </button>
+                    <button id="tennis-clickable" type="button" class="preview-card module-card" data-module="tennis" aria-label="Open Tennis module" title="Open Tennis module">
                         <div class="module-icon" id="tennis-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">Tennis</h3>
-                    </div>
-                    <div id="coffee-clickable" class="preview-card module-card" data-module="coffee">
+                    </button>
+                    <button id="coffee-clickable" type="button" class="preview-card module-card" data-module="coffee" aria-label="Open Coffee module" title="Open Coffee module">
                         <div class="module-icon" id="coffee-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">Coffee</h3>
-                    </div>
-                    <div id="guitar-clickable" class="preview-card module-card" data-module="guitar">
+                    </button>
+                    <button id="guitar-clickable" type="button" class="preview-card module-card" data-module="guitar" aria-label="Open Guitar module" title="Open Guitar module">
                         <div class="module-icon" id="guitar-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">Guitar</h3>
-                    </div>
-                    <div id="history-clickable" class="preview-card module-card" data-module="history">
-                        <div class="module-icon" id="history-icon"></div>
-                        <h3 class="font-bold text-sm sm:text-xs">History</h3>
-                    </div>
-                    <div id="poetry-clickable" class="preview-card module-card" data-module="poetry">
+                    </button>
+                    <button id="poetry-clickable" type="button" class="preview-card module-card" data-module="poetry" aria-label="Open Poetry module" title="Open Poetry module">
                         <div class="module-icon" id="poetry-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">Poetry</h3>
-                    </div>
-                    <div id="frenchy-clickable-day" class="preview-card cursor-pointer module-card" data-module="french">
+                    </button>
+                    <button id="frenchy-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="french" aria-label="Open French translator" title="Open French translator">
                         <div class="module-icon" id="french-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">French</h3>
-                    </div>
-                    <div id="food-clickable-day" class="preview-card cursor-pointer module-card" data-module="food">
+                    </button>
+                    <button id="food-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="food" aria-label="Open Today's Food module" title="Open Today's Food module">
                         <div class="module-icon" id="food-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">Today's Food</h3>
-                    </div>
-                    <div id="analytics-clickable-day" class="preview-card cursor-pointer module-card" data-module="analytics">
+                    </button>
+                    <button id="analytics-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="analytics" aria-label="Open Analytics module" title="Open Analytics module">
                         <div class="module-icon" id="analytics-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">Analytics</h3>
-                    </div>
-                    <div id="hood-clickable-day" class="preview-card cursor-pointer module-card" data-module="hood">
+                    </button>
+                    <button id="hood-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="hood" aria-label="Open Curious module" title="Open Curious module">
                         <div class="module-icon" id="curious-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">Curious</h3>
-                    </div>
-                    <div id="exercise-clickable-day" class="preview-card cursor-pointer module-card" data-module="exercise">
+                    </button>
+                    <button id="exercise-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="exercise" aria-label="Open Exercise module" title="Open Exercise module">
                         <div class="module-icon" id="exercise-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">Exercise</h3>
-                    </div>
+                    </button>
                 </div>
-            </section>
-
-            <!-- HISTORY BROWSER SECTION -->
-            <section id="history-browser" class="mobile-section">
-                <!-- History browser will be populated by JS -->
             </section>
         </div>
 
@@ -260,18 +252,6 @@
                     <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
                 </div>
                 <div id="guitar-content" class="overflow-y-auto">
-                    <!-- JS will populate this -->
-                </div>
-            </div>
-        </div>
-
-        <div id="history-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">History Recommendation</h3>
-                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="history-content" class="overflow-y-auto">
                     <!-- JS will populate this -->
                 </div>
             </div>

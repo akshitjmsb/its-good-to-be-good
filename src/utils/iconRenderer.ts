@@ -39,16 +39,6 @@ export const iconSvgs = {
             <circle cx="12" cy="18" r="2" />
         </svg>
     `,
-    history: `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            <path d="M8 6h8" />
-            <path d="M8 9h8" />
-            <path d="M8 12h6" />
-            <path d="M8 15h4" />
-        </svg>
-    `,
     poetry: `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9" />
@@ -159,7 +149,6 @@ export function renderModuleIcons() {
         'tennis-icon': iconSvgs.tennis,
         'coffee-icon': iconSvgs.coffee,
         'guitar-icon': iconSvgs.guitar,
-        'history-icon': iconSvgs.history,
         'poetry-icon': iconSvgs.poetry,
         'french-icon': iconSvgs.french,
         'food-icon': iconSvgs.food,

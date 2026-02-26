@@ -1,7 +1,7 @@
 import { getOrGeneratePlanForDate } from "../../api/perplexity";
 import { ErrorHandler } from "../../utils/errorHandling";
 import { DEFAULT_USER_ID } from "../../core/default-user";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
 
 export async function showFoodModal(
     mode: 'today' | 'tomorrow' | 'archive',
@@ -39,11 +39,6 @@ export async function showFoodModal(
     try {
         const plan = await getOrGeneratePlanForDate(DEFAULT_USER_ID, date, key);
         setModalContent(elements, plan.replace(/\n/g, '<br>'));
-
-        // Save session for history (only for new content, not archive)
-        if (mode !== 'archive') {
-            saveSessionContent('food', { plan }, title);
-        }
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Food modal (${mode})`);
         ErrorHandler.logError(appError);

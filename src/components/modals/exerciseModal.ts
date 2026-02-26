@@ -2,7 +2,7 @@ import { generateWeeklyExerciseContent } from "../../api/perplexity";
 import { ErrorHandler } from "../../utils/errorHandling";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { createSafeHtml } from "../../utils/escapeHtml";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
 
 // Exercise modal with 4-day workout schedule and swipable cards
 
@@ -36,12 +36,6 @@ export async function showExerciseModal(
         }
 
         renderWeeklyExerciseContent(elements.content, weeklyData, date!);
-
-        // Save session for history (only for new content, not archive)
-        if (mode !== 'archive') {
-            const weekStart = startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            saveSessionContent('exercise', weeklyData, `Weekly Exercise - ${weekStart}`);
-        }
 
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Exercise modal (${mode})`);

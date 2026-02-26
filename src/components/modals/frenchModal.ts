@@ -1,6 +1,6 @@
 import { getOrGenerateDynamicContent } from "../../api/perplexity";
 import { DEFAULT_USER_ID } from "../../core/default-user";
-import { getModalElements, showModalWithLoading, setModalContent, setModalTitle, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
 
 export async function showFrenchModal(
     mode: 'today' | 'tomorrow' | 'archive',
@@ -32,11 +32,6 @@ export async function showFrenchModal(
                 `<tr><td class="font-bold text-center">${index + 1}</td><td>${item.word}</td><td>${item.cue}</td><td>${item.meaning}</td><td class="text-center"><button class="play-btn" data-word="${item.word}">🔊</button></td></tr>`
             ).join('');
             setModalContent(elements, html);
-
-            // Save session for history (only for new content, not archive)
-            if (mode !== 'archive') {
-                saveSessionContent('french', soundData, `French: ${soundData.sound}`);
-            }
         }
     } catch (error) {
         console.error('Error showing French modal:', error);

@@ -1,5 +1,5 @@
 import { ai } from "../../api/perplexity";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, saveSessionContent, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowWorldOrder() {
     const elements = getModalElements(MODAL_CONFIGS.worldOrder);
@@ -29,10 +29,6 @@ export async function fetchAndShowWorldOrder() {
                 .replace(/\n/g, '<br>')
                 .replace(/^(.*?):<br>/gm, '<strong class="block mt-3 mb-1">$1:</strong>');
             setModalContent(elements, `<div class="mb-4">${formattedText}</div>`);
-
-            // Save session for history
-            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            saveSessionContent('worldOrder', { headlines: response.text }, `World Order - ${today}`);
         } else {
             showModalError(elements, 'Could not retrieve any news data at this time.');
         }
