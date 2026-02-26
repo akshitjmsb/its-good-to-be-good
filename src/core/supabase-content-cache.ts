@@ -4,7 +4,6 @@ export type ContentType =
     | 'food-plan' 
     | 'analytics' 
     | 'transportation-physics' 
-    | 'french-sound' 
     | 'exercise-plan' 
     | 'weekly-exercise' 
     | 'archive'
@@ -174,4 +173,3 @@ export async function setGenerationFlag(
         throw error;
     }
 }
-

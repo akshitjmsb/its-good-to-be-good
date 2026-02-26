@@ -42,7 +42,7 @@ export function initializeModalManager(
         if (target.closest('#food-clickable-day')) {
             return showFoodModal(dates.active, keys.today);
         }
-        if (target.closest('#frenchy-clickable-day')) {
+        if (target.closest('#french-clickable-day')) {
             window.location.href = 'french.html';
             return;
         }

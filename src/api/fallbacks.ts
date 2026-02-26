@@ -16,17 +16,6 @@ export interface PhysicsContent {
     explanation: string;
 }
 
-export interface FrenchWord {
-    word: string;
-    cue: string;
-    meaning: string;
-}
-
-export interface FrenchContent {
-    sound: string;
-    words: FrenchWord[];
-}
-
 export interface Exercise {
     name: string;
     muscleGroup?: string;
@@ -151,24 +140,6 @@ export function getFallbackPhysics(): PhysicsContent {
     return {
         title: "How Airplane Wings Work",
         explanation: "Airplane wings create lift by creating a pressure difference. Air moves faster over the top of the wing, creating lower pressure, while slower air underneath creates higher pressure, pushing the wing upward."
-    };
-}
-
-export function getFallbackFrench(): FrenchContent {
-    return {
-        sound: "on",
-        words: [
-            { word: "bon", cue: "like 'bone'", meaning: "good" },
-            { word: "mon", cue: "like 'moan'", meaning: "my" },
-            { word: "ton", cue: "like 'tone'", meaning: "your" },
-            { word: "son", cue: "like 'sown'", meaning: "his/her" },
-            { word: "non", cue: "like 'known'", meaning: "no" },
-            { word: "don", cue: "like 'dawn'", meaning: "gift" },
-            { word: "pont", cue: "like 'pawn'", meaning: "bridge" },
-            { word: "front", cue: "like 'frawn'", meaning: "front" },
-            { word: "mont", cue: "like 'mawn'", meaning: "mountain" },
-            { word: "compte", cue: "like 'kawn'", meaning: "account" }
-        ]
     };
 }
 

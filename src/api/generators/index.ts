@@ -9,21 +9,18 @@ import { ErrorHandler } from "../../utils/errorHandling";
 import {
     getFallbackAnalytics,
     getFallbackPhysics,
-    getFallbackFrench,
     getFallbackExercisePlan,
     getFallbackFoodPlan,
     getFallbackWeeklyExercise,
     getFallbackClassicRockPool
 } from "../fallbacks";
 
-export type ContentType = 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan';
+export type ContentType = 'analytics' | 'transportation-physics' | 'classic-rock-500' | 'exercise-plan';
 
 // Re-export types from fallbacks for consumers
 export type {
     AnalyticsContent,
     PhysicsContent,
-    FrenchContent,
-    FrenchWord,
     ExercisePlanContent,
     WeeklyExerciseContent
 } from "../fallbacks";
@@ -97,8 +94,6 @@ function getPromptForContentType(contentType: ContentType, dateKey: string): str
             return getAnalyticsPrompt(dateKey);
         case 'transportation-physics':
             return getPhysicsPrompt(dateKey);
-        case 'french-sound':
-            return getFrenchPrompt(dateKey);
         case 'classic-rock-500':
             return getGuitarPrompt();
         case 'exercise-plan':
@@ -114,8 +109,6 @@ function getFallbackContent(contentType: ContentType, dateKey: string): any {
             return getFallbackAnalytics();
         case 'transportation-physics':
             return getFallbackPhysics();
-        case 'french-sound':
-            return getFallbackFrench();
         case 'classic-rock-500':
             return getFallbackClassicRockPool();
         case 'exercise-plan':
@@ -152,19 +145,6 @@ Return as JSON:
 {
   "title": "...",
   "explanation": "..."
-}`;
-}
-
-function getFrenchPrompt(dateKey: string): string {
-    return `Act as a French phonetics teacher planning a long-term course. For the date ${dateKey}, create a self-contained lesson for a single, unique French phoneme. The series of lessons over many days should eventually cover all phonemes of the French language in a logical progression. The content for this single day must be unique. Provide: 1. The target sound (e.g., 'an', 'in', 'ou' or an IPA symbol). 2. A list of exactly 10 example words that use this sound. For each word, provide the French word, a simple phonetic cue for an English speaker, and its English meaning. Do not use markdown.
-
-Return as JSON:
-{
-  "sound": "...",
-  "words": [
-    {"word": "...", "cue": "...", "meaning": "..."},
-    ...
-  ]
 }`;
 }
 

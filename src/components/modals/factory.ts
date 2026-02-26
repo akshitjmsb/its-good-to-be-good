@@ -150,12 +150,6 @@ export const MODAL_CONFIGS: Record<string, ModalConfig> = {
         contentId: 'guitar-content',
         loadingMessage: 'Finding a song for you...'
     },
-    french: {
-        modalId: 'frenchy-modal',
-        contentId: 'modal-frenchy-table-body',
-        titleId: 'modal-frenchy-title',
-        loadingMessage: '<tr><td colspan="5" class="text-center p-4">Loading French lesson...</td></tr>'
-    },
     food: {
         modalId: 'food-modal',
         contentId: 'food-plan-content',

@@ -4,24 +4,3 @@
     background-color: #ffffff; 
     color: #111111; 
 }
-
-.frenchy-table th, .frenchy-table td { 
-    padding: 10px 8px; 
-    text-align: left; 
-    vertical-align: middle; 
-    border-bottom: 1px solid #dddddd; 
-    font-size: 0.9rem; 
-}
-
-.frenchy-table th { font-weight: bold; }
-.frenchy-table tr:last-child td { border-bottom: none; }
-
-.play-btn { 
-    background: none; 
-    border: none; 
-    font-size: 1.25rem; 
-    cursor: pointer; 
-    transition: transform 0.2s; 
-}
-
-.play-btn:hover { transform: scale(1.1); }
