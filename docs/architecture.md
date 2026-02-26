@@ -39,6 +39,25 @@ The application is a local-first personal dashboard with a single local anonymou
 - No UI decisions.
 - Must return typed responses or typed errors.
 
+## Module vs Tool
+
+| Term   | Meaning | Examples |
+| --- | --- | --- |
+| Module | User-facing feature | `analytics`, `food`, `todo`, `french` |
+| Tool | Internal reusable capability | `src/infra/supabase/*`, `src/utils/*`, modal helper utilities |
+
+### Module Taxonomy
+
+| Module Category | IDs | Surface |
+| --- | --- | --- |
+| Journey | `todo`, `quantum`, `meditate`, `money`, `health`, `travel` | Page |
+| Learn | `world-order`, `tennis`, `coffee`, `guitar`, `poetry`, `french`, `food`, `analytics`, `curious`, `exercise` | Modal or page |
+
+Notes:
+- `french` is a Learn Module by entry-point rule (it appears in Learn), even though its surface is a dedicated page.
+- Canonical module metadata lives in `src/domains/modules/registry.ts`.
+- `npm run check:architecture` enforces registry and layer-boundary guardrails.
+
 ## Anti-Patterns to Avoid
 
 1. Adding new feature logic directly into `src/index.tsx`.

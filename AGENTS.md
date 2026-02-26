@@ -27,6 +27,17 @@ This file defines how AI agents should work safely in this repository.
 - keys belong only in `.env.local`
 - never commit `.env.local` or any real credentials
 
+## Tool vs Module Language Contract
+
+- Never call a user-facing feature a tool.
+- Never call internal infra/utils capabilities a module.
+- Module subtypes are:
+  - Journey Modules (`todo`, `quantum`, `meditate`, `money`, `health`, `travel`)
+  - Learn Modules (`world-order`, `tennis`, `coffee`, `guitar`, `poetry`, `french`, `food`, `analytics`, `curious`, `exercise`)
+- Source of truth:
+  - `src/domains/modules/types.ts`
+  - `src/domains/modules/registry.ts`
+
 ## Required Verification Before Commit
 
 Run and pass:

@@ -1,6 +1,9 @@
+import { getModulesByCategory } from '../domains/modules/registry';
+import type { JourneyModuleId, LearnModuleId } from '../domains/modules/types';
+
 // Icon SVG string generators for vanilla JS - Sharp, clean line art style
-export const iconSvgs = {
-    worldOrder: `
+export const learnIconSvgs: Record<LearnModuleId, string> = {
+    'world-order': `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10" />
             <path d="M2 12h20" />
@@ -101,7 +104,7 @@ export const iconSvgs = {
 };
 
 // Navigation button icons - Black and white SVG icons for main navigation
-export const navigationIconSvgs = {
+export const journeyIconSvgs: Record<JourneyModuleId, string> = {
     todo: `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 12l2 2 4-4" />
@@ -144,44 +147,32 @@ export const navigationIconSvgs = {
 };
 
 export function renderModuleIcons() {
-    const iconMap = {
-        'world-order-icon': iconSvgs.worldOrder,
-        'tennis-icon': iconSvgs.tennis,
-        'coffee-icon': iconSvgs.coffee,
-        'guitar-icon': iconSvgs.guitar,
-        'poetry-icon': iconSvgs.poetry,
-        'french-icon': iconSvgs.french,
-        'food-icon': iconSvgs.food,
-        'analytics-icon': iconSvgs.analytics,
-        'curious-icon': iconSvgs.curious,
-        'exercise-icon': iconSvgs.exercise,
-    };
+    const learnModules = getModulesByCategory('learn');
+    learnModules.forEach(module => {
+        if (!module.iconElementId) return;
 
-    Object.entries(iconMap).forEach(([iconId, svgString]) => {
-        const iconContainer = document.getElementById(iconId);
-        if (iconContainer) {
-            // Use responsive sizing - start with mobile size (24px)
-            const responsiveSvg = svgString.replace(/width="20"/g, 'width="24"').replace(/height="20"/g, 'height="24"');
-            iconContainer.innerHTML = responsiveSvg;
-        }
+        const svgString = learnIconSvgs[module.id];
+        const iconContainer = document.getElementById(module.iconElementId);
+        if (!svgString || !iconContainer) return;
+
+        // Use responsive sizing - start with mobile size (24px)
+        const responsiveSvg = svgString
+            .replace(/width="20"/g, 'width="24"')
+            .replace(/height="20"/g, 'height="24"');
+        iconContainer.innerHTML = responsiveSvg;
     });
 }
 
 export function renderNavigationIcons() {
-    const navigationIconMap = {
-        'todo-icon': navigationIconSvgs.todo,
-        'quantum-icon': navigationIconSvgs.quantum,
-        'meditate-icon': navigationIconSvgs.meditate,
-        'money-icon': navigationIconSvgs.money,
-        'health-icon': navigationIconSvgs.health,
-        'travel-icon': navigationIconSvgs.travel,
-    };
+    const journeyModules = getModulesByCategory('journey');
+    journeyModules.forEach(module => {
+        if (!module.iconElementId) return;
 
-    Object.entries(navigationIconMap).forEach(([iconId, svgString]) => {
-        const iconContainer = document.getElementById(iconId);
-        if (iconContainer) {
-            // Icons are already sized at 24px for navigation buttons
-            iconContainer.innerHTML = svgString;
-        }
+        const svgString = journeyIconSvgs[module.id];
+        const iconContainer = document.getElementById(module.iconElementId);
+        if (!svgString || !iconContainer) return;
+
+        // Icons are already sized at 24px for navigation buttons
+        iconContainer.innerHTML = svgString;
     });
 }

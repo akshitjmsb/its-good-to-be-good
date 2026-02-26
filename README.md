@@ -13,6 +13,13 @@ This project is a light, fun philosophical space you can step into from time to 
 
 Long-term direction: build it in phases so any person can create their own version of this space.
 
+## Glossary
+
+- `Module`: a user-facing feature.
+- `Tool`: an internal reusable capability that supports modules.
+- `Journey Module`: route/page feature (`todo`, `quantum`, `meditate`, `money`, `health`, `travel`).
+- `Learn Module`: Learn card feature (`world-order`, `tennis`, `coffee`, `guitar`, `poetry`, `french`, `food`, `analytics`, `curious`, `exercise`).
+
 ## Home Design Lock
 
 The home page visual language is intentionally locked to:
@@ -93,6 +100,7 @@ Use these as primary docs:
 | Agent contract and guardrails | [AGENTS.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/AGENTS.md)                           |
 | Architecture map              | [docs/architecture.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/architecture.md)     |
 | Agent workflow playbook       | [docs/agent-playbook.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-playbook.md) |
+| Tool/module contract          | [docs/tool-module-contract.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/tool-module-contract.md) |
 | Archived status/history docs  | [docs/archive](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/archive)                     |
 
 ## Scripts

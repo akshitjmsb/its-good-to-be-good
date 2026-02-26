@@ -26,5 +26,28 @@
     "prefer-const": "error",
     "no-var": "error",
     "@typescript-eslint/no-explicit-any": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/domains/**/*.{ts,tsx}", "src/infra/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/components/**",
+                  "**/app/**",
+                  "src/components/**",
+                  "src/app/**"
+                ],
+                "message": "Domains/infra must not import from app/components."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

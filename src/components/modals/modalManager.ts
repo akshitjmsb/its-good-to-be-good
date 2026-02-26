@@ -7,6 +7,10 @@ import { fetchAndShowTennisMatches } from './tennisModal';
 import { fetchAndShowCoffeeTip } from './coffeeModal';
 import { fetchAndShowGuitarTab } from './guitarModal';
 import { fetchAndShowPoetry } from './poetryModal';
+import {
+    getModulesByCategory,
+    type LearnModuleId,
+} from '../../domains/modules/registry';
 
 type ModalDependencies = {
     dates: {
@@ -17,11 +21,30 @@ type ModalDependencies = {
     };
 };
 
+type LearnModuleHandler = (dependencies: ModalDependencies) => void | Promise<void>;
+
+function navigateToFrenchPage(): void {
+    window.location.href = 'french.html';
+}
+
+const LEARN_MODULE_HANDLERS: Record<LearnModuleId, LearnModuleHandler> = {
+    'world-order': () => fetchAndShowWorldOrder(),
+    tennis: () => fetchAndShowTennisMatches(),
+    coffee: ({ dates }) => fetchAndShowCoffeeTip(dates.active),
+    guitar: ({ dates }) => fetchAndShowGuitarTab(dates.active),
+    poetry: ({ dates }) => fetchAndShowPoetry(dates.active),
+    french: navigateToFrenchPage,
+    food: ({ dates, keys }) => showFoodModal(dates.active, keys.today),
+    analytics: ({ dates }) => showAnalyticsModal(dates.active),
+    curious: ({ dates }) => showHoodModal(dates.active),
+    exercise: ({ dates }) => showExerciseModal(dates.active),
+};
+
 export function initializeModalManager(
     appContainer: HTMLElement,
     dependencies: ModalDependencies
 ) {
-    const { dates, keys } = dependencies;
+    const learnModules = getModulesByCategory('learn');
 
     appContainer.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
@@ -38,37 +61,12 @@ export function initializeModalManager(
             return;
         }
 
-        // Topic card handlers - directly open modals with fresh content
-        if (target.closest('#food-clickable-day')) {
-            return showFoodModal(dates.active, keys.today);
-        }
-        if (target.closest('#french-clickable-day')) {
-            window.location.href = 'french.html';
-            return;
-        }
-        if (target.closest('#analytics-clickable-day')) {
-            return showAnalyticsModal(dates.active);
-        }
-        if (target.closest('#hood-clickable-day')) {
-            return showHoodModal(dates.active);
-        }
-        if (target.closest('#exercise-clickable-day')) {
-            return showExerciseModal(dates.active);
-        }
-        if (target.closest('#geopolitics-clickable')) {
-            return fetchAndShowWorldOrder();
-        }
-        if (target.closest('#tennis-clickable')) {
-            return fetchAndShowTennisMatches();
-        }
-        if (target.closest('#coffee-clickable')) {
-            return fetchAndShowCoffeeTip(dates.active);
-        }
-        if (target.closest('#guitar-clickable')) {
-            return fetchAndShowGuitarTab(dates.active);
-        }
-        if (target.closest('#poetry-clickable')) {
-            return fetchAndShowPoetry(dates.active);
+        // Learn module handlers - registry driven
+        for (const module of learnModules) {
+            if (target.closest(module.entrySelector)) {
+                const handler = LEARN_MODULE_HANDLERS[module.id];
+                return handler(dependencies);
+            }
         }
     });
 }
