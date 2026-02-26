@@ -130,8 +130,7 @@ export class ErrorHandler {
      */
     static handleAndShowError(
         error: any,
-        context: string,
-        errorType: ErrorType = ErrorType.UNKNOWN_ERROR
+        context: string
     ): AppError {
         const appError = this.handleUnknownError(error, context);
         this.logError(appError);

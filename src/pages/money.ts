@@ -32,7 +32,7 @@ function saveTransactions(transactions: Transaction[]): void {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    let transactions = loadTransactions();
+    const transactions = loadTransactions();
 
     const totalIncomeEl = document.getElementById('total-income');
     const totalExpensesEl = document.getElementById('total-expenses');
@@ -53,6 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ) {
         return;
     }
+    const totalIncomeDisplay = totalIncomeEl as HTMLElement;
+    const totalExpensesDisplay = totalExpensesEl as HTMLElement;
+    const netAmountDisplay = netAmountEl as HTMLElement;
+    const transactionsList = transactionsListEl as HTMLElement;
+    const addIncome = addIncomeBtn as HTMLElement;
+    const addExpense = addExpenseBtn as HTMLElement;
+    const viewTransactions = viewTransactionsBtn as HTMLElement;
 
     function updateFinancialOverview() {
         const totalIncome = transactions
@@ -65,22 +72,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const netAmount = totalIncome - totalExpenses;
 
-        totalIncomeEl.textContent = `$${totalIncome.toFixed(2)}`;
-        totalExpensesEl.textContent = `$${totalExpenses.toFixed(2)}`;
-        netAmountEl.textContent = `$${netAmount.toFixed(2)}`;
+        totalIncomeDisplay.textContent = `$${totalIncome.toFixed(2)}`;
+        totalExpensesDisplay.textContent = `$${totalExpenses.toFixed(2)}`;
+        netAmountDisplay.textContent = `$${netAmount.toFixed(2)}`;
 
         if (netAmount > 0) {
-            netAmountEl.className = 'text-2xl font-bold text-green-700';
+            netAmountDisplay.className = 'text-2xl font-bold text-green-700';
         } else if (netAmount < 0) {
-            netAmountEl.className = 'text-2xl font-bold text-red-700';
+            netAmountDisplay.className = 'text-2xl font-bold text-red-700';
         } else {
-            netAmountEl.className = 'text-2xl font-bold text-blue-700';
+            netAmountDisplay.className = 'text-2xl font-bold text-blue-700';
         }
     }
 
     function updateTransactionsList() {
         if (transactions.length === 0) {
-            transactionsListEl.innerHTML = `
+            transactionsList.innerHTML = `
                 <div class="text-center text-gray-500 text-sm">
                     No transactions yet. Add your first income or expense!
                 </div>
@@ -88,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        transactionsListEl.innerHTML = transactions.slice(0, 5).map((transaction) => `
+        transactionsList.innerHTML = transactions.slice(0, 5).map((transaction) => `
             <div class="bg-gray-100 p-3 rounded-lg text-sm">
                 <div class="flex justify-between items-center">
                     <div>
@@ -137,10 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
         addTransaction(type, parsedAmount, description);
     }
 
-    addIncomeBtn.addEventListener('click', () => promptForTransaction('income'));
-    addExpenseBtn.addEventListener('click', () => promptForTransaction('expense'));
+    addIncome.addEventListener('click', () => promptForTransaction('income'));
+    addExpense.addEventListener('click', () => promptForTransaction('expense'));
 
-    viewTransactionsBtn.addEventListener('click', () => {
+    viewTransactions.addEventListener('click', () => {
         if (transactions.length === 0) {
             window.alert('No transactions to view yet.');
             return;

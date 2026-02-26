@@ -1,4 +1,4 @@
-import { getOrGenerateDynamicContent } from "../../api/perplexity";
+import { getPhysicsContent } from "../../domains/content/service";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
@@ -13,7 +13,7 @@ export async function showHoodModal(
     setModalTitle(elements, 'Under the Hood');
 
     try {
-        const data = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'transportation-physics', date);
+        const data = await getPhysicsContent(DEFAULT_USER_ID, date);
 
         if (!data || !data.title || !data.explanation) {
             setModalTitle(elements, 'Error');

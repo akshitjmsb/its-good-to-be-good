@@ -11,22 +11,26 @@ This repository is configured for local Supabase development only.
 ## Install Supabase CLI
 
 ### macOS
+
 ```bash
 brew install supabase/tap/supabase
 ```
 
 ### Windows (Scoop)
+
 ```bash
 scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
 scoop install supabase
 ```
 
 ### Linux
+
 ```bash
 brew install supabase/tap/supabase
 ```
 
 Verify:
+
 ```bash
 supabase --version
 ```
@@ -48,6 +52,7 @@ supabase status --output json
 ```
 
 `supabase status --output json` provides:
+
 - `API_URL` (expected local default: `http://127.0.0.1:54321`)
 - `PUBLISHABLE_KEY` (use as `VITE_SUPABASE_ANON_KEY`)
 
@@ -72,6 +77,7 @@ VITE_PERPLEXITY_API_KEY=<optional local key>
 ```bash
 npm install
 npm run dev
+npm run verify
 ```
 
 ## Useful Commands
@@ -94,12 +100,15 @@ supabase status --output json
 ## Troubleshooting
 
 ### Supabase CLI not found
+
 Install CLI and re-open terminal.
 
 ### Docker not running
+
 Start Docker Desktop and retry `supabase start`.
 
 ### Migration fails
+
 Run:
 
 ```bash

@@ -54,6 +54,7 @@ export function sanitizeInput(input: string, maxLength: number = 1000): string {
     // Remove null bytes and control characters
     let sanitized = input
         .replace(/\0/g, '') // Remove null bytes
+        // eslint-disable-next-line no-control-regex
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
         .trim();
     

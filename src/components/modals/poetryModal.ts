@@ -1,7 +1,7 @@
 import { ai, type ResponseSchema } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
-import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../core/supabase-persistence";
+import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../infra/supabase/persistence";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 

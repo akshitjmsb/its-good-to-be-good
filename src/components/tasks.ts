@@ -1,5 +1,5 @@
 import { Task } from "../types";
-import { saveTasks as saveTasksToSupabase, loadTasks as loadTasksFromSupabase } from "../core/supabase-persistence";
+import { saveTasks as saveTasksToSupabase, loadTasks as loadTasksFromSupabase } from "../infra/supabase/persistence";
 import { sanitizeTaskInput, createSafeHtml } from "../utils/escapeHtml";
 
 export function renderTasks(tasks: Task[], listId: string) {

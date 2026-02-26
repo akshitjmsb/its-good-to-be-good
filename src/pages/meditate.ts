@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const typeButtons = document.querySelectorAll<HTMLButtonElement>('.meditation-type');
 
     if (!displayEl || !buttonEl || !historyEl) return;
+    const display = displayEl as HTMLElement;
+    const button = buttonEl as HTMLElement;
+    const history = historyEl as HTMLElement;
 
     function formatTime(seconds: number) {
         const mins = Math.floor(seconds / 60);
@@ -17,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateDisplay() {
-        displayEl.textContent = formatTime(timeRemaining);
+        display.textContent = formatTime(timeRemaining);
     }
 
     function addSessionToHistory() {
@@ -29,17 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="text-green-600">✅ Completed</div>
         `;
 
-        if (historyEl.querySelector('.text-gray-500')) {
-            historyEl.innerHTML = '';
+        if (history.querySelector('.text-gray-500')) {
+            history.innerHTML = '';
         }
-        historyEl.insertBefore(sessionDiv, historyEl.firstChild);
+        history.insertBefore(sessionDiv, history.firstChild);
     }
 
     function stopMeditation() {
         isMeditationActive = false;
-        const label = buttonEl.querySelector('h2');
+        const label = button.querySelector('h2');
         if (label) label.textContent = 'Start Meditation';
-        (buttonEl as HTMLElement).style.background = '';
+        button.style.background = '';
         if (meditationInterval !== undefined) {
             window.clearInterval(meditationInterval);
         }
@@ -47,9 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startMeditation() {
         isMeditationActive = true;
-        const label = buttonEl.querySelector('h2');
+        const label = button.querySelector('h2');
         if (label) label.textContent = 'Stop Meditation';
-        (buttonEl as HTMLElement).style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+        button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
 
         meditationInterval = window.setInterval(() => {
             timeRemaining--;
@@ -68,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplay();
     }
 
-    buttonEl.addEventListener('click', () => {
+    button.addEventListener('click', () => {
         if (isMeditationActive) {
             stopMeditation();
         } else {

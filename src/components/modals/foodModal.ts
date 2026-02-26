@@ -1,4 +1,4 @@
-import { getOrGeneratePlanForDate } from "../../api/perplexity";
+import { getFoodPlan } from "../../domains/content/service";
 import { ErrorHandler } from "../../utils/errorHandling";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
@@ -14,7 +14,7 @@ export async function showFoodModal(
     setModalTitle(elements, "Today's Food");
 
     try {
-        const plan = await getOrGeneratePlanForDate(DEFAULT_USER_ID, date, key);
+        const plan = await getFoodPlan(DEFAULT_USER_ID, date, key);
         setModalContent(elements, plan.replace(/\n/g, '<br>'));
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, 'Food modal');

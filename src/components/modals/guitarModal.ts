@@ -2,7 +2,7 @@ import { ai, hasApiKey, getOrGenerateDynamicContent, type ResponseSchema } from 
 import { getFallbackClassicRockPool } from "../../api/fallbacks";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
-import { loadGuitarRecentPicks, saveGuitarRecentPick } from "../../core/supabase-persistence";
+import { loadGuitarRecentPicks, saveGuitarRecentPick } from "../../infra/supabase/persistence";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 

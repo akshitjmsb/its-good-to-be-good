@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyEl = document.getElementById('session-history');
 
     if (!displayEl || !buttonEl || !historyEl) return;
+    const display = displayEl as HTMLElement;
+    const button = buttonEl as HTMLElement;
+    const history = historyEl as HTMLElement;
 
     function formatTime(seconds: number) {
         const mins = Math.floor(seconds / 60);
@@ -16,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateDisplay() {
-        displayEl.textContent = formatTime(timeRemaining);
+        display.textContent = formatTime(timeRemaining);
     }
 
     function addSessionToHistory() {
@@ -28,17 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="text-green-600">✅ Completed</div>
         `;
 
-        if (historyEl.querySelector('.text-gray-500')) {
-            historyEl.innerHTML = '';
+        if (history.querySelector('.text-gray-500')) {
+            history.innerHTML = '';
         }
-        historyEl.insertBefore(sessionDiv, historyEl.firstChild);
+        history.insertBefore(sessionDiv, history.firstChild);
     }
 
     function stopQuantumTimer() {
         isQuantumActive = false;
-        const label = buttonEl.querySelector('h2');
+        const label = button.querySelector('h2');
         if (label) label.textContent = 'Start Quantum Session';
-        (buttonEl as HTMLElement).style.background = '';
+        button.style.background = '';
         if (quantumInterval !== undefined) {
             window.clearInterval(quantumInterval);
         }
@@ -48,9 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startQuantumTimer() {
         isQuantumActive = true;
-        const label = buttonEl.querySelector('h2');
+        const label = button.querySelector('h2');
         if (label) label.textContent = 'Stop Session';
-        (buttonEl as HTMLElement).style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        button.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
 
         quantumInterval = window.setInterval(() => {
             timeRemaining--;
@@ -64,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    buttonEl.addEventListener('click', () => {
+    button.addEventListener('click', () => {
         if (isQuantumActive) {
             stopQuantumTimer();
         } else {

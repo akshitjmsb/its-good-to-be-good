@@ -3,7 +3,7 @@
  * Dedicated page for task management with statistics and quick actions
  */
 
-import { loadTasks as loadTasksFromSupabase, saveTasks as saveTasksToSupabase } from './core/supabase-persistence';
+import { loadTasks as loadTasksFromSupabase, saveTasks as saveTasksToSupabase } from './infra/supabase/persistence';
 import { renderTasks, attachTaskListeners } from './components/tasks';
 import { DEFAULT_USER_ID } from './core/default-user';
 import { sanitizeTaskInput } from './utils/escapeHtml';

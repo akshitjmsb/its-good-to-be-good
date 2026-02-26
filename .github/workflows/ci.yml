@@ -2,45 +2,26 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [base-app-development, master]
+    branches: [prod]
   pull_request:
-    branches: [base-app-development, master]
+    branches: [prod]
 
 jobs:
-  test:
+  verify:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run linting
-      run: npm run lint
-    
-    - name: Check formatting
-      run: npm run format:check
-    
-    - name: Run type checking
-      run: npm run type-check
-    
-    - name: Run tests
-      run: npm test
-    
-    - name: Build project
-      run: npm run build
-    
-    - name: Verify deployment readiness
-      if: github.ref == 'refs/heads/development' && github.event_name == 'push'
-      run: |
-        echo "✅ All tests passed"
-        echo "✅ Build completed successfully"
-        echo "🚀 Ready for Vercel deployment (handled automatically by Vercel GitHub integration)" 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full verification gates
+        run: npm run verify

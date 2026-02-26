@@ -29,6 +29,7 @@ npm run supabase:setup
 ```
 
 This script:
+
 - starts local Supabase
 - applies migrations with `supabase db push --local`
 - prints your local `API_URL` and `PUBLISHABLE_KEY`
@@ -40,6 +41,7 @@ cp .env.example .env.local
 ```
 
 Set the values in `.env.local`:
+
 - `VITE_SUPABASE_URL=http://127.0.0.1:54321`
 - `VITE_SUPABASE_ANON_KEY=<local publishable key from supabase status>`
 - `VITE_PERPLEXITY_API_KEY=<optional local key>`
@@ -51,6 +53,12 @@ npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173).
+
+## 6. Run Full Quality Gates
+
+```bash
+npm run verify
+```
 
 ## Notes
 
