@@ -158,11 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modalDependencies = {
                     dates: {
                         active: activeContentDate,
-                        preview: activeContentDate, // Use same date for now
                     },
                     keys: {
                         today: todayKey,
-                        tomorrow: todayKey, // Use same key for now
                     },
                 };
                 initializeModalManager(appContainer, modalDependencies);

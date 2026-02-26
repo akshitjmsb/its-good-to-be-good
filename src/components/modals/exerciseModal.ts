@@ -2,32 +2,22 @@ import { generateWeeklyExerciseContent } from "../../api/perplexity";
 import { ErrorHandler } from "../../utils/errorHandling";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { createSafeHtml } from "../../utils/escapeHtml";
-import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
+import { getModalElements, showModalWithLoading, showModalError, setModalTitle, MODAL_CONFIGS } from "./factory";
 
 // Exercise modal with 4-day workout schedule and swipable cards
 
 export async function showExerciseModal(
-    mode: 'today' | 'tomorrow' | 'archive',
-    dates: { active: Date, preview: Date, archive?: Date }
+    date: Date
 ) {
     const elements = getModalElements(MODAL_CONFIGS.exercise);
     if (!elements) return;
-
-    const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-
-    if (mode === 'archive' && !dates.archive) {
-        console.error('Archive mode requested but archive data not available');
-        showModalWithLoading(elements, MODAL_CONFIGS.exercise.loadingMessage);
-        setModalContent(elements, '<div class="p-4">Archive functionality not available.</div>');
-        return;
-    }
 
     showModalWithLoading(elements, MODAL_CONFIGS.exercise.loadingMessage);
     setModalTitle(elements, "Weekly Exercise Plan");
 
     try {
         // Get the start of the week (Sunday) for the given date
-        const startOfWeek = getStartOfWeek(date!);
+        const startOfWeek = getStartOfWeek(date);
         const weeklyData = await generateWeeklyExerciseContent(DEFAULT_USER_ID, startOfWeek);
 
         if (!weeklyData) {
@@ -35,10 +25,10 @@ export async function showExerciseModal(
             return;
         }
 
-        renderWeeklyExerciseContent(elements.content, weeklyData, date!);
+        renderWeeklyExerciseContent(elements.content, weeklyData, date);
 
     } catch (error) {
-        const appError = ErrorHandler.handleApiError(error, `Exercise modal (${mode})`);
+        const appError = ErrorHandler.handleApiError(error, 'Exercise modal');
         ErrorHandler.logError(appError);
         ErrorHandler.showUserError(appError);
         showModalError(elements, 'Could not load the exercise plan.');

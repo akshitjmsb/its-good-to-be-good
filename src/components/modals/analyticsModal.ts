@@ -25,8 +25,7 @@ export function cleanupAnalyticsEventListeners() {
 }
 
 export async function showAnalyticsModal(
-    mode: 'today' | 'tomorrow' | 'archive',
-    dates: { active: Date, preview: Date, archive?: Date }
+    date: Date
 ) {
     const elements = getModalElements(MODAL_CONFIGS.analytics);
     if (!elements) return;
@@ -42,14 +41,6 @@ export async function showAnalyticsModal(
     }
 
     showModalWithLoading(elements, MODAL_CONFIGS.analytics.loadingMessage);
-
-    const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-
-    if (mode === 'archive' && !dates.archive) {
-        console.error('Archive mode requested but archive data not available');
-        setModalContent(elements, '<div class="analytics-card flex items-center justify-center"><p>Archive functionality not available.</p></div>');
-        return;
-    }
 
     try {
         analyticsData = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'analytics', date);

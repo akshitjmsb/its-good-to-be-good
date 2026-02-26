@@ -4,19 +4,10 @@ import { escapeHtml } from "../../utils/escapeHtml";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
 
 export async function showHoodModal(
-    mode: 'today' | 'tomorrow' | 'archive',
-    dates: { active: Date, preview: Date, archive?: Date }
+    date: Date
 ) {
     const elements = getModalElements(MODAL_CONFIGS.hood);
     if (!elements) return;
-
-    const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-
-    if (mode === 'archive' && !dates.archive) {
-        console.error('Archive mode requested but archive data not available');
-        setModalContent(elements, '<div class="p-4">Archive functionality not available.</div>');
-        return;
-    }
 
     showModalWithLoading(elements, MODAL_CONFIGS.hood.loadingMessage);
     setModalTitle(elements, 'Under the Hood');

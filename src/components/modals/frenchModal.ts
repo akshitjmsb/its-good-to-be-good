@@ -3,19 +3,10 @@ import { DEFAULT_USER_ID } from "../../core/default-user";
 import { getModalElements, showModalWithLoading, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
 
 export async function showFrenchModal(
-    mode: 'today' | 'tomorrow' | 'archive',
-    dates: { active: Date, preview: Date, archive?: Date }
+    date: Date
 ) {
     const elements = getModalElements(MODAL_CONFIGS.french);
     if (!elements) return;
-
-    const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-
-    if (mode === 'archive' && !dates.archive) {
-        console.error('Archive mode requested but archive data not available');
-        setModalContent(elements, '<tr><td colspan="3" class="text-center p-4">Archive functionality not available.</td></tr>');
-        return;
-    }
 
     showModalWithLoading(elements, MODAL_CONFIGS.french.loadingMessage);
     setModalTitle(elements, 'French');
