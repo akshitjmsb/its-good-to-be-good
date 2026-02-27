@@ -1,6 +1,6 @@
 /**
  * Session Prompt Component
- * "New session or continue?" dialog for Mr. Mojo Rising
+ * "New session or continue?" dialog for It's Good To Be King
  */
 
 import { SessionContentType, TOPIC_METADATA } from '../core/learning-sessions';

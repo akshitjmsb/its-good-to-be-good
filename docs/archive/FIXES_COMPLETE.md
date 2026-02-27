@@ -96,7 +96,7 @@ After applying the migration:
 
 **Migration File**: `supabase/migrations/20240101000001_disable_auth_requirements.sql`  
 **Supabase Dashboard**: https://supabase.com/dashboard/project/rwhevivopepxuenevcme/sql/new  
-**App URL**: https://night-divides-the-day.vercel.app
+**App URL**: https://its-good-to-be-king.vercel.app
 
 ---
 

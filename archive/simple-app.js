@@ -1,5 +1,5 @@
 // Simple JavaScript version of the app for development without build process
-console.log('Night Divides the Day - Simple App Loading...');
+console.log('It's Good To Be King - Simple App Loading...');
 
 // Basic app functionality
 document.addEventListener('DOMContentLoaded', () => {

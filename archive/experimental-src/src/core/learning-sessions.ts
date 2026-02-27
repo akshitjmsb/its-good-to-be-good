@@ -1,6 +1,6 @@
 /**
  * Learning Sessions Persistence Layer
- * Session-based content storage for Mr. Mojo Rising
+ * Session-based content storage for It's Good To Be King
  */
 
 import { supabase } from '../lib/supabase';

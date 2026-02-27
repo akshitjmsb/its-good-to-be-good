@@ -1,6 +1,6 @@
 /**
  * History Browser Component
- * Browse learning sessions by topic or timeline for Mr. Mojo Rising
+ * Browse learning sessions by topic or timeline for It's Good To Be King
  */
 
 import {

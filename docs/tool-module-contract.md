@@ -35,15 +35,15 @@ Forbidden:
 ## Source of Truth
 
 - Module taxonomy and metadata:
-  - [types.ts](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/src/domains/modules/types.ts)
-  - [registry.ts](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/src/domains/modules/registry.ts)
+  - [types.ts](../src/domains/modules/types.ts)
+  - [registry.ts](../src/domains/modules/registry.ts)
 
 ## Tool Categories
 
 - Runtime tools:
   - `src/infra/*`
   - `src/utils/*`
-  - shared modal utilities in [factory.ts](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/src/components/modals/factory.ts)
+  - shared modal utilities in [factory.ts](../src/components/modals/factory.ts)
 - Dev tools:
   - npm scripts
   - CI workflows

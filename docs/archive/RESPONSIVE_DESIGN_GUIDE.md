@@ -1,8 +1,8 @@
 # Responsive Design Guide
-## Night Divides the Day - Mobile Navigation Enhancement
+## It's Good To Be King - Mobile Navigation Enhancement
 
 ### Overview
-This guide documents the responsive design patterns implemented for the Night Divides the Day application, specifically focusing on mobile navigation improvements.
+This guide documents the responsive design patterns implemented for the It's Good To Be King application, specifically focusing on mobile navigation improvements.
 
 ---
 
@@ -228,4 +228,4 @@ When adding new responsive features:
 
 ---
 
-*This guide serves as the foundation for maintaining and extending responsive design patterns in the Night Divides the Day application.*
+*This guide serves as the foundation for maintaining and extending responsive design patterns in the It's Good To Be King application.*

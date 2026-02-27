@@ -15,7 +15,7 @@
 
 ### 3. ✅ Deployed to Production
 - **Deployment URL**: https://night-divides-the-61fxryhx0-akshit-guptas-projects-add2f9c0.vercel.app
-- **Production URL**: https://night-divides-the-day.vercel.app
+- **Production URL**: https://its-good-to-be-king.vercel.app
 - Build completed successfully
 - All environment variables are active
 
@@ -39,7 +39,7 @@
 ## Next Steps
 
 1. **Test the Deployment**:
-   - Visit: https://night-divides-the-day.vercel.app
+   - Visit: https://its-good-to-be-king.vercel.app
    - Test authentication (Supabase)
    - Test AI content generation (Perplexity)
    - Verify all features work correctly

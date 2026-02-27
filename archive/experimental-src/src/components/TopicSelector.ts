@@ -1,6 +1,6 @@
 /**
  * Topic Selector Component
- * Grid of learning topics for Mr. Mojo Rising
+ * Grid of learning topics for It's Good To Be King
  */
 
 import { SessionContentType, TOPIC_METADATA, getAllTopics, getSessionCounts, getLatestSession } from '../core/learning-sessions';

@@ -31,7 +31,7 @@
 
 ## After Applying
 
-1. Refresh the app: https://night-divides-the-day.vercel.app
+1. Refresh the app: https://its-good-to-be-king.vercel.app
 2. Check browser console - Supabase errors should be gone
 3. Test creating a task - it should save successfully
 4. Test content generation - should work without errors

@@ -28,7 +28,7 @@ supabase db push
 
 ## After Applying Migration
 
-1. Refresh the app: https://night-divides-the-day.vercel.app
+1. Refresh the app: https://its-good-to-be-king.vercel.app
 2. The login screen should be gone
 3. The app should load directly with all features available
 

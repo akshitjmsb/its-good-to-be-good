@@ -9,7 +9,7 @@
 ## 🔍 Immediate Next Steps
 
 ### 1. Test the Live Deployment
-Visit: **https://night-divides-the-day.vercel.app**
+Visit: **https://its-good-to-be-king.vercel.app**
 
 **Test Checklist:**
 - [ ] App loads without errors
@@ -61,7 +61,7 @@ Ensure your Supabase database has all tables:
 npm run vercel:projects
 
 # Check deployment logs
-npx vercel logs https://night-divides-the-day.vercel.app
+npx vercel logs https://its-good-to-be-king.vercel.app
 
 # View environment variables
 npm run vercel:env:ls

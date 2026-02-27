@@ -1,4 +1,4 @@
--- Database Schema for Night Divides the Day
+-- Database Schema for It's Good To Be King
 -- Initial migration: Create all tables, indexes, RLS policies, and triggers
 
 -- 1. Tasks table

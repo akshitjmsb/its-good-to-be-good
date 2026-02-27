@@ -1,4 +1,4 @@
--- Database Schema for Night Divides the Day
+-- Database Schema for It's Good To Be King
 -- Run this SQL in your Supabase SQL Editor
 
 -- 1. Tasks table

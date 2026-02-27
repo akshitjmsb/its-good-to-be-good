@@ -5,7 +5,7 @@
 ### 1. Perplexity API Format Fix
 - **Status**: ✅ Fixed and Deployed
 - **Changes**: Removed unsupported `response_format` parameter, added JSON extraction
-- **Deployment**: Live at https://night-divides-the-day.vercel.app
+- **Deployment**: Live at https://its-good-to-be-king.vercel.app
 - **Result**: Perplexity API errors should be resolved
 
 ### 2. Code Updates
@@ -69,7 +69,7 @@ The migration:
 
 After applying the migration, test:
 
-1. **Open the App**: https://night-divides-the-day.vercel.app
+1. **Open the App**: https://its-good-to-be-king.vercel.app
 2. **Check Browser Console** (F12):
    - ✅ No Supabase RLS errors
    - ✅ No "permission denied" errors
@@ -94,7 +94,7 @@ After applying the migration, test:
 
 **Migration File**: `MIGRATION_SQL.txt`  
 **Supabase SQL Editor**: https://supabase.com/dashboard/project/rwhevivopepxuenevcme/sql/new  
-**App URL**: https://night-divides-the-day.vercel.app
+**App URL**: https://its-good-to-be-king.vercel.app
 
 ---
 

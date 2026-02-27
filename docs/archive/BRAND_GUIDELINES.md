@@ -1,8 +1,8 @@
-# Night Divides the Day - Brand Guidelines
+# It's Good To Be King - Brand Guidelines
 
 ## Brand Identity Overview
 
-**Night Divides the Day** is a personal productivity and learning dashboard that embodies the philosophy of mindful, intentional living. The brand represents the intersection of technology and human wisdom, where digital tools serve to enhance rather than replace human reflection and growth.
+**It's Good To Be King** is a personal productivity and learning dashboard that embodies the philosophy of mindful, intentional living. The brand represents the intersection of technology and human wisdom, where digital tools serve to enhance rather than replace human reflection and growth.
 
 ---
 
@@ -335,7 +335,7 @@ The Analytics Card serves as the gold standard for complex component implementat
 ## Contact & Resources
 
 **Brand Owner**: Akshit Gupta  
-**Application**: Night Divides the Day  
+**Application**: It's Good To Be King  
 **Last Updated**: January 2025  
 
 ### Development Resources
@@ -346,4 +346,4 @@ The Analytics Card serves as the gold standard for complex component implementat
 
 ---
 
-*This brand guide ensures consistency across all development work while maintaining the unique identity and philosophy of Night Divides the Day.*
+*This brand guide ensures consistency across all development work while maintaining the unique identity and philosophy of It's Good To Be King.*

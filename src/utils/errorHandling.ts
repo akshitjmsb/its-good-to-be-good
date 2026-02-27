@@ -1,5 +1,5 @@
 /**
- * Centralized error handling utilities for the Mr. Mojo Rising application
+ * Centralized error handling utilities for It's Good To Be King
  */
 
 export enum ErrorType {

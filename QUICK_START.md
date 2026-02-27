@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with Night Divides the Day locally in a few minutes.
+Get up and running with It's Good To Be King locally in a few minutes.
 
 ## 1. Install Supabase CLI
 

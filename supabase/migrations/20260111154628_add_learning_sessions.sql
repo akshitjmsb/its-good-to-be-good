@@ -1,4 +1,4 @@
--- Migration: Add learning_sessions table for Mr. Mojo Rising
+-- Migration: Add learning_sessions table for It's Good To Be King
 
 -- 1. Create learning_sessions table (session-based instead of date-based)
 CREATE TABLE IF NOT EXISTS learning_sessions (

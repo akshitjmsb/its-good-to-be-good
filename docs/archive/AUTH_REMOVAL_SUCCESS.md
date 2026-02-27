@@ -3,7 +3,7 @@
 ## Status: Complete and Deployed
 
 The app is now **live without authentication** at:
-**https://night-divides-the-day.vercel.app**
+**https://its-good-to-be-king.vercel.app**
 
 ## What Was Done
 

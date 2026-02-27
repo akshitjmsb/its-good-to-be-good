@@ -2,9 +2,9 @@
 
 ## Pick A Role First
 
-1. `Builder`: [docs/agent-roles/builder.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-roles/builder.md)
-2. `Reviewer`: [docs/agent-roles/reviewer.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-roles/reviewer.md)
-3. `QA`: [docs/agent-roles/qa.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-roles/qa.md)
+1. `Builder`: [builder.md](./agent-roles/builder.md)
+2. `Reviewer`: [reviewer.md](./agent-roles/reviewer.md)
+3. `QA`: [qa.md](./agent-roles/qa.md)
 
 ## Safe Change Workflow
 

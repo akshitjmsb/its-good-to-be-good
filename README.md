@@ -1,4 +1,4 @@
-# Night Divides the Day
+# It's Good To Be King
 
 Personal dashboard application with task management, modal-based daily content, and a French translator module.
 
@@ -30,8 +30,8 @@ The home page visual language is intentionally locked to:
 
 Implementation lock points:
 
-- [index.html](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/index.html): `body.home-vintage-lock`
-- [home-lock.css](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/src/styles/home-lock.css): home-specific style tokens and guardrails
+- [index.html](./index.html): `body.home-vintage-lock`
+- [home-lock.css](./src/styles/home-lock.css): home-specific style tokens and guardrails
 
 Do not change these unless there is an explicit product decision to change the home visual direction.
 
@@ -94,16 +94,16 @@ Use these as primary docs:
 
 | Purpose                       | File                                                                                                               |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Project overview + setup      | [README.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/README.md)                           |
-| Fast local setup              | [QUICK_START.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/QUICK_START.md)                 |
-| Supabase local workflow       | [SUPABASE_SETUP.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/SUPABASE_SETUP.md)           |
-| Agent contract and guardrails | [AGENTS.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/AGENTS.md)                           |
-| Architecture map              | [docs/architecture.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/architecture.md)     |
-| Agent-operable architecture   | [docs/agent-architecture.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-architecture.md) |
-| Agent workflow playbook       | [docs/agent-playbook.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-playbook.md) |
-| Agent role playbooks          | [docs/agent-roles](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-roles) |
-| Tool/module contract          | [docs/tool-module-contract.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/tool-module-contract.md) |
-| Archived status/history docs  | [docs/archive](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/archive)                     |
+| Project overview + setup      | [README.md](./README.md) |
+| Fast local setup              | [QUICK_START.md](./QUICK_START.md) |
+| Supabase local workflow       | [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) |
+| Agent contract and guardrails | [AGENTS.md](./AGENTS.md) |
+| Architecture map              | [docs/architecture.md](./docs/architecture.md) |
+| Agent-operable architecture   | [docs/agent-architecture.md](./docs/agent-architecture.md) |
+| Agent workflow playbook       | [docs/agent-playbook.md](./docs/agent-playbook.md) |
+| Agent role playbooks          | [docs/agent-roles](./docs/agent-roles) |
+| Tool/module contract          | [docs/tool-module-contract.md](./docs/tool-module-contract.md) |
+| Archived status/history docs  | [docs/archive](./docs/archive) |
 
 ## Scripts
 
