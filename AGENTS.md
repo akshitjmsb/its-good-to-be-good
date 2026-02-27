@@ -67,6 +67,7 @@ Legacy/Archive:
 
 - root status markdowns moved to `docs/archive/`
 - avoid reintroducing removed feature paths unless requested
+- experimental or deprecated source lives under `archive/experimental-src/` and must not be imported into `src/*`
 
 ## Change Discipline
 

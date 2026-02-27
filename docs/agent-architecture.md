@@ -30,6 +30,11 @@ Purpose: Supabase and AI adapters.
 Allowed imports: `src/lib/*`, `src/utils/*`, `src/domains/*` types.
 Forbidden: UI imports and UI decisions.
 
+5. `archive/experimental-src/*`
+Purpose: archived experiments and deprecated source snapshots.
+Allowed imports: none from active runtime.
+Forbidden: any import from `src/*` to this path.
+
 ## AI Content Safety Boundary
 
 1. Treat all AI output as untrusted text.

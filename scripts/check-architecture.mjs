@@ -319,12 +319,44 @@ async function validateUnsafeAiHtmlInjection() {
   }
 }
 
+async function validateNoExperimentalImports() {
+  const files = await collectCodeFiles('src');
+  const fromImportRegex = /from\s+['"]([^'"]+)['"]/g;
+  const sideEffectImportRegex = /^\s*import\s+['"]([^'"]+)['"]/;
+
+  for (const relativeFile of files) {
+    const source = await readText(relativeFile);
+    const lines = source.split('\n');
+    lines.forEach((line, lineIndex) => {
+      const specifiers = [];
+
+      for (const match of line.matchAll(fromImportRegex)) {
+        specifiers.push(match[1]);
+      }
+
+      const sideEffectMatch = sideEffectImportRegex.exec(line);
+      if (sideEffectMatch) {
+        specifiers.push(sideEffectMatch[1]);
+      }
+
+      specifiers.forEach(specifier => {
+        if (specifier.includes('archive/experimental-src')) {
+          fail(
+            `Forbidden experimental import in ${relativeFile}:${lineIndex + 1} -> "${specifier}".`
+          );
+        }
+      });
+    });
+  }
+}
+
 async function main() {
   validateRegistryBasics();
   await validateLearnModuleWiring();
   await validateLayerBoundaries();
   await validateModalControllerBoundaries();
   await validateUnsafeAiHtmlInjection();
+  await validateNoExperimentalImports();
 
   if (errors.length > 0) {
     console.error('Architecture guard check failed:\n');
