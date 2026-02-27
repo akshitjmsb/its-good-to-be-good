@@ -1,65 +1,74 @@
 # Agent Playbook
 
+## Pick A Role First
+
+1. `Builder`: [docs/agent-roles/builder.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-roles/builder.md)
+2. `Reviewer`: [docs/agent-roles/reviewer.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-roles/reviewer.md)
+3. `QA`: [docs/agent-roles/qa.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-roles/qa.md)
+
 ## Safe Change Workflow
 
-1. Read `AGENTS.md` and `docs/architecture.md`.
-2. Read `docs/agent-architecture.md` for layer and safety contract details.
-3. Locate target boundaries (`app`, `domains`, `infra`, `components`).
-4. Implement smallest complete change.
-5. Run full verification:
+1. Read `AGENTS.md`, `docs/architecture.md`, and `docs/agent-architecture.md`.
+2. Stay inside layer boundaries (`app`, `components`, `domains`, `infra`).
+3. Implement the smallest complete change.
+4. Run one pre-PR command:
 
 ```bash
-npm run verify
+npm run agent:prepr
 ```
 
-6. Summarize:
+5. Share output in this order:
+- goal
+- changes
+- checks
+- risks
 
-- what changed
-- why
-- tests/checks run
-- residual risks
+## Agent Pre-PR Command
 
-## When Adding New Features
+`npm run agent:prepr` runs:
 
-1. Add/extend domain DTOs first.
-2. Add infra adapters with strict types.
-3. Wire UI last.
-4. Add tests before merging.
+1. `npm run verify` (type-check, lint, tests, architecture check, build)
+2. `npm run check:architecture` (explicit second architecture gate)
+3. `npm run test:changed` (only changed test files from git diff)
 
-## Where to Add Modules vs Tools
+Diff base for changed tests:
 
-### Add a New Module
+1. default: `origin/prod`
+2. override:
 
-1. Add the module entry to `src/domains/modules/registry.ts`.
-2. Use canonical module IDs and category (`journey` or `learn`).
+```bash
+AGENT_BASE_REF=origin/main npm run test:changed
+```
+
+## Where To Add Modules vs Tools
+
+### Add A New Module
+
+1. Add module metadata in `src/domains/modules/registry.data.js`.
+2. Keep canonical module IDs and category (`journey` or `learn`).
 3. Wire Learn module handlers through `src/components/modals/modalManager.ts`.
 4. Keep UI selectors and `data-module` aligned with the registry.
 
-### Add a New Tool
+### Add A New Tool
 
 1. Runtime tools belong in `src/infra/*` or `src/utils/*`.
 2. Dev tools belong in npm scripts, CI workflows, or setup scripts.
-3. Tools must not become user-facing modules unless intentionally promoted as product features.
+3. Tools must not become user-facing modules unless intentionally promoted.
 
 ## Migration / Schema Changes
 
-1. Create new migration under `supabase/migrations`.
-2. Keep runtime types aligned with migration constraints.
-3. Verify local migration apply with `npm run supabase:push`.
+1. Create a new migration in `supabase/migrations`.
+2. Keep runtime types aligned with DB constraints.
+3. Validate with `npm run supabase:push`.
 
-## Environment and Secrets
+## Environment And Secrets
 
-1. Use `.env.local` for all local secrets.
+1. Use `.env.local` for local secrets.
 2. Never commit tokens/keys.
-3. Use `.env.example` only for placeholders.
+3. Use `.env.example` for placeholders only.
 
 ## Behavior Locks
 
-1. Preserve home visual lock (`home-vintage-lock`) unless explicitly requested.
-2. Preserve local Supabase-first runtime for now.
-3. Preserve French page as standalone app entrypoint (`french.html`).
-
-## Required Checks Before Commit
-
-1. Run `npm run check:architecture`.
-2. Run `npm run verify`.
+1. Preserve `home-vintage-lock` unless explicitly requested.
+2. Preserve local Supabase-first runtime.
+3. Preserve `french.html` as standalone entrypoint.

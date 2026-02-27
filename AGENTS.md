@@ -46,6 +46,12 @@ Run and pass:
 npm run verify
 ```
 
+For agent PR prep, run:
+
+```bash
+npm run agent:prepr
+```
+
 ## Migration Protocol
 
 1. Schema changes require a new file under `supabase/migrations/`.

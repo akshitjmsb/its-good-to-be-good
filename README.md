@@ -101,6 +101,7 @@ Use these as primary docs:
 | Architecture map              | [docs/architecture.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/architecture.md)     |
 | Agent-operable architecture   | [docs/agent-architecture.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-architecture.md) |
 | Agent workflow playbook       | [docs/agent-playbook.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-playbook.md) |
+| Agent role playbooks          | [docs/agent-roles](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-roles) |
 | Tool/module contract          | [docs/tool-module-contract.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/tool-module-contract.md) |
 | Archived status/history docs  | [docs/archive](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/archive)                     |
 
@@ -112,6 +113,8 @@ npm run build
 npm run type-check
 npm run test
 npm run verify
+npm run test:changed
+npm run agent:prepr
 ```
 
 ## Security Notes
