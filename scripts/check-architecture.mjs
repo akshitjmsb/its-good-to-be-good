@@ -7,7 +7,9 @@ import { MODULE_REGISTRY_DATA } from '../src/domains/modules/registry.data.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = process.env.ARCH_CHECK_ROOT
+  ? path.resolve(process.env.ARCH_CHECK_ROOT)
+  : path.resolve(__dirname, '..');
 
 const EXPECTED_JOURNEY_MODULES = [
   'todo',
@@ -74,6 +76,7 @@ function isForbiddenLayerImport(specifier) {
 
 async function collectCodeFiles(relativeDir) {
   const startPath = path.join(repoRoot, relativeDir);
+  if (!(await fileExists(relativeDir))) return [];
   const files = [];
 
   async function walk(dirPath) {
@@ -223,22 +226,95 @@ async function validateLayerBoundaries() {
     ...(await collectCodeFiles('src/domains')),
     ...(await collectCodeFiles('src/infra')),
   ];
-  const importRegex = /from\s+['"]([^'"]+)['"]/g;
+  const fromImportRegex = /from\s+['"]([^'"]+)['"]/g;
+  const sideEffectImportRegex = /^\s*import\s+['"]([^'"]+)['"]/;
 
   for (const relativeFile of files) {
     const source = await readText(relativeFile);
     const lines = source.split('\n');
     lines.forEach((line, lineIndex) => {
-      const match = importRegex.exec(line);
-      importRegex.lastIndex = 0;
-      if (!match) return;
+      const specifiers = [];
 
-      const specifier = match[1];
-      if (isForbiddenLayerImport(specifier)) {
-        fail(
-          `Forbidden import in ${relativeFile}:${lineIndex + 1} -> "${specifier}" (domains/infra cannot import app/components).`
-        );
+      for (const match of line.matchAll(fromImportRegex)) {
+        specifiers.push(match[1]);
       }
+
+      const sideEffectMatch = sideEffectImportRegex.exec(line);
+      if (sideEffectMatch) {
+        specifiers.push(sideEffectMatch[1]);
+      }
+
+      specifiers.forEach(specifier => {
+        if (isForbiddenLayerImport(specifier)) {
+          fail(
+            `Forbidden import in ${relativeFile}:${lineIndex + 1} -> "${specifier}" (domains/infra cannot import app/components).`
+          );
+        }
+      });
+    });
+  }
+}
+
+async function validateModalControllerBoundaries() {
+  const checks = [
+    {
+      path: 'src/components/modals/analytics/controller.ts',
+      forbidden: '../../../api/perplexity',
+      required: '../../../domains/content/service',
+    },
+    {
+      path: 'src/components/modals/exercise/controller.ts',
+      forbidden: '../../../api/perplexity',
+      required: '../../../domains/content/service',
+    },
+  ];
+
+  for (const check of checks) {
+    if (!(await fileExists(check.path))) continue;
+    const source = await readText(check.path);
+    if (source.includes(check.forbidden)) {
+      fail(
+        `${check.path} must not import "${check.forbidden}". Use domain services instead.`
+      );
+    }
+    if (!source.includes(check.required)) {
+      fail(
+        `${check.path} must import "${check.required}" to keep UI -> domain -> infra layering.`
+      );
+    }
+  }
+}
+
+async function validateUnsafeAiHtmlInjection() {
+  const files = [
+    ...(await collectCodeFiles('src/app')),
+    ...(await collectCodeFiles('src/components')),
+    ...(await collectCodeFiles('src/pages')),
+    ...(await collectCodeFiles('src/apps')),
+  ];
+
+  const dangerousPatterns = [
+    {
+      regex: /innerHTML\s*=\s*.*response\.text/,
+      label: 'innerHTML with response.text',
+    },
+    {
+      regex: /setModalContent\([^)]*response\.text/,
+      label: 'setModalContent with response.text',
+    },
+  ];
+
+  for (const relativeFile of files) {
+    const source = await readText(relativeFile);
+    const lines = source.split('\n');
+    lines.forEach((line, lineIndex) => {
+      dangerousPatterns.forEach(pattern => {
+        if (pattern.regex.test(line)) {
+          fail(
+            `Unsafe AI HTML injection in ${relativeFile}:${lineIndex + 1} -> ${pattern.label}. Escape content before rendering.`
+          );
+        }
+      });
     });
   }
 }
@@ -247,6 +323,8 @@ async function main() {
   validateRegistryBasics();
   await validateLearnModuleWiring();
   await validateLayerBoundaries();
+  await validateModalControllerBoundaries();
+  await validateUnsafeAiHtmlInjection();
 
   if (errors.length > 0) {
     console.error('Architecture guard check failed:\n');

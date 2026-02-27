@@ -16,6 +16,14 @@ export interface ModalConfig {
     loadingMessage?: string;
 }
 
+export function saveSessionContent(
+    _topic: string,
+    _content: unknown,
+    _title?: string
+): void {
+    window.dispatchEvent(new CustomEvent('session-created'));
+}
+
 /**
  * Get modal elements by IDs
  */
@@ -47,7 +55,10 @@ export function showModalWithLoading(
 ): void {
     elements.modal.classList.remove('hidden');
     elements.modal.classList.add('flex');
-    elements.content.innerHTML = `<p>${loadingMessage}</p>`;
+    elements.content.textContent = '';
+    const message = document.createElement('p');
+    message.textContent = loadingMessage;
+    elements.content.appendChild(message);
 }
 
 /**
@@ -65,7 +76,10 @@ export function showModalError(
     elements: ModalElements,
     message: string = 'An error occurred. Please try again.'
 ): void {
-    elements.content.innerHTML = `<p>${message}</p>`;
+    elements.content.textContent = '';
+    const error = document.createElement('p');
+    error.textContent = message;
+    elements.content.appendChild(error);
 }
 
 /**

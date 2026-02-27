@@ -26,7 +26,7 @@ function showSyncStatus(message: string, isFinal = false): void {
   const statusEl = document.getElementById('sync-status');
   if (!statusEl) return;
 
-  statusEl.innerHTML = message;
+  statusEl.textContent = message;
   statusEl.classList.remove('hidden');
   if (!isFinal) return;
 

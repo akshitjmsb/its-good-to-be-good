@@ -3,15 +3,16 @@
 ## Safe Change Workflow
 
 1. Read `AGENTS.md` and `docs/architecture.md`.
-2. Locate target boundaries (`app`, `domains`, `infra`, `components`).
-3. Implement smallest complete change.
-4. Run full verification:
+2. Read `docs/agent-architecture.md` for layer and safety contract details.
+3. Locate target boundaries (`app`, `domains`, `infra`, `components`).
+4. Implement smallest complete change.
+5. Run full verification:
 
 ```bash
 npm run verify
 ```
 
-5. Summarize:
+6. Summarize:
 
 - what changed
 - why

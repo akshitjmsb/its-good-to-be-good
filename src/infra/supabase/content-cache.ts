@@ -1,6 +1,7 @@
 import { supabase } from '../../lib/supabase';
 
 export type CachedContentType =
+  | 'archive'
   | 'food-plan'
   | 'analytics'
   | 'transportation-physics'

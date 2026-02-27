@@ -55,8 +55,15 @@ Your task is to explain this to the junior engineer. Provide a response in JSON 
 
         const data = JSON.parse(response.text);
 
-        const problemExplanationHtml = data.problemExplanation.replace(/\n/g, '<br>');
-        const professionalApproachHtml = data.professionalApproach.replace(/\n/g, '<br>');
+        const problemExplanation =
+            typeof data.problemExplanation === 'string' ? data.problemExplanation : '';
+        const professionalApproach =
+            typeof data.professionalApproach === 'string' ? data.professionalApproach : '';
+        const formattedSolution =
+            typeof data.formattedSolution === 'string' ? data.formattedSolution : questionSolution;
+
+        const problemExplanationHtml = escapeHtml(problemExplanation).replace(/\n/g, '<br>');
+        const professionalApproachHtml = escapeHtml(professionalApproach).replace(/\n/g, '<br>');
 
         return `
             <div class="space-y-4">
@@ -70,7 +77,7 @@ Your task is to explain this to the junior engineer. Provide a response in JSON 
                 </div>
                 <div>
                     <h5 class="font-bold text-sm mb-1">Solution Code</h5>
-                    <div class="bg-gray-100 p-3 rounded-md text-sm"><pre class="text-gray-800">${escapeHtml(data.formattedSolution)}</pre></div>
+                    <div class="bg-gray-100 p-3 rounded-md text-sm"><pre class="text-gray-800">${escapeHtml(formattedSolution)}</pre></div>
                 </div>
             </div>
         `;

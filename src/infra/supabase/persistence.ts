@@ -1,8 +1,78 @@
 import { supabase } from '../../lib/supabase';
-import { PoetrySelection, Task } from '../../types';
+import { ChatMessage, PoetrySelection, Task } from '../../types';
 
 const MAX_POETRY_RECENTS = 6;
 const MAX_GUITAR_RECENT_PICKS = 30;
+const MAX_CHAT_HISTORY = 100;
+
+export async function loadChatHistory(userId: string): Promise<ChatMessage[]> {
+  try {
+    const { data, error } = await supabase
+      .from('chat_history')
+      .select('role, text')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+      .limit(MAX_CHAT_HISTORY);
+
+    if (error || !data) {
+      if (error) console.error('Error loading chat history from Supabase:', error);
+      return [];
+    }
+
+    return data
+      .filter(
+        item =>
+          (item.role === 'user' || item.role === 'model') &&
+          typeof item.text === 'string'
+      )
+      .map(item => ({ role: item.role, text: item.text }));
+  } catch (error) {
+    console.error('Error loading chat history:', error);
+    return [];
+  }
+}
+
+export async function saveChatHistory(
+  userId: string,
+  messages: ChatMessage[]
+): Promise<void> {
+  try {
+    const { error: deleteError } = await supabase
+      .from('chat_history')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('Error deleting existing chat history:', deleteError);
+    }
+
+    if (!messages.length) return;
+
+    const payload = messages
+      .slice(-MAX_CHAT_HISTORY)
+      .filter(
+        msg =>
+          (msg.role === 'user' || msg.role === 'model') &&
+          typeof msg.text === 'string' &&
+          msg.text.trim().length > 0
+      )
+      .map(msg => ({
+        user_id: userId,
+        role: msg.role,
+        text: msg.text,
+      }));
+
+    if (!payload.length) return;
+
+    const { error: insertError } = await supabase
+      .from('chat_history')
+      .insert(payload);
+    if (insertError) throw insertError;
+  } catch (error) {
+    console.error('Error saving chat history:', error);
+    throw error;
+  }
+}
 
 export async function loadTasks(userId: string): Promise<Task[]> {
   try {

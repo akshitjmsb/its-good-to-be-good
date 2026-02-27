@@ -115,7 +115,7 @@ export class ErrorHandler {
                 userMessage = `${error.context}: ${userMessage}`;
             }
 
-            statusEl.innerHTML = `⚠️ ${userMessage}`;
+            statusEl.textContent = `⚠️ ${userMessage}`;
             statusEl.classList.remove('hidden');
             
             // Auto-hide after 5 seconds

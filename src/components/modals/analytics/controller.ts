@@ -1,4 +1,4 @@
-import { getOrGenerateDynamicContent } from '../../../api/perplexity';
+import { getAnalyticsContent } from '../../../domains/content/service';
 import { DEFAULT_USER_ID } from '../../../core/default-user';
 import {
   MODAL_CONFIGS,
@@ -20,15 +20,21 @@ let analyticsData: AnalyticsContent | null = null;
 let keyboardListener: ((e: KeyboardEvent) => void) | null = null;
 let solutionButtonListener: ((e: Event) => void) | null = null;
 
+function cleanupKeyboardListener() {
+  if (!keyboardListener) return;
+  document.removeEventListener('keydown', keyboardListener);
+  keyboardListener = null;
+}
+
+function cleanupSolutionListener() {
+  if (!solutionButtonListener) return;
+  document.removeEventListener('click', solutionButtonListener);
+  solutionButtonListener = null;
+}
+
 export function cleanupAnalyticsEventListeners() {
-  if (keyboardListener) {
-    document.removeEventListener('keydown', keyboardListener);
-    keyboardListener = null;
-  }
-  if (solutionButtonListener) {
-    document.removeEventListener('click', solutionButtonListener);
-    solutionButtonListener = null;
-  }
+  cleanupKeyboardListener();
+  cleanupSolutionListener();
 }
 
 export async function showAnalyticsModal(date: Date) {
@@ -45,14 +51,11 @@ export async function showAnalyticsModal(date: Date) {
     return;
   }
 
+  cleanupAnalyticsEventListeners();
   showModalWithLoading(elements, MODAL_CONFIGS.analytics.loadingMessage);
 
   try {
-    analyticsData = (await getOrGenerateDynamicContent(
-      DEFAULT_USER_ID,
-      'analytics',
-      date
-    )) as AnalyticsContent;
+    analyticsData = await getAnalyticsContent(DEFAULT_USER_ID, date);
     if (!analyticsData) {
       setModalContent(
         elements,
@@ -162,199 +165,193 @@ export async function showAnalyticsModal(date: Date) {
 function setupCardNavigation() {
   const prevBtn = document.getElementById('prev-card-btn');
   const nextBtn = document.getElementById('next-card-btn');
-  const indicators = document.querySelectorAll('.card-indicator');
   const cardsWrapper = document.getElementById('analytics-cards-wrapper');
+  const indicatorsContainer = document.getElementById('card-indicators');
 
-  if (!prevBtn || !nextBtn || !cardsWrapper) return;
+  if (!prevBtn || !nextBtn || !cardsWrapper || !indicatorsContainer) return;
 
-  // Previous button
-  prevBtn.addEventListener('click', () => {
+  prevBtn.onclick = () => {
     if (currentCardIndex > 0) {
       currentCardIndex--;
       updateCardPosition();
       updateNavigationState();
     }
-  });
+  };
 
-  // Next button
-  nextBtn.addEventListener('click', () => {
+  nextBtn.onclick = () => {
     if (currentCardIndex < totalCards - 1) {
       currentCardIndex++;
       updateCardPosition();
       updateNavigationState();
     }
-  });
+  };
 
-  // Indicator clicks
-  indicators.forEach((indicator, index) => {
-    indicator.addEventListener('click', () => {
+  indicatorsContainer.onclick = event => {
+    const target = (event.target as HTMLElement).closest(
+      '.card-indicator'
+    ) as HTMLElement | null;
+    if (!target) return;
+    const index = Number.parseInt(target.dataset.index ?? '', 10);
+    if (!Number.isNaN(index)) {
       currentCardIndex = index;
       updateCardPosition();
       updateNavigationState();
-    });
-  });
+    }
+  };
 
-  // Enhanced touch/swipe support for mobile
-  let startX = 0;
-  let startY = 0;
-  let isDragging = false;
-  let currentX = 0;
-  let isSwipeGesture = false;
+  if (cardsWrapper.dataset.navigationBound !== 'true') {
+    // Enhanced touch/swipe support for mobile
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+    let currentX = 0;
+    let isSwipeGesture = false;
 
-  cardsWrapper.addEventListener(
-    'touchstart',
-    e => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      currentX = startX;
-      isDragging = true;
-      isSwipeGesture = false;
+    cardsWrapper.addEventListener(
+      'touchstart',
+      e => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        currentX = startX;
+        isDragging = true;
+        isSwipeGesture = false;
+        cardsWrapper.style.transition = 'none';
+      },
+      { passive: true }
+    );
+
+    cardsWrapper.addEventListener(
+      'touchmove',
+      e => {
+        if (!isDragging) return;
+
+        currentX = e.touches[0].clientX;
+        const diffX = startX - currentX;
+        const diffY = startY - e.touches[0].clientY;
+
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+          isSwipeGesture = true;
+          e.preventDefault();
+
+          const translateX =
+            -currentCardIndex * 100 + (diffX / window.innerWidth) * 100;
+          cardsWrapper.style.transform = `translateX(${translateX}%)`;
+        }
+      },
+      { passive: false }
+    );
+
+    cardsWrapper.addEventListener(
+      'touchend',
+      e => {
+        if (!isDragging) return;
+        isDragging = false;
+        cardsWrapper.style.transition =
+          'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+
+        if (!isSwipeGesture) return;
+
+        const endX = e.changedTouches[0].clientX;
+        const diffX = startX - endX;
+        const swipeThreshold = window.innerWidth * 0.15;
+
+        if (Math.abs(diffX) > swipeThreshold) {
+          if (diffX > 0 && currentCardIndex < totalCards - 1) {
+            currentCardIndex++;
+            updateCardPosition();
+            updateNavigationState();
+          } else if (diffX < 0 && currentCardIndex > 0) {
+            currentCardIndex--;
+            updateCardPosition();
+            updateNavigationState();
+          } else {
+            updateCardPosition();
+          }
+        } else {
+          updateCardPosition();
+        }
+      },
+      { passive: true }
+    );
+
+    // Enhanced mouse drag support for desktop
+    let isMouseDown = false;
+    let mouseStartX = 0;
+    let mouseCurrentX = 0;
+    let isMouseDrag = false;
+
+    cardsWrapper.addEventListener('mousedown', e => {
+      isMouseDown = true;
+      mouseStartX = e.clientX;
+      mouseCurrentX = mouseStartX;
+      isMouseDrag = false;
+      cardsWrapper.style.cursor = 'grabbing';
       cardsWrapper.style.transition = 'none';
-    },
-    { passive: true }
-  );
+      cardsWrapper.style.userSelect = 'none';
+    });
 
-  cardsWrapper.addEventListener(
-    'touchmove',
-    e => {
-      if (!isDragging) return;
+    cardsWrapper.addEventListener('mousemove', e => {
+      if (!isMouseDown) return;
 
-      currentX = e.touches[0].clientX;
-      const diffX = startX - currentX;
-      const diffY = startY - e.touches[0].clientY;
+      mouseCurrentX = e.clientX;
+      const diffX = mouseStartX - mouseCurrentX;
 
-      // Determine if this is a horizontal swipe gesture
-      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
-        isSwipeGesture = true;
+      if (Math.abs(diffX) > 10) {
+        isMouseDrag = true;
         e.preventDefault();
 
-        // Add visual feedback during swipe
         const translateX =
           -currentCardIndex * 100 + (diffX / window.innerWidth) * 100;
         cardsWrapper.style.transform = `translateX(${translateX}%)`;
       }
-    },
-    { passive: false }
-  );
+    });
 
-  cardsWrapper.addEventListener(
-    'touchend',
-    e => {
-      if (!isDragging) return;
-      isDragging = false;
-      cardsWrapper.style.transition =
-        'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-
-      if (!isSwipeGesture) return;
-
-      const endX = e.changedTouches[0].clientX;
-      const diffX = startX - endX;
-      const swipeThreshold = window.innerWidth * 0.15; // 15% of screen width
-
-      if (Math.abs(diffX) > swipeThreshold) {
-        if (diffX > 0 && currentCardIndex < totalCards - 1) {
-          // Swipe left - next card
-          currentCardIndex++;
-          updateCardPosition();
-          updateNavigationState();
-        } else if (diffX < 0 && currentCardIndex > 0) {
-          // Swipe right - previous card
-          currentCardIndex--;
-          updateCardPosition();
-          updateNavigationState();
-        } else {
-          // Snap back to current position
-          updateCardPosition();
-        }
-      } else {
-        // Snap back to current position
-        updateCardPosition();
-      }
-    },
-    { passive: true }
-  );
-
-  // Enhanced mouse drag support for desktop
-  let isMouseDown = false;
-  let mouseStartX = 0;
-  let mouseCurrentX = 0;
-  let isMouseDrag = false;
-
-  cardsWrapper.addEventListener('mousedown', e => {
-    isMouseDown = true;
-    mouseStartX = e.clientX;
-    mouseCurrentX = mouseStartX;
-    isMouseDrag = false;
-    cardsWrapper.style.cursor = 'grabbing';
-    cardsWrapper.style.transition = 'none';
-    cardsWrapper.style.userSelect = 'none';
-  });
-
-  cardsWrapper.addEventListener('mousemove', e => {
-    if (!isMouseDown) return;
-
-    mouseCurrentX = e.clientX;
-    const diffX = mouseStartX - mouseCurrentX;
-
-    if (Math.abs(diffX) > 10) {
-      isMouseDrag = true;
-      e.preventDefault();
-
-      // Add visual feedback during drag
-      const translateX =
-        -currentCardIndex * 100 + (diffX / window.innerWidth) * 100;
-      cardsWrapper.style.transform = `translateX(${translateX}%)`;
-    }
-  });
-
-  cardsWrapper.addEventListener('mouseup', e => {
-    if (!isMouseDown) return;
-    isMouseDown = false;
-    cardsWrapper.style.cursor = 'grab';
-    cardsWrapper.style.transition =
-      'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-    cardsWrapper.style.userSelect = 'auto';
-
-    if (!isMouseDrag) return;
-
-    const mouseEndX = e.clientX;
-    const diffX = mouseStartX - mouseEndX;
-    const dragThreshold = window.innerWidth * 0.1; // 10% of screen width
-
-    if (Math.abs(diffX) > dragThreshold) {
-      if (diffX > 0 && currentCardIndex < totalCards - 1) {
-        // Drag left - next card
-        currentCardIndex++;
-        updateCardPosition();
-        updateNavigationState();
-      } else if (diffX < 0 && currentCardIndex > 0) {
-        // Drag right - previous card
-        currentCardIndex--;
-        updateCardPosition();
-        updateNavigationState();
-      } else {
-        // Snap back to current position
-        updateCardPosition();
-      }
-    } else {
-      // Snap back to current position
-      updateCardPosition();
-    }
-  });
-
-  cardsWrapper.addEventListener('mouseleave', () => {
-    if (isMouseDown) {
+    cardsWrapper.addEventListener('mouseup', e => {
+      if (!isMouseDown) return;
       isMouseDown = false;
       cardsWrapper.style.cursor = 'grab';
       cardsWrapper.style.transition =
         'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
       cardsWrapper.style.userSelect = 'auto';
-      updateCardPosition();
-    }
-  });
 
-  // Add keyboard navigation support
-  cleanupAnalyticsEventListeners(); // Clean up any existing listeners
+      if (!isMouseDrag) return;
+
+      const mouseEndX = e.clientX;
+      const diffX = mouseStartX - mouseEndX;
+      const dragThreshold = window.innerWidth * 0.1;
+
+      if (Math.abs(diffX) > dragThreshold) {
+        if (diffX > 0 && currentCardIndex < totalCards - 1) {
+          currentCardIndex++;
+          updateCardPosition();
+          updateNavigationState();
+        } else if (diffX < 0 && currentCardIndex > 0) {
+          currentCardIndex--;
+          updateCardPosition();
+          updateNavigationState();
+        } else {
+          updateCardPosition();
+        }
+      } else {
+        updateCardPosition();
+      }
+    });
+
+    cardsWrapper.addEventListener('mouseleave', () => {
+      if (isMouseDown) {
+        isMouseDown = false;
+        cardsWrapper.style.cursor = 'grab';
+        cardsWrapper.style.transition =
+          'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        cardsWrapper.style.userSelect = 'auto';
+        updateCardPosition();
+      }
+    });
+
+    cardsWrapper.dataset.navigationBound = 'true';
+  }
+
+  cleanupKeyboardListener();
   keyboardListener = (e: KeyboardEvent) => {
     const modal = document.getElementById('analytics-engineer-modal');
     if (!modal || modal.classList.contains('hidden')) return;
@@ -370,7 +367,7 @@ function setupCardNavigation() {
     } else if (e.key === 'Escape') {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-      cleanupAnalyticsEventListeners(); // Clean up when modal closes
+      cleanupAnalyticsEventListeners();
     }
   };
   document.addEventListener('keydown', keyboardListener);
@@ -422,7 +419,7 @@ function updateNavigationState() {
 
 function setupCardInteractions() {
   // Handle solution button clicks
-  cleanupAnalyticsEventListeners(); // Clean up any existing listeners
+  cleanupSolutionListener();
   solutionButtonListener = async (e: Event) => {
     const target = e.target as HTMLElement;
     if (target.classList.contains('analytics-card-solution-btn')) {

@@ -1,5 +1,6 @@
 import { getFoodPlan } from "../../domains/content/service";
 import { ErrorHandler } from "../../utils/errorHandling";
+import { createSafeHtml } from "../../utils/escapeHtml";
 import { DEFAULT_USER_ID } from "../../core/default-user";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
 
@@ -15,7 +16,7 @@ export async function showFoodModal(
 
     try {
         const plan = await getFoodPlan(DEFAULT_USER_ID, date, key);
-        setModalContent(elements, plan.replace(/\n/g, '<br>'));
+        setModalContent(elements, createSafeHtml(plan, { maxLength: 8000 }));
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, 'Food modal');
         ErrorHandler.logError(appError);

@@ -1,4 +1,5 @@
 import { ai } from "../../api/perplexity";
+import { createSafeHtml } from "../../utils/escapeHtml";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 
 export async function fetchAndShowWorldOrder() {
@@ -24,11 +25,10 @@ export async function fetchAndShowWorldOrder() {
         });
 
         if (response.text) {
-            const formattedText = response.text
-                .replace(/\*/g, '')
-                .replace(/\n/g, '<br>')
-                .replace(/^(.*?):<br>/gm, '<strong class="block mt-3 mb-1">$1:</strong>');
-            setModalContent(elements, `<div class="mb-4">${formattedText}</div>`);
+            const safeText = createSafeHtml(response.text.replace(/\*/g, ''), {
+                maxLength: 15000
+            });
+            setModalContent(elements, `<div class="mb-4">${safeText}</div>`);
         } else {
             showModalError(elements, 'Could not retrieve any news data at this time.');
         }

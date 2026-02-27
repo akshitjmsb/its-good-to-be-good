@@ -1,6 +1,6 @@
 import { getPhysicsContent } from "../../domains/content/service";
 import { DEFAULT_USER_ID } from "../../core/default-user";
-import { escapeHtml } from "../../utils/escapeHtml";
+import { createSafeHtml } from "../../utils/escapeHtml";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, setModalTitle, MODAL_CONFIGS } from "./factory";
 
 export async function showHoodModal(
@@ -21,8 +21,11 @@ export async function showHoodModal(
             return;
         }
 
-        setModalTitle(elements, `Under the Hood: ${escapeHtml(data.title)}`);
-        setModalContent(elements, data.explanation.replace(/\n/g, '<br>'));
+        setModalTitle(elements, `Under the Hood: ${data.title}`);
+        setModalContent(
+            elements,
+            createSafeHtml(data.explanation, { maxLength: 12000 })
+        );
     } catch (error) {
         console.error("Error showing under the hood modal:", error);
         setModalTitle(elements, 'Error');

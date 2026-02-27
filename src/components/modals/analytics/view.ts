@@ -10,6 +10,7 @@ export function createAnalyticsCardHTML(
   if (topic.isQuestion) {
     const encodedPrompt = btoa(topic.data.prompt);
     const encodedSolution = btoa(topic.data.solution);
+    const safePrompt = escapeHtml(topic.data.prompt).replace(/\n/g, '<br>');
 
     return `
       <div class="analytics-card" id="${cardId}">
@@ -19,7 +20,7 @@ export function createAnalyticsCardHTML(
         </div>
         <div class="analytics-card-content">
           <div class="analytics-card-question">
-            <p class="text-sm leading-relaxed">${topic.data.prompt.replace(/\n/g, '<br>')}</p>
+            <p class="text-sm leading-relaxed">${safePrompt}</p>
           </div>
           <button class="analytics-card-solution-btn"
                   data-prompt="${encodedPrompt}"
@@ -35,7 +36,10 @@ export function createAnalyticsCardHTML(
 
   const content = topic.data as unknown as Record<string, unknown>;
   if (typeof content.explanation === 'string') {
-    const formattedExplanation = content.explanation.replace(/\n/g, '<br>');
+    const formattedExplanation = escapeHtml(content.explanation).replace(
+      /\n/g,
+      '<br>'
+    );
     return `
       <div class="analytics-card" id="${cardId}">
         <div class="analytics-card-header">

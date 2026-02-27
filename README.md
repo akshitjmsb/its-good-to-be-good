@@ -99,6 +99,7 @@ Use these as primary docs:
 | Supabase local workflow       | [SUPABASE_SETUP.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/SUPABASE_SETUP.md)           |
 | Agent contract and guardrails | [AGENTS.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/AGENTS.md)                           |
 | Architecture map              | [docs/architecture.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/architecture.md)     |
+| Agent-operable architecture   | [docs/agent-architecture.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-architecture.md) |
 | Agent workflow playbook       | [docs/agent-playbook.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/agent-playbook.md) |
 | Tool/module contract          | [docs/tool-module-contract.md](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/tool-module-contract.md) |
 | Archived status/history docs  | [docs/archive](/Users/akshitgupta/Desktop/Repo/night-divides-the-day-development/docs/archive)                     |

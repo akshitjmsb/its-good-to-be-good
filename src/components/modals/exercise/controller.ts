@@ -1,4 +1,4 @@
-import { generateWeeklyExerciseContent } from '../../../api/perplexity';
+import { getWeeklyExercise } from '../../../domains/content/service';
 import { DEFAULT_USER_ID } from '../../../core/default-user';
 import { ErrorHandler } from '../../../utils/errorHandling';
 import {
@@ -20,7 +20,7 @@ export async function showExerciseModal(date: Date) {
 
   try {
     const startOfWeek = getStartOfWeek(date);
-    const weeklyData = (await generateWeeklyExerciseContent(
+    const weeklyData = (await getWeeklyExercise(
       DEFAULT_USER_ID,
       startOfWeek
     )) as WeeklyExerciseContent | null;

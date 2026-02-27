@@ -1,6 +1,7 @@
 import { renderTasks } from '../components/tasks';
 import { MultilingualQuote } from '../components/reflection';
 import { Task } from '../types';
+import { escapeHtml } from '../utils/escapeHtml';
 
 export function updateDynamicIcon(): void {
   const iconEl = document.getElementById(
@@ -15,13 +16,25 @@ export function updateDynamicIcon(): void {
 export function renderQuoteHTML(quote: MultilingualQuote): string {
   const isMultilingual =
     quote.language !== 'en' && (quote.transliteration || quote.translation);
+  const language = ['en', 'hi', 'ur', 'pa'].includes(quote.language)
+    ? quote.language
+    : 'en';
+  const safeQuote = escapeHtml(quote.quote).replace(/\n/g, '<br>');
+  const safeTransliteration = quote.transliteration
+    ? escapeHtml(quote.transliteration).replace(/\n/g, '<br>')
+    : '';
+  const safeTranslation = quote.translation
+    ? escapeHtml(quote.translation).replace(/\n/g, '<br>')
+    : '';
+  const safeAuthor = escapeHtml(quote.author);
+
   return `
-    <div class="quote-original ${isMultilingual ? 'multilingual' : ''}" lang="${quote.language}">
-      "${quote.quote}"
+    <div class="quote-original ${isMultilingual ? 'multilingual' : ''}" lang="${language}">
+      "${safeQuote}"
     </div>
-    ${quote.transliteration ? `<div class="quote-transliteration">${quote.transliteration}</div>` : ''}
-    ${quote.translation ? `<div class="quote-translation">"${quote.translation}"</div>` : ''}
-    <div class="quote-author">— ${quote.author}</div>
+    ${safeTransliteration ? `<div class="quote-transliteration">${safeTransliteration}</div>` : ''}
+    ${safeTranslation ? `<div class="quote-translation">"${safeTranslation}"</div>` : ''}
+    <div class="quote-author">— ${safeAuthor}</div>
   `;
 }
 
