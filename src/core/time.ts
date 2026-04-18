@@ -1,5 +1,5 @@
 /**
- * Time utilities for Co Create
+ * Time utilities for It's Good To Be King
  * Provides canonical time handling for consistent date operations
  */
 

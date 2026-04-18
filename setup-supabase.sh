@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 
+# Sets up the cloud Supabase workflow for this repo:
+#   - verifies CLI + linked project
+#   - loads secrets from .env.local (SUPABASE_DB_PASSWORD, etc.)
+#   - pushes pending migrations to the linked cloud project
+#
+# Use `npm run supabase:start` + `npm run supabase:push:local` for the optional
+# local Docker fallback.
+
 set -euo pipefail
 
-echo "Starting local Supabase setup..."
+PROJECT_REF="rwhevivopepxuenevcme"
+ENV_FILE=".env.local"
+
+echo "Starting cloud Supabase setup..."
 
 if ! command -v supabase >/dev/null 2>&1; then
   echo "Supabase CLI is not installed."
@@ -10,21 +21,31 @@ if ! command -v supabase >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Ensuring local Supabase services are running..."
-supabase start
+if [[ ! -f "${ENV_FILE}" ]]; then
+  echo "${ENV_FILE} not found. Copy .env.example to .env.local and fill it in."
+  exit 1
+fi
 
-echo "Applying local migrations..."
-supabase db push --local
+set -a
+# shellcheck disable=SC1090
+. "./${ENV_FILE}"
+set +a
 
-status_json="$(supabase status --output json)"
-api_url="$(printf '%s' "$status_json" | sed -n 's/.*"API_URL": *"\([^"]*\)".*/\1/p')"
-publishable_key="$(printf '%s' "$status_json" | sed -n 's/.*"PUBLISHABLE_KEY": *"\([^"]*\)".*/\1/p')"
+if [[ -z "${SUPABASE_DB_PASSWORD:-}" ]]; then
+  echo "SUPABASE_DB_PASSWORD is missing from ${ENV_FILE}."
+  echo "Reset it in Supabase dashboard -> Project Settings -> Database, then paste into ${ENV_FILE}."
+  exit 1
+fi
+
+linked_ref="$(cat supabase/.temp/project-ref 2>/dev/null || true)"
+if [[ "${linked_ref}" != "${PROJECT_REF}" ]]; then
+  echo "Linking repo to cloud project ${PROJECT_REF}..."
+  supabase link --project-ref "${PROJECT_REF}"
+fi
+
+echo "Applying pending migrations to the cloud DB..."
+supabase db push --linked --yes
 
 echo ""
-echo "Local Supabase setup complete."
-echo "API_URL=${api_url}"
-echo "PUBLISHABLE_KEY=${publishable_key}"
-echo ""
-echo "Set your frontend env values in .env.local:"
-echo "VITE_SUPABASE_URL=${api_url}"
-echo "VITE_SUPABASE_ANON_KEY=${publishable_key}"
+echo "Cloud Supabase setup complete."
+echo "API_URL=https://${PROJECT_REF}.supabase.co"
