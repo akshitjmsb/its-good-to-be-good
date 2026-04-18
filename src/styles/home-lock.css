@@ -33,6 +33,11 @@ body.home-vintage-lock h3 {
 
 body.home-vintage-lock .logo-svg {
     stroke: var(--home-ink);
+    color: var(--home-ink);
+}
+
+body.home-vintage-lock .logo-svg * {
+    stroke: var(--home-ink);
 }
 
 body.home-vintage-lock .preview-card,

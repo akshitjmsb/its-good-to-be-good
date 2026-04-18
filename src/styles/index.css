@@ -330,7 +330,8 @@
     
     /* Logo adjustments */
     .logo-svg {
-        width: 40px !important;
+        width: 64px !important;
+        height: auto !important;
     }
     
     /* Current datetime */

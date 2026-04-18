@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 200" width="520" height="200">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Special+Elite&amp;display=swap');
+    </style>
+  </defs>
+
+  <!-- Crown icon — stroke style, monochrome, minimal -->
+  <!-- Zigzag outline: left peak (192,48) → valley (222,66) → center peak (260,18) → valley (298,66) → right peak (328,48) -->
+  <polyline
+    points="192,82 192,48 222,66 260,18 298,66 328,48 328,82"
+    fill="none"
+    stroke="#111111"
+    stroke-width="2.5"
+    stroke-linejoin="miter"
+    stroke-linecap="square"
+  />
+
+  <!-- Crown band (filled base) -->
+  <rect x="192" y="74" width="136" height="11" fill="#111111"/>
+
+  <!-- Peak tip dots -->
+  <circle cx="192" cy="48" r="4" fill="#111111"/>
+  <circle cx="260" cy="18" r="4" fill="#111111"/>
+  <circle cx="328" cy="48" r="4" fill="#111111"/>
+
+  <!-- Primary wordmark -->
+  <text
+    x="260"
+    y="143"
+    font-family="'Special Elite', monospace"
+    font-size="23"
+    fill="#111111"
+    text-anchor="middle"
+    letter-spacing="5"
+  >IT&#x2019;S GOOD TO BE KING</text>
+
+  <!-- Decorative rule below text -->
+  <line x1="108" y1="158" x2="412" y2="158" stroke="#111111" stroke-width="0.75" opacity="0.3"/>
+</svg>

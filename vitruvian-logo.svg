@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 560" width="520" height="560">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Special+Elite&amp;display=swap');
+      .geo  { fill: none; stroke: #111; stroke-width: 1.2; }
+      .bdy  { fill: none; stroke: #111; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .dtl  { fill: none; stroke: #111; stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; }
+      .dot  { fill: #111; stroke: none; }
+    </style>
+  </defs>
+
+  <!-- ════════════════════════════════
+       GEOMETRY  —  circle + square
+       Circle: cx=260 cy=252 r=208
+       Square: 52,84 → 468,500 (416×416)
+  ════════════════════════════════ -->
+  <circle cx="260" cy="252" r="208" class="geo"/>
+  <rect x="52" y="84" width="416" height="416" class="geo"/>
+
+  <!-- ════════ HEAD ════════ -->
+  <circle cx="260" cy="114" r="32" class="bdy"/>
+
+  <!-- Curly hair -->
+  <path d="M 229,101 C 227,91 231,83 237,85 C 236,77 240,72 245,79
+           C 246,72 250,68 254,79" class="dtl"/>
+  <path d="M 254,79 C 256,70 260,68 264,79" class="dtl"/>
+  <path d="M 264,79 C 268,70 272,70 275,79 C 278,72 283,72 284,83
+           C 289,80 290,91 288,101" class="dtl"/>
+  <!-- Hair arc over crown -->
+  <path d="M 230,104 C 232,90 244,84 260,84 C 276,84 288,90 290,104" class="dtl"/>
+
+  <!-- Ears -->
+  <path d="M 228,114 C 222,112 221,121 227,123" class="dtl"/>
+  <path d="M 292,114 C 298,112 299,121 293,123" class="dtl"/>
+
+  <!-- Eyes -->
+  <ellipse cx="250" cy="110" rx="4" ry="3" class="dtl" style="fill:#111"/>
+  <ellipse cx="270" cy="110" rx="4" ry="3" class="dtl" style="fill:#111"/>
+
+  <!-- Nose -->
+  <path d="M 259,116 L 256,125 C 257,127 263,127 264,125 L 261,116" class="dtl" style="stroke-width:0.8"/>
+
+  <!-- Mouth -->
+  <path d="M 251,131 C 256,135 264,135 269,131" class="dtl"/>
+
+  <!-- ════════ NECK ════════ -->
+  <path d="M 248,146 L 244,166" class="bdy"/>
+  <path d="M 272,146 L 276,166" class="bdy"/>
+
+  <!-- Collarbone / trapezius -->
+  <path d="M 244,166 Q 210,162 150,170" class="dtl"/>
+  <path d="M 276,166 Q 310,162 370,170" class="dtl"/>
+
+  <!-- ════════ TORSO ════════ -->
+  <!-- Left outline: shoulder → chest → waist → hip → crotch -->
+  <path d="M 150,170
+           C 133,177 127,194 136,214
+           C 140,226 144,235 216,255
+           L 206,292
+           C 200,305 197,318 214,332
+           L 240,340" class="bdy"/>
+
+  <!-- Right outline -->
+  <path d="M 370,170
+           C 387,177 393,194 384,214
+           C 380,226 376,235 304,255
+           L 314,292
+           C 320,305 323,318 306,332
+           L 280,340" class="bdy"/>
+
+  <!-- Crotch join -->
+  <path d="M 240,340 Q 260,348 280,340" class="bdy"/>
+
+  <!-- Sternum -->
+  <line x1="260" y1="166" x2="260" y2="224" class="dtl"/>
+
+  <!-- Pectoral lines -->
+  <path d="M 244,170 C 238,180 228,192 218,202" class="dtl"/>
+  <path d="M 276,170 C 282,180 292,192 302,202" class="dtl"/>
+
+  <!-- Abdominal segments -->
+  <path d="M 230,216 L 252,216  M 268,216 L 290,216" class="dtl" style="stroke-width:0.75"/>
+  <path d="M 226,228 L 252,228  M 268,228 L 294,228" class="dtl" style="stroke-width:0.75"/>
+  <path d="M 222,240 L 252,240  M 268,240 L 298,240" class="dtl" style="stroke-width:0.75"/>
+
+  <!-- Navel -->
+  <circle cx="260" cy="254" r="2.8" class="dot"/>
+
+  <!-- Hip crease -->
+  <path d="M 214,332 Q 228,325 240,340" class="dtl"/>
+  <path d="M 306,332 Q 292,325 280,340" class="dtl"/>
+
+  <!-- ════════ ARMS — HORIZONTAL ════════ -->
+  <!-- Left: shoulder → elbow → wrist → hand  (endpoint on circle ~x=70,y=170) -->
+  <path d="M 150,170 C 124,173 98,175 74,176 C 66,177 58,176 52,178" class="bdy"/>
+  <!-- Elbow crease -->
+  <path d="M 104,174 C 100,178 98,178 96,175" class="dtl"/>
+  <!-- Left hand / fingers -->
+  <path d="M 52,175 L 46,170  M 51,177 L 45,176  M 52,179 L 47,181  M 54,181 L 53,186" class="dtl"/>
+
+  <!-- Right -->
+  <path d="M 370,170 C 396,173 422,175 446,176 C 454,177 462,176 468,178" class="bdy"/>
+  <path d="M 416,174 C 420,178 422,178 424,175" class="dtl"/>
+  <path d="M 468,175 L 474,170  M 469,177 L 475,176  M 468,179 L 473,181  M 466,181 L 467,186" class="dtl"/>
+
+  <!-- ════════ ARMS — RAISED (~30° above H, hands on circle) ════════ -->
+  <!-- Left: hand lands ≈ (78,150) on circle -->
+  <path d="M 150,170 C 128,157 106,143 86,131 C 78,126 70,120 62,112" class="bdy"/>
+  <path d="M 62,112 L 56,106  M 60,114 L 54,113  M 64,110 L 62,104  M 66,114 L 65,108" class="dtl"/>
+
+  <!-- Right: hand ≈ (442,150) -->
+  <path d="M 370,170 C 392,157 414,143 434,131 C 442,126 450,120 458,112" class="bdy"/>
+  <path d="M 458,112 L 464,106  M 460,114 L 466,113  M 456,110 L 458,104  M 454,114 L 455,108" class="dtl"/>
+
+  <!-- ════════ LEGS — TOGETHER ════════ -->
+  <!-- Left -->
+  <path d="M 240,340 C 236,360 232,383 234,406
+           C 235,424 236,447 236,464 L 234,496" class="bdy"/>
+  <!-- Right -->
+  <path d="M 280,340 C 284,360 288,383 286,406
+           C 285,424 284,447 284,464 L 286,496" class="bdy"/>
+
+  <!-- Inner thigh lines -->
+  <path d="M 242,340 C 243,360 244,382 244,406" class="dtl" style="stroke-width:0.7"/>
+  <path d="M 278,340 C 277,360 276,382 276,406" class="dtl" style="stroke-width:0.7"/>
+
+  <!-- Kneecaps -->
+  <path d="M 232,402 Q 238,406 244,402" class="dtl"/>
+  <path d="M 276,402 Q 282,406 288,402" class="dtl"/>
+
+  <!-- Calf shading -->
+  <path d="M 231,406 C 228,422 227,442 229,460" class="dtl" style="stroke-width:0.7"/>
+  <path d="M 289,406 C 292,422 293,442 291,460" class="dtl" style="stroke-width:0.7"/>
+
+  <!-- Left foot (together) -->
+  <path d="M 234,496 C 224,500 208,500 194,496" class="bdy"/>
+  <path d="M 194,496 C 192,493 194,490 197,490" class="dtl"/>
+
+  <!-- Right foot (together) -->
+  <path d="M 286,496 C 296,500 312,500 326,496" class="bdy"/>
+  <path d="M 326,496 C 328,493 326,490 323,490" class="dtl"/>
+
+  <!-- ════════ LEGS — SPREAD ════════ -->
+  <!-- Left -->
+  <path d="M 240,340 C 220,362 196,388 170,413
+           C 152,432 133,452 114,474" class="bdy"/>
+  <!-- Right -->
+  <path d="M 280,340 C 300,362 324,388 350,413
+           C 368,432 387,452 406,474" class="bdy"/>
+
+  <!-- Inner spread leg lines -->
+  <path d="M 242,340 C 223,360 200,384 175,408" class="dtl" style="stroke-width:0.7"/>
+  <path d="M 278,340 C 297,360 320,384 345,408" class="dtl" style="stroke-width:0.7"/>
+
+  <!-- Spread kneecaps -->
+  <path d="M 171,411 Q 177,415 184,412" class="dtl"/>
+  <path d="M 336,412 Q 342,416 349,413" class="dtl"/>
+
+  <!-- Left foot (spread) -->
+  <path d="M 114,474 C 102,478 88,479 76,475" class="bdy"/>
+  <path d="M 76,475 C 74,472 76,469 79,469" class="dtl"/>
+
+  <!-- Right foot (spread) -->
+  <path d="M 406,474 C 418,478 432,479 444,475" class="bdy"/>
+  <path d="M 444,475 C 446,472 444,469 441,469" class="dtl"/>
+
+  <!-- ════════ WORDMARK ════════ -->
+  <text
+    x="260" y="538"
+    font-family="'Special Elite', monospace"
+    font-size="17"
+    fill="#111"
+    text-anchor="middle"
+    letter-spacing="5"
+  >IT&#x2019;S GOOD TO BE KING</text>
+  <line x1="92" y1="520" x2="428" y2="520" stroke="#111" stroke-width="0.6" opacity="0.3"/>
+
+</svg>
