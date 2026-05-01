@@ -13,7 +13,7 @@ import {
   getFallbackFoodPlan,
   getFallbackPhysics,
   getFallbackWeeklyExercise,
-} from '../../api/fallbacks';
+} from './fallbacks';
 import {
   AnalyticsContent,
   ExerciseWeeklyContent,

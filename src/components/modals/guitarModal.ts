@@ -1,5 +1,4 @@
-import { ai, hasApiKey, getOrGenerateDynamicContent, type ResponseSchema } from "../../api/perplexity";
-import { getFallbackClassicRockPool } from "../../api/fallbacks";
+import { ai, hasApiKey, getOrGenerateDynamicContent, getFallbackClassicRockPool, type ResponseSchema } from "../../infra/ai";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadGuitarRecentPicks, saveGuitarRecentPick } from "../../infra/supabase/persistence";

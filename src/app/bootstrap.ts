@@ -1,4 +1,4 @@
-import { ai } from '../api/perplexity';
+import { ai } from '../infra/ai';
 import { getCanonicalTime } from '../core/time';
 import { loadTasks as loadTasksFromSupabase } from '../infra/supabase/persistence';
 import {

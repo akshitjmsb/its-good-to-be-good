@@ -1,4 +1,4 @@
-import { ai } from "../api/perplexity";
+import { ai } from "../infra/ai";
 
 // Multilingual quote type
 export interface MultilingualQuote {

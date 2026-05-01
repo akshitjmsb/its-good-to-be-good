@@ -1,4 +1,4 @@
-import { ai } from "../../api/perplexity";
+import { ai } from "../../infra/ai";
 import { createSafeHtml } from "../../utils/escapeHtml";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
 

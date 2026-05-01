@@ -1,4 +1,4 @@
-import { ai, type ResponseSchema } from "../../api/perplexity";
+import { ai, type ResponseSchema } from "../../infra/ai";
 import { escapeHtml } from "../../utils/escapeHtml";
 
 export async function getSolutionExplanation(questionPrompt: string, questionSolution: string): Promise<string> {

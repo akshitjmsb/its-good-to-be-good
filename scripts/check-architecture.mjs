@@ -259,12 +259,12 @@ async function validateModalControllerBoundaries() {
   const checks = [
     {
       path: 'src/components/modals/analytics/controller.ts',
-      forbidden: '../../../api/perplexity',
+      forbidden: '../../../infra/ai',
       required: '../../../domains/content/service',
     },
     {
       path: 'src/components/modals/exercise/controller.ts',
-      forbidden: '../../../api/perplexity',
+      forbidden: '../../../infra/ai',
       required: '../../../domains/content/service',
     },
   ];

@@ -1,4 +1,4 @@
-import { ai, type ResponseSchema } from "../../api/perplexity";
+import { ai, type ResponseSchema } from "../../infra/ai";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../infra/supabase/persistence";

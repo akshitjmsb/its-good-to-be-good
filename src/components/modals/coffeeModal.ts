@@ -1,4 +1,4 @@
-import { ai, type ResponseSchema } from "../../api/perplexity";
+import { ai, type ResponseSchema } from "../../infra/ai";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { getModalElements, showModalWithLoading, showModalError, setModalContent, MODAL_CONFIGS } from "./factory";
