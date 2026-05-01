@@ -1,80 +1,149 @@
 /**
- * Todo Page Entry Point
- * Dedicated page for task management with statistics and quick actions
+ * Todo page — minimal, Apple-Notes-inspired list.
+ *
+ * Owns its own row renderer (the homepage no longer touches tasks, so the
+ * shared components/tasks.ts is gone). Completed rows sink to the bottom
+ * and pick up a line-through + muted treatment. Periodic 30 s pull keeps
+ * the list in sync with Supabase across devices.
  */
 
-import { loadTasks as loadTasksFromSupabase, saveTasks as saveTasksToSupabase } from './infra/supabase/persistence';
-import { renderTasks, attachTaskListeners } from './components/tasks';
+import {
+  loadTasks as loadTasksFromSupabase,
+  saveTasks as saveTasksToSupabase,
+} from './infra/supabase/persistence';
 import { DEFAULT_USER_ID } from './core/default-user';
-import { sanitizeTaskInput } from './utils/escapeHtml';
+import { sanitizeTaskInput, createSafeHtml } from './utils/escapeHtml';
+import type { Task } from './types';
 
 const LIST_ID = 'tasks-list-todo';
+const SYNC_INTERVAL_MS = 30_000;
+
+interface DisplayTask extends Task {
+  originalIndex: number;
+}
+
+function decorate(tasks: Task[]): DisplayTask[] {
+  return tasks
+    .map((task, originalIndex) => ({ ...task, originalIndex }))
+    .sort((a, b) => {
+      if (a.completed === b.completed) return a.originalIndex - b.originalIndex;
+      return a.completed ? 1 : -1;
+    });
+}
+
+function renderRow(task: DisplayTask): string {
+  const completedClass = task.completed ? ' completed' : '';
+  const checked = task.completed ? ' checked' : '';
+  const safeText = createSafeHtml(task.text, { maxLength: 200 });
+  return `
+    <div class="todo-row${completedClass}" role="listitem" data-index="${task.originalIndex}">
+      <input
+        type="checkbox"
+        class="todo-row__checkbox"
+        data-index="${task.originalIndex}"
+        aria-label="Mark task complete"${checked}
+      >
+      <label class="todo-row__label" data-index="${task.originalIndex}">${safeText}</label>
+      <button
+        type="button"
+        class="todo-row__delete"
+        data-index="${task.originalIndex}"
+        aria-label="Delete task"
+        title="Delete"
+      >&times;</button>
+    </div>
+  `;
+}
+
+function renderList(tasks: Task[]): void {
+  const listEl = document.getElementById(LIST_ID);
+  if (!listEl) return;
+
+  if (tasks.length === 0) {
+    listEl.innerHTML = `<p class="todo-empty">No tasks yet.</p>`;
+    return;
+  }
+
+  listEl.innerHTML = decorate(tasks).map(renderRow).join('');
+}
+
+function renderCounter(tasks: Task[]): void {
+  const counterEl = document.getElementById('todo-counter');
+  if (!counterEl) return;
+
+  if (tasks.length === 0) {
+    counterEl.textContent = '';
+    return;
+  }
+
+  const done = tasks.filter(t => t.completed).length;
+  counterEl.textContent = `${done} of ${tasks.length} done`;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const userId = DEFAULT_USER_ID;
-    let tasks = await loadTasksFromSupabase(userId);
+  const userId = DEFAULT_USER_ID;
+  let tasks: Task[] = await loadTasksFromSupabase(userId);
 
-    const renderAndWire = (current: { text: string; completed: boolean }[]) => {
-        renderTasks(current, LIST_ID);
-        attachTaskListeners(LIST_ID, userId);
-        updateStatistics(current);
-    };
+  const refresh = () => {
+    renderList(tasks);
+    renderCounter(tasks);
+  };
 
-    const persistAndRender = async (current: { text: string; completed: boolean }[]) => {
-        await saveTasksToSupabase(userId, current);
-        renderAndWire(current);
-    };
-
-    renderAndWire(tasks);
-
-    const form = document.getElementById('add-task-form-todo') as HTMLFormElement;
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const input = form.querySelector('input[type="text"]') as HTMLInputElement;
-            const taskText = input?.value.trim();
-            if (!taskText) return;
-
-            const sanitizedText = sanitizeTaskInput(taskText);
-            if (!sanitizedText) return;
-
-            tasks.push({ text: sanitizedText, completed: false });
-            await persistAndRender(tasks);
-            input.value = '';
-        });
+  const persist = async () => {
+    refresh();
+    try {
+      await saveTasksToSupabase(userId, tasks);
+    } catch (error) {
+      console.error('Error saving tasks:', error);
     }
+  };
 
-    document.getElementById('clear-completed')?.addEventListener('click', async () => {
-        tasks = tasks.filter(t => !t.completed);
-        await persistAndRender(tasks);
-    });
+  refresh();
 
-    document.getElementById('mark-all-complete')?.addEventListener('click', async () => {
-        tasks.forEach(t => t.completed = true);
-        await persistAndRender(tasks);
-    });
+  const form = document.getElementById('add-task-form-todo') as HTMLFormElement | null;
+  const input = document.getElementById('todo-input') as HTMLInputElement | null;
 
-    // Periodic sync (every 30 seconds) — refresh from cloud, no save
-    setInterval(async () => {
-        try {
-            tasks = await loadTasksFromSupabase(userId);
-            renderAndWire(tasks);
-        } catch (error) {
-            console.warn('Failed to sync tasks:', error);
-        }
-    }, 30000);
+  form?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!input) return;
+    const sanitized = sanitizeTaskInput(input.value.trim());
+    if (!sanitized) {
+      input.value = '';
+      return;
+    }
+    tasks = [...tasks, { text: sanitized, completed: false }];
+    input.value = '';
+    await persist();
+  });
+
+  const listEl = document.getElementById(LIST_ID);
+  listEl?.addEventListener('click', async event => {
+    const target = event.target as HTMLElement | null;
+    const deleteBtn = target?.closest('.todo-row__delete') as HTMLElement | null;
+    if (!deleteBtn) return;
+    const index = Number(deleteBtn.dataset.index ?? -1);
+    if (Number.isNaN(index) || index < 0 || index >= tasks.length) return;
+    tasks = tasks.filter((_, i) => i !== index);
+    await persist();
+  });
+
+  listEl?.addEventListener('change', async event => {
+    const target = event.target as HTMLInputElement | null;
+    if (!target || target.type !== 'checkbox') return;
+    const index = Number(target.dataset.index ?? -1);
+    if (Number.isNaN(index) || index < 0 || index >= tasks.length) return;
+    tasks = tasks.map((task, i) =>
+      i === index ? { ...task, completed: target.checked } : task
+    );
+    await persist();
+  });
+
+  setInterval(async () => {
+    try {
+      tasks = await loadTasksFromSupabase(userId);
+      refresh();
+    } catch (error) {
+      console.warn('Failed to sync tasks:', error);
+    }
+  }, SYNC_INTERVAL_MS);
 });
-
-function updateStatistics(tasks: { text: string; completed: boolean }[]) {
-    const total = tasks.length;
-    const completed = tasks.filter(t => t.completed).length;
-    const pending = total - completed;
-
-    const totalEl = document.getElementById('total-tasks');
-    const completedEl = document.getElementById('completed-tasks');
-    const pendingEl = document.getElementById('pending-tasks');
-
-    if (totalEl) totalEl.textContent = String(total);
-    if (completedEl) completedEl.textContent = String(completed);
-    if (pendingEl) pendingEl.textContent = String(pending);
-}

@@ -1,16 +1,10 @@
 import { getCanonicalTime } from '../core/time';
-import { loadTasks as loadTasksFromSupabase } from '../infra/supabase/persistence';
 import { getPhilosophicalQuoteInstant } from '../components/reflection';
 import {
   attachQuoteDeepDive,
   setActiveQuote,
 } from '../components/quoteDeepDive';
 import { initializeQuantumTimer } from '../components/quantumTimer';
-import {
-  initializeTaskForms,
-  renderTasks,
-  attachTaskListeners,
-} from '../components/tasks';
 import { initializeModalManager } from '../components/modals/modalManager';
 import {
   renderModuleIcons,
@@ -67,8 +61,6 @@ export async function bootstrapApp(): Promise<void> {
 
   async function mainRender() {
     updateDateDerivedData();
-    const tasks = await loadTasksFromSupabase(store.getState().currentUserId);
-    store.setState({ tasks });
 
     const dayModule = document.getElementById(
       'day-module'
@@ -77,7 +69,7 @@ export async function bootstrapApp(): Promise<void> {
 
     renderNavigationIcons();
     const { todaysQuote, currentUserId } = store.getState();
-    renderDayModule(todaysQuote, tasks);
+    renderDayModule(todaysQuote);
     if (todaysQuote) {
       setActiveQuote(currentUserId, todaysQuote);
       attachQuoteDeepDive();
@@ -92,13 +84,11 @@ export async function bootstrapApp(): Promise<void> {
 
       const appContainer = document.getElementById('app-container');
       if (appContainer) {
-        const { activeContentDate, todayKey, tasks, currentUserId } = store.getState();
+        const { activeContentDate, todayKey } = store.getState();
         initializeModalManager(appContainer, {
           dates: { active: activeContentDate },
           keys: { today: todayKey },
         });
-        initializeTaskForms(tasks, currentUserId, mainRender);
-        attachTaskListeners('tasks-list-day', currentUserId);
       }
 
       updateTimeDisplay();
@@ -107,11 +97,6 @@ export async function bootstrapApp(): Promise<void> {
       initializeSchedulers({
         updateTime: updateTimeDisplay,
         periodicRender: mainRender,
-        syncTasks: async () => {
-          const latestTasks = await loadTasksFromSupabase(store.getState().currentUserId);
-          store.setState({ tasks: latestTasks });
-          renderTasks(latestTasks, 'tasks-list-day');
-        },
         onError: handleGlobalError,
       });
     } catch (error) {

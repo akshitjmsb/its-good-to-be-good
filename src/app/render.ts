@@ -1,7 +1,5 @@
-import { renderTasks } from '../components/tasks';
 import { MultilingualQuote } from '../components/reflection';
 import { renderDeepDiveScaffold } from '../components/quoteDeepDive';
-import { Task } from '../types';
 import { escapeHtml } from '../utils/escapeHtml';
 
 export function renderQuoteHTML(quote: MultilingualQuote): string {
@@ -33,14 +31,9 @@ export function renderQuoteHTML(quote: MultilingualQuote): string {
   `;
 }
 
-export function renderDayModule(
-  quote: MultilingualQuote | null,
-  tasks: Task[]
-): void {
+export function renderDayModule(quote: MultilingualQuote | null): void {
   const lifePointerEl = document.getElementById('life-pointer-display-day');
   if (lifePointerEl && quote) {
     lifePointerEl.innerHTML = renderQuoteHTML(quote);
   }
-
-  renderTasks(tasks, 'tasks-list-day');
 }

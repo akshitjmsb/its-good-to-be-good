@@ -259,32 +259,6 @@
 }
 
 
-/* Form improvements for mobile */
-@media (max-width: 768px) {
-    .add-task-form {
-        flex-direction: column !important;
-        gap: 0.5rem !important;
-    }
-    
-    .add-task-form input {
-        padding: 0.75rem !important;
-        font-size: 1rem !important;
-        min-height: 44px;
-        border-radius: 0.375rem !important;
-        border: 1px solid #d1d5db;
-    }
-    
-    .add-task-form button {
-        padding: 0.75rem 1.5rem !important;
-        font-size: 1rem !important;
-        min-height: 44px;
-        border-radius: 0.375rem !important;
-        background-color: #374151;
-        color: white;
-        border: none;
-    }
-}
-
 /* Button improvements for touch */
 @media (max-width: 768px) {
     .panel-btn {
@@ -293,24 +267,6 @@
         min-height: 44px;
         border-radius: 0.5rem !important;
         touch-action: manipulation;
-    }
-    
-    /* Task items for mobile */
-    .task-item {
-        padding: 0.75rem 0.5rem !important;
-        min-height: 44px;
-        align-items: center;
-    }
-    
-    .task-item input[type="checkbox"] {
-        width: 1.5rem !important;
-        height: 1.5rem !important;
-        margin-right: 1rem !important;
-    }
-    
-    .task-item label {
-        font-size: 1rem !important;
-        line-height: 1.4;
     }
 }
 
@@ -408,17 +364,13 @@
 
 /* Focus improvements for accessibility */
 .panel-btn:focus,
-.preview-card:focus,
-.add-task-form input:focus,
-.add-task-form button:focus {
+.preview-card:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
 }
 
 /* Touch target improvements */
 .preview-card,
-.panel-btn,
-.add-task-form button,
-.task-item input[type="checkbox"] {
+.panel-btn {
     touch-action: manipulation;
 }
