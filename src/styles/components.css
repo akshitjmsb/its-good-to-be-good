@@ -753,9 +753,11 @@ button.preview-card {
 }
 
 .nav-carousel > .nav-item {
-    /* ~2.5–3 cards visible on a 375 px viewport (38 vw ≈ 142 px there);
-       clamp keeps cards readable on very small or very large mobiles. */
-    flex: 0 0 clamp(110px, 38vw, 160px);
+    /* Target 4 cards visible on a 375 px viewport (22 vw ≈ 82.5 px),
+       with a small sliver of the 5th peeking as a scroll cue. clamp
+       floor keeps cards usable on smaller phones, ceiling caps growth
+       on larger ones before the desktop layout kicks in. */
+    flex: 0 0 clamp(80px, 22vw, 130px);
     scroll-snap-align: center;
     min-height: 44px; /* WCAG touch target */
 }
