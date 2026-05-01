@@ -5,6 +5,31 @@ const MAX_POETRY_RECENTS = 6;
 const MAX_GUITAR_RECENT_PICKS = 30;
 const MAX_CHAT_HISTORY = 100;
 
+/**
+ * Replace all rows belonging to a user in a table with a fresh set.
+ * Deletes the user's existing rows then inserts the new ones in a single
+ * round-trip. Empty inputs short-circuit after the delete.
+ */
+export async function replaceAll<TRow extends Record<string, unknown>>(
+  table: string,
+  userId: string,
+  rows: TRow[]
+): Promise<void> {
+  const { error: deleteError } = await supabase
+    .from(table)
+    .delete()
+    .eq('user_id', userId);
+
+  if (deleteError) {
+    console.error(`Error deleting existing rows from ${table}:`, deleteError);
+  }
+
+  if (!rows.length) return;
+
+  const { error: insertError } = await supabase.from(table).insert(rows);
+  if (insertError) throw insertError;
+}
+
 export async function loadChatHistory(userId: string): Promise<ChatMessage[]> {
   try {
     const { data, error } = await supabase
@@ -37,17 +62,6 @@ export async function saveChatHistory(
   messages: ChatMessage[]
 ): Promise<void> {
   try {
-    const { error: deleteError } = await supabase
-      .from('chat_history')
-      .delete()
-      .eq('user_id', userId);
-
-    if (deleteError) {
-      console.error('Error deleting existing chat history:', deleteError);
-    }
-
-    if (!messages.length) return;
-
     const payload = messages
       .slice(-MAX_CHAT_HISTORY)
       .filter(
@@ -62,12 +76,7 @@ export async function saveChatHistory(
         text: msg.text,
       }));
 
-    if (!payload.length) return;
-
-    const { error: insertError } = await supabase
-      .from('chat_history')
-      .insert(payload);
-    if (insertError) throw insertError;
+    await replaceAll('chat_history', userId, payload);
   } catch (error) {
     console.error('Error saving chat history:', error);
     throw error;
@@ -99,27 +108,12 @@ export async function loadTasks(userId: string): Promise<Task[]> {
 
 export async function saveTasks(userId: string, tasks: Task[]): Promise<void> {
   try {
-    const { error: deleteError } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('user_id', userId);
-
-    if (deleteError) {
-      console.error('Error deleting existing tasks:', deleteError);
-    }
-
-    if (!tasks.length) return;
-
     const tasksToInsert = tasks.map(task => ({
       user_id: userId,
       text: task.text,
       completed: task.completed,
     }));
-
-    const { error: insertError } = await supabase
-      .from('tasks')
-      .insert(tasksToInsert);
-    if (insertError) throw insertError;
+    await replaceAll('tasks', userId, tasksToInsert);
   } catch (error) {
     console.error('Error saving tasks:', error);
     throw error;
@@ -159,29 +153,13 @@ export async function savePoetryRecents(
   recents: PoetrySelection[]
 ): Promise<void> {
   try {
-    const { error: deleteError } = await supabase
-      .from('poetry_recents')
-      .delete()
-      .eq('user_id', userId);
-
-    if (deleteError) {
-      console.error('Error deleting existing poetry recents:', deleteError);
-    }
-
-    if (!recents.length) return;
-
     const recentsToInsert = recents.map(recent => ({
       user_id: userId,
       poet: recent.poet,
       language: recent.language,
       timestamp: recent.timestamp,
     }));
-
-    const { error: insertError } = await supabase
-      .from('poetry_recents')
-      .insert(recentsToInsert);
-
-    if (insertError) throw insertError;
+    await replaceAll('poetry_recents', userId, recentsToInsert);
   } catch (error) {
     console.error('Error saving poetry recents:', error);
     throw error;

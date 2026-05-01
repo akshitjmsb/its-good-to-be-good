@@ -8,62 +8,57 @@ import { renderTasks, attachTaskListeners } from './components/tasks';
 import { DEFAULT_USER_ID } from './core/default-user';
 import { sanitizeTaskInput } from './utils/escapeHtml';
 
+const LIST_ID = 'tasks-list-todo';
+
 document.addEventListener('DOMContentLoaded', async () => {
     const userId = DEFAULT_USER_ID;
     let tasks = await loadTasksFromSupabase(userId);
 
-    // Initial render
-    renderTasks(tasks, 'tasks-list-todo');
-    attachTaskListeners('tasks-list-todo', userId);
-    updateStatistics(tasks);
+    const renderAndWire = (current: { text: string; completed: boolean }[]) => {
+        renderTasks(current, LIST_ID);
+        attachTaskListeners(LIST_ID, userId);
+        updateStatistics(current);
+    };
 
-    // Form submission handler
+    const persistAndRender = async (current: { text: string; completed: boolean }[]) => {
+        await saveTasksToSupabase(userId, current);
+        renderAndWire(current);
+    };
+
+    renderAndWire(tasks);
+
     const form = document.getElementById('add-task-form-todo') as HTMLFormElement;
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const input = form.querySelector('input[type="text"]') as HTMLInputElement;
             const taskText = input?.value.trim();
+            if (!taskText) return;
 
-            if (taskText) {
-                const sanitizedText = sanitizeTaskInput(taskText);
-                if (sanitizedText) {
-                    tasks.push({ text: sanitizedText, completed: false });
-                    await saveTasksToSupabase(userId, tasks);
-                    renderTasks(tasks, 'tasks-list-todo');
-                    attachTaskListeners('tasks-list-todo', userId);
-                    updateStatistics(tasks);
-                    input.value = '';
-                }
-            }
+            const sanitizedText = sanitizeTaskInput(taskText);
+            if (!sanitizedText) return;
+
+            tasks.push({ text: sanitizedText, completed: false });
+            await persistAndRender(tasks);
+            input.value = '';
         });
     }
 
-    // Clear completed handler
     document.getElementById('clear-completed')?.addEventListener('click', async () => {
         tasks = tasks.filter(t => !t.completed);
-        await saveTasksToSupabase(userId, tasks);
-        renderTasks(tasks, 'tasks-list-todo');
-        attachTaskListeners('tasks-list-todo', userId);
-        updateStatistics(tasks);
+        await persistAndRender(tasks);
     });
 
-    // Mark all complete handler
     document.getElementById('mark-all-complete')?.addEventListener('click', async () => {
         tasks.forEach(t => t.completed = true);
-        await saveTasksToSupabase(userId, tasks);
-        renderTasks(tasks, 'tasks-list-todo');
-        attachTaskListeners('tasks-list-todo', userId);
-        updateStatistics(tasks);
+        await persistAndRender(tasks);
     });
 
-    // Periodic sync (every 30 seconds)
+    // Periodic sync (every 30 seconds) — refresh from cloud, no save
     setInterval(async () => {
         try {
             tasks = await loadTasksFromSupabase(userId);
-            renderTasks(tasks, 'tasks-list-todo');
-            attachTaskListeners('tasks-list-todo', userId);
-            updateStatistics(tasks);
+            renderAndWire(tasks);
         } catch (error) {
             console.warn('Failed to sync tasks:', error);
         }
