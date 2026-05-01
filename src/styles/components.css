@@ -662,6 +662,56 @@ button.preview-card {
     }
 }
 
+/* ── Header refresh button ───────────────────────────────────────────────── */
+/* Sits in the top-left corner of .app-container, mirroring the Quantum
+   widget on the right. Mainly for PWA users who lack a browser reload. */
+
+.header-refresh {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    color: #9ca3af;
+    cursor: pointer;
+    border-radius: 9999px;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+    touch-action: manipulation;
+}
+
+.header-refresh:hover {
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+
+.header-refresh:active {
+    transform: scale(0.95);
+}
+
+.header-refresh:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.header-refresh svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .header-refresh {
+        top: 0.5rem;
+        left: 0.5rem;
+    }
+}
+
 /* ── Home navigation carousel ────────────────────────────────────────────── */
 /* Mobile-first: a horizontal flex strip that scrolls with snap. On tablet
    and up the strip stops scrolling and the items grow to fill the row. */

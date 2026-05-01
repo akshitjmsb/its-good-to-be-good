@@ -82,6 +82,11 @@ export async function bootstrapApp(): Promise<void> {
       updateDateDerivedData();
       initializeQuantumTimer();
 
+      // PWA users on the home screen have no browser refresh button.
+      document
+        .getElementById('header-refresh-btn')
+        ?.addEventListener('click', () => window.location.reload());
+
       const appContainer = document.getElementById('app-container');
       if (appContainer) {
         const { activeContentDate, todayKey } = store.getState();
