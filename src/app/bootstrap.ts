@@ -18,7 +18,7 @@ import {
   renderModuleIcons,
   renderNavigationIcons,
 } from '../utils/iconRenderer';
-import { createAppRuntimeState } from './state';
+import { createAppRuntimeStore } from './state';
 import { renderDayModule, renderQuoteHTML, updateDynamicIcon } from './render';
 import { initializeSchedulers } from './scheduler';
 
@@ -57,29 +57,24 @@ function updateTimeDisplay(): void {
 }
 
 export async function bootstrapApp(): Promise<void> {
-  const state = createAppRuntimeState();
+  const store = createAppRuntimeStore();
 
   async function updateDateDerivedData() {
     const { now } = getCanonicalTime();
-    state.activeContentDate = new Date(now);
-    state.todayKey = state.activeContentDate.toISOString().split('T')[0];
-    state.todaysQuote = getPhilosophicalQuoteInstant(state.activeContentDate);
+    const activeContentDate = new Date(now);
+    const todayKey = activeContentDate.toISOString().split('T')[0];
+    const todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
+    store.setState({ activeContentDate, todayKey, todaysQuote });
 
     if (!ai) return;
     showQuoteLoadingIndicator();
 
-    generateAIPhilosophicalQuote(state.activeContentDate)
+    generateAIPhilosophicalQuote(activeContentDate)
       .then(aiQuote => {
         hideQuoteLoadingIndicator();
-        if (!aiQuote || aiQuote.quote === state.todaysQuote?.quote) return;
-
-        state.todaysQuote = aiQuote;
-        const lifePointerEl = document.getElementById(
-          'life-pointer-display-day'
-        );
-        if (lifePointerEl) {
-          lifePointerEl.innerHTML = renderQuoteHTML(aiQuote);
-        }
+        const current = store.getState().todaysQuote;
+        if (!aiQuote || aiQuote.quote === current?.quote) return;
+        store.setState({ todaysQuote: aiQuote });
       })
       .catch(error => {
         hideQuoteLoadingIndicator();
@@ -90,9 +85,22 @@ export async function bootstrapApp(): Promise<void> {
       });
   }
 
+  // Re-render the life-pointer when the quote changes (e.g. async AI quote arrives).
+  let lastRenderedQuote = store.getState().todaysQuote;
+  store.subscribe(state => {
+    if (state.todaysQuote === lastRenderedQuote) return;
+    lastRenderedQuote = state.todaysQuote;
+    if (!state.todaysQuote) return;
+    const lifePointerEl = document.getElementById('life-pointer-display-day');
+    if (lifePointerEl) {
+      lifePointerEl.innerHTML = renderQuoteHTML(state.todaysQuote);
+    }
+  });
+
   async function mainRender() {
     await updateDateDerivedData();
-    state.tasks = await loadTasksFromSupabase(state.currentUserId);
+    const tasks = await loadTasksFromSupabase(store.getState().currentUserId);
+    store.setState({ tasks });
 
     const dayModule = document.getElementById(
       'day-module'
@@ -101,7 +109,8 @@ export async function bootstrapApp(): Promise<void> {
 
     updateDynamicIcon();
     renderNavigationIcons();
-    renderDayModule(state.todaysQuote, state.tasks);
+    const { todaysQuote } = store.getState();
+    renderDayModule(todaysQuote, tasks);
   }
 
   async function initializeApp() {
@@ -112,12 +121,13 @@ export async function bootstrapApp(): Promise<void> {
 
       const appContainer = document.getElementById('app-container');
       if (appContainer) {
+        const { activeContentDate, todayKey, tasks, currentUserId } = store.getState();
         initializeModalManager(appContainer, {
-          dates: { active: state.activeContentDate },
-          keys: { today: state.todayKey },
+          dates: { active: activeContentDate },
+          keys: { today: todayKey },
         });
-        initializeTaskForms(state.tasks, state.currentUserId, mainRender);
-        attachTaskListeners('tasks-list-day', state.currentUserId);
+        initializeTaskForms(tasks, currentUserId, mainRender);
+        attachTaskListeners('tasks-list-day', currentUserId);
       }
 
       updateTimeDisplay();
@@ -127,8 +137,8 @@ export async function bootstrapApp(): Promise<void> {
         updateTime: updateTimeDisplay,
         periodicRender: mainRender,
         syncTasks: async () => {
-          const latestTasks = await loadTasksFromSupabase(state.currentUserId);
-          state.tasks = latestTasks;
+          const latestTasks = await loadTasksFromSupabase(store.getState().currentUserId);
+          store.setState({ tasks: latestTasks });
           renderTasks(latestTasks, 'tasks-list-day');
         },
         onError: handleGlobalError,
