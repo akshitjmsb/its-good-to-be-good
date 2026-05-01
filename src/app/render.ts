@@ -1,5 +1,6 @@
 import { renderTasks } from '../components/tasks';
 import { MultilingualQuote } from '../components/reflection';
+import { renderDeepDiveScaffold } from '../components/quoteDeepDive';
 import { Task } from '../types';
 import { escapeHtml } from '../utils/escapeHtml';
 
@@ -30,12 +31,15 @@ export function renderQuoteHTML(quote: MultilingualQuote): string {
   const safeSource = quote.source ? escapeHtml(quote.source) : '';
 
   return `
-    <div class="quote-original ${isMultilingual ? 'multilingual' : ''}" lang="${language}">
-      "${safeQuote}"
+    <div class="quote-block">
+      <div class="quote-original ${isMultilingual ? 'multilingual' : ''}" lang="${language}">
+        "${safeQuote}"
+      </div>
+      ${safeTransliteration ? `<div class="quote-transliteration">${safeTransliteration}</div>` : ''}
+      ${safeTranslation ? `<div class="quote-translation">"${safeTranslation}"</div>` : ''}
+      <div class="quote-author">— ${safeAuthor}${safeSource ? ` · ${safeSource}` : ''}</div>
     </div>
-    ${safeTransliteration ? `<div class="quote-transliteration">${safeTransliteration}</div>` : ''}
-    ${safeTranslation ? `<div class="quote-translation">"${safeTranslation}"</div>` : ''}
-    <div class="quote-author">— ${safeAuthor}${safeSource ? ` · ${safeSource}` : ''}</div>
+    ${renderDeepDiveScaffold()}
   `;
 }
 

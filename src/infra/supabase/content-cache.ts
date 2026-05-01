@@ -7,7 +7,8 @@ export type CachedContentType =
   | 'transportation-physics'
   | 'exercise-plan'
   | 'weekly-exercise'
-  | 'classic-rock-500';
+  | 'classic-rock-500'
+  | 'quote-deep-dive';
 
 export async function getCachedContent<T>(
   userId: string,

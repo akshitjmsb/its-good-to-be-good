@@ -1,6 +1,10 @@
 import { getCanonicalTime } from '../core/time';
 import { loadTasks as loadTasksFromSupabase } from '../infra/supabase/persistence';
 import { getPhilosophicalQuoteInstant } from '../components/reflection';
+import {
+  attachQuoteDeepDive,
+  setActiveQuote,
+} from '../components/quoteDeepDive';
 import { initializeQuantumTimer } from '../components/quantumTimer';
 import {
   initializeTaskForms,
@@ -73,8 +77,12 @@ export async function bootstrapApp(): Promise<void> {
 
     updateDynamicIcon();
     renderNavigationIcons();
-    const { todaysQuote } = store.getState();
+    const { todaysQuote, currentUserId } = store.getState();
     renderDayModule(todaysQuote, tasks);
+    if (todaysQuote) {
+      setActiveQuote(currentUserId, todaysQuote);
+      attachQuoteDeepDive();
+    }
   }
 
   async function initializeApp() {
