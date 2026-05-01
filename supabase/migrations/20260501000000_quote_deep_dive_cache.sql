@@ -5,11 +5,6 @@
 --   2. Relax date_key from DATE to TEXT so it can hold a stable hash key
 --      derived from the (author, quote) pair. Existing date-string rows
 --      cast cleanly to text; the column keeps the same name.
---
--- Run once via `npm run supabase:push` (or the Supabase SQL editor) before
--- shipping the deep-dive feature. The TypeScript layer falls back to a
--- live Perplexity call if the cache write fails, so the feature still
--- functions before this migration is applied — just without persistence.
 
 ALTER TABLE content_cache
   DROP CONSTRAINT IF EXISTS content_cache_content_type_check;
