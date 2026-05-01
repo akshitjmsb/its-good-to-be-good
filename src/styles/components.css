@@ -216,7 +216,8 @@ button.preview-card {
 }
 
 /* Urdu (Nastaliq) - Right to Left */
-.quote-original[lang="ur"] {
+.quote-original[lang="ur"],
+.quote-original[lang="fa"] {
     font-family: 'Noto Nastaliq Urdu', 'Noto Sans Arabic', sans-serif;
     direction: rtl;
     text-align: right;

@@ -16,7 +16,7 @@ export function updateDynamicIcon(): void {
 export function renderQuoteHTML(quote: MultilingualQuote): string {
   const isMultilingual =
     quote.language !== 'en' && (quote.transliteration || quote.translation);
-  const language = ['en', 'hi', 'ur', 'pa'].includes(quote.language)
+  const language = ['en', 'hi', 'ur', 'pa', 'fa'].includes(quote.language)
     ? quote.language
     : 'en';
   const safeQuote = escapeHtml(quote.quote).replace(/\n/g, '<br>');
@@ -27,6 +27,7 @@ export function renderQuoteHTML(quote: MultilingualQuote): string {
     ? escapeHtml(quote.translation).replace(/\n/g, '<br>')
     : '';
   const safeAuthor = escapeHtml(quote.author);
+  const safeSource = quote.source ? escapeHtml(quote.source) : '';
 
   return `
     <div class="quote-original ${isMultilingual ? 'multilingual' : ''}" lang="${language}">
@@ -34,7 +35,7 @@ export function renderQuoteHTML(quote: MultilingualQuote): string {
     </div>
     ${safeTransliteration ? `<div class="quote-transliteration">${safeTransliteration}</div>` : ''}
     ${safeTranslation ? `<div class="quote-translation">"${safeTranslation}"</div>` : ''}
-    <div class="quote-author">— ${safeAuthor}</div>
+    <div class="quote-author">— ${safeAuthor}${safeSource ? ` · ${safeSource}` : ''}</div>
   `;
 }
 
@@ -46,11 +47,6 @@ export function renderDayModule(
   if (lifePointerEl && quote) {
     lifePointerEl.innerHTML = renderQuoteHTML(quote);
   }
-
-  const reflectionPromptEl = document.getElementById(
-    'reflection-prompt-display-day'
-  );
-  if (reflectionPromptEl) reflectionPromptEl.textContent = '';
 
   renderTasks(tasks, 'tasks-list-day');
 }

@@ -1,12 +1,6 @@
-import { ai } from '../infra/ai';
 import { getCanonicalTime } from '../core/time';
 import { loadTasks as loadTasksFromSupabase } from '../infra/supabase/persistence';
-import {
-  generateAIPhilosophicalQuote,
-  getPhilosophicalQuoteInstant,
-  hideQuoteLoadingIndicator,
-  showQuoteLoadingIndicator,
-} from '../components/reflection';
+import { getPhilosophicalQuoteInstant } from '../components/reflection';
 import { initializeQuantumTimer } from '../components/quantumTimer';
 import {
   initializeTaskForms,
@@ -19,7 +13,7 @@ import {
   renderNavigationIcons,
 } from '../utils/iconRenderer';
 import { createAppRuntimeStore } from './state';
-import { renderDayModule, renderQuoteHTML, updateDynamicIcon } from './render';
+import { renderDayModule, updateDynamicIcon } from './render';
 import { initializeSchedulers } from './scheduler';
 
 function showSyncStatus(message: string, isFinal = false): void {
@@ -59,46 +53,16 @@ function updateTimeDisplay(): void {
 export async function bootstrapApp(): Promise<void> {
   const store = createAppRuntimeStore();
 
-  async function updateDateDerivedData() {
+  function updateDateDerivedData() {
     const { now } = getCanonicalTime();
     const activeContentDate = new Date(now);
     const todayKey = activeContentDate.toISOString().split('T')[0];
     const todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
     store.setState({ activeContentDate, todayKey, todaysQuote });
-
-    if (!ai) return;
-    showQuoteLoadingIndicator();
-
-    generateAIPhilosophicalQuote(activeContentDate)
-      .then(aiQuote => {
-        hideQuoteLoadingIndicator();
-        const current = store.getState().todaysQuote;
-        if (!aiQuote || aiQuote.quote === current?.quote) return;
-        store.setState({ todaysQuote: aiQuote });
-      })
-      .catch(error => {
-        hideQuoteLoadingIndicator();
-        console.log(
-          'Background AI quote generation failed, using curated quote:',
-          error
-        );
-      });
   }
 
-  // Re-render the life-pointer when the quote changes (e.g. async AI quote arrives).
-  let lastRenderedQuote = store.getState().todaysQuote;
-  store.subscribe(state => {
-    if (state.todaysQuote === lastRenderedQuote) return;
-    lastRenderedQuote = state.todaysQuote;
-    if (!state.todaysQuote) return;
-    const lifePointerEl = document.getElementById('life-pointer-display-day');
-    if (lifePointerEl) {
-      lifePointerEl.innerHTML = renderQuoteHTML(state.todaysQuote);
-    }
-  });
-
   async function mainRender() {
-    await updateDateDerivedData();
+    updateDateDerivedData();
     const tasks = await loadTasksFromSupabase(store.getState().currentUserId);
     store.setState({ tasks });
 
@@ -116,7 +80,7 @@ export async function bootstrapApp(): Promise<void> {
   async function initializeApp() {
     try {
       renderModuleIcons();
-      await updateDateDerivedData();
+      updateDateDerivedData();
       initializeQuantumTimer();
 
       const appContainer = document.getElementById('app-container');

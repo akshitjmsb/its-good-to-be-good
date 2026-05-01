@@ -1,278 +1,1226 @@
-import { ai } from "../infra/ai";
+/**
+ * Curated multilingual quote pool. The first paint reads from this pool
+ * synchronously — no API calls, no loading state. Selection is deterministic
+ * per local date (same quote for the whole day), and a module-level cache
+ * preserves the chosen quote across in-session navigations (todo.html etc.)
+ * without touching localStorage.
+ *
+ * Bias: Urdu (~65 %), then Hindi, Punjabi, Persian (Rumi/Hafez/Saadi),
+ * and English (Stoic + Gibran + Neruda).
+ *
+ * Source attributions follow the canonical anthologies. When a couplet is
+ * universally quoted but the named ghazal/poem isn't reliably identifiable
+ * (most Mir/Jaun couplets fall in this bucket), `source` is left undefined.
+ */
 
-// Multilingual quote type
 export interface MultilingualQuote {
-    quote: string;
-    author: string;
-    language: 'en' | 'hi' | 'ur' | 'pa';
-    transliteration?: string;
-    translation?: string;
+  quote: string;
+  author: string;
+  language: 'en' | 'hi' | 'ur' | 'pa' | 'fa';
+  transliteration?: string;
+  translation?: string;
+  source?: string;
 }
 
-// Cache for philosophical quotes to avoid repeated API calls
-const quoteCache = new Map<string, MultilingualQuote & { timestamp: number }>();
-const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+const QUOTES: ReadonlyArray<MultilingualQuote> = [
+  // ── Mirza Ghalib (Diwan-e-Ghalib) ────────────────────────────────────────
+  {
+    quote: 'ہزاروں خواہشیں ایسی کہ ہر خواہش پہ دم نکلے\nبہت نکلے میرے ارمان لیکن پھر بھی کم نکلے',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Hazaaron khwahishein aisi ke har khwahish pe dam nikle\nBahut nikle mere armaan lekin phir bhi kam nikle',
+    translation: 'A thousand desires, each worth dying for; many of mine were fulfilled, yet many remain.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'دلِ ناداں تجھے ہوا کیا ہے\nآخر اس درد کی دوا کیا ہے',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Dil-e-naadan tujhe hua kya hai\nAakhir is dard ki dawa kya hai',
+    translation: 'Innocent heart, what has happened to you? At last, what is the cure for this pain?',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'ہم کو معلوم ہے جنّت کی حقیقت لیکن\nدل کے خوش رکھنے کو غالبؔ یہ خیال اچھا ہے',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Hum ko maaloom hai jannat ki haqeeqat lekin\nDil ke khush rakhne ko Ghalib ye khayal achha hai',
+    translation: 'We know the reality of paradise — yet to keep the heart content, Ghalib, this thought is good enough.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'موت کا اِک دن مُعیّن ہے\nنیند کیوں رات بھر نہیں آتی',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Maut ka ek din mu’ayyan hai\nNeend kyun raat bhar nahi aati',
+    translation: 'The day of death is already fixed — why then does sleep not come all night?',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'بے خودی بے سبب نہیں غالبؔ\nکچھ تو ہے جس کی پردہ داری ہے',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Bekhudi besabab nahi Ghalib\nKuchh to hai jis ki pardadari hai',
+    translation: 'This self-loss is not without cause, Ghalib — something is being concealed.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'عشق نے غالبؔ نکمّا کر دیا\nورنہ ہم بھی آدمی تھے کام کے',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Ishq ne Ghalib nikamma kar diya\nWarna hum bhi aadmi the kaam ke',
+    translation: 'Love has rendered Ghalib useless — otherwise, I too was a man of substance.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'رنج سے خوگر ہوا انساں تو مٹ جاتا ہے رنج\nمشکلیں مجھ پر پڑیں اتنی کہ آساں ہو گئیں',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Ranj se khoogar hua insaan to mit jaata hai ranj\nMushkilein mujh par padin itni ke aasaan ho gayin',
+    translation: 'When a person grows accustomed to grief, the grief itself dissolves; so many troubles fell on me that they became easy.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'ہوئی مدّت کہ غالبؔ مر گیا پر یاد آتا ہے\nوہ ہر اِک بات پہ کہنا کہ یوں ہوتا تو کیا ہوتا',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Hui muddat ke Ghalib mar gaya par yaad aata hai\nWoh har ik baat pe kehna ke yun hota to kya hota',
+    translation: 'Long has it been since Ghalib died — yet I remember how he said, of every little thing: "what if it had been so?"',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'نہ تھا کچھ تو خدا تھا، کچھ نہ ہوتا تو خدا ہوتا\nڈبویا مجھ کو ہونے نے، نہ ہوتا میں تو کیا ہوتا',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Na tha kuchh to Khuda tha, kuchh na hota to Khuda hota\nDuboya mujh ko hone ne, na hota main to kya hota',
+    translation: 'When nothing was, God was; if nothing were, God would still be. My very being drowned me — had I not been, what would I be?',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'بازیچۂ اطفال ہے دنیا میرے آگے\nہوتا ہے شب و روز تماشا میرے آگے',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Baazicha-e-atfaal hai duniya mere aage\nHota hai shab-o-roz tamasha mere aage',
+    translation: 'The world is a child’s playground before me — night and day, a spectacle unfolds.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'بسکہ دشوار ہے ہر کام کا آساں ہونا\nآدمی کو بھی میسّر نہیں انساں ہونا',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Baski dushwaar hai har kaam ka aasaan hona\nAadmi ko bhi mayassar nahi insaan hona',
+    translation: 'So hard is it for any task to come easy — even being human is not granted to a man.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'عشرتِ قطرہ ہے دریا میں فنا ہو جانا\nدرد کا حد سے گزرنا ہے دوا ہو جانا',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Ishrat-e-qatra hai darya mein fanaa ho jaana\nDard ka hadd se guzarna hai dawa ho jaana',
+    translation: 'A drop’s ecstasy is to vanish into the sea; pain crossing its limit becomes its own remedy.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'آہ کو چاہیے اِک عمر اثر ہونے تک\nکون جیتا ہے تری زلف کے سر ہونے تک',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Aah ko chahiye ik umr asar hone tak\nKaun jeeta hai teri zulf ke sar hone tak',
+    translation: 'A sigh needs a lifetime to take effect — who lives long enough to win your tresses?',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'دل ہی تو ہے نہ سنگ و خشت، درد سے بھر نہ آئے کیوں\nروئیں گے ہم ہزار بار، کوئی ہمیں ستائے کیوں',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Dil hi to hai na sang-o-khisht, dard se bhar na aaye kyun\nRoyenge hum hazaar baar, koi hamein sataaye kyun',
+    translation: 'It is only a heart, not stone or brick — why would it not fill with pain? We shall weep a thousand times — why must anyone torment us?',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'یہ نہ تھی ہماری قسمت کہ وصالِ یار ہوتا\nاگر اور جیتے رہتے، یہی انتظار ہوتا',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Ye na thi hamaari qismat ke wisaal-e-yaar hota\nAgar aur jeete rehte, yahi intezaar hota',
+    translation: 'It was not in our fate to be united with the beloved — had we lived longer, this very waiting would have continued.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'حضرتِ ناصح! گر آئیں دیدہ و دل فرشِ راہ\nکوئی مجھ کو یہ تو سمجھا دے کہ سمجھاؤں اسے کیا',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Hazrat-e-Naasih! gar aayein deeda-o-dil farsh-e-raah\nKoi mujh ko ye to samjha de ke samjhaaon use kya',
+    translation: 'O preacher, even if you come with eye and heart spread for the road — let someone first explain to me what I am to explain to him.',
+    source: 'Diwan-e-Ghalib',
+  },
+  {
+    quote: 'غم اگرچہ جاں گسل ہے، پہ کہاں بچیں کہ دل ہے\nغمِ عشق گر نہ ہوتا، غمِ روزگار ہوتا',
+    author: 'Mirza Ghalib',
+    language: 'ur',
+    transliteration: 'Gham agarche jaan-gusil hai, pe kahaan bachen ke dil hai\nGham-e-ishq gar na hota, gham-e-rozgaar hota',
+    translation: 'Grief, though life-shattering — where to flee, when the heart is here? If not the grief of love, it would be the grief of livelihood.',
+    source: 'Diwan-e-Ghalib',
+  },
 
-// English Rebellion Poetry Quotes (30)
-const ENGLISH_QUOTES: MultilingualQuote[] = [
-    { quote: "Still I rise.", author: "Maya Angelou", language: 'en' },
-    { quote: "I am not free while any woman is unfree, even when her shackles are very different from my own.", author: "Audre Lorde", language: 'en' },
-    { quote: "The most common way people give up their power is by thinking they don't have any.", author: "Alice Walker", language: 'en' },
-    { quote: "If you are neutral in situations of injustice, you have chosen the side of the oppressor.", author: "Desmond Tutu", language: 'en' },
-    { quote: "Freedom is never voluntarily given by the oppressor; it must be demanded by the oppressed.", author: "Martin Luther King Jr.", language: 'en' },
-    { quote: "The revolution is not an apple that falls when it is ripe. You have to make it fall.", author: "Che Guevara", language: 'en' },
-    { quote: "I have learned over the years that when one's mind is made up, this diminishes fear.", author: "Rosa Parks", language: 'en' },
-    { quote: "Emancipate yourselves from mental slavery. None but ourselves can free our minds.", author: "Bob Marley", language: 'en' },
-    { quote: "The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion.", author: "Albert Camus", language: 'en' },
-    { quote: "I would rather die on my feet than live on my knees.", author: "Emiliano Zapata", language: 'en' },
-    { quote: "Those who make peaceful revolution impossible will make violent revolution inevitable.", author: "John F. Kennedy", language: 'en' },
-    { quote: "Disobedience is the true foundation of liberty. The obedient must be slaves.", author: "Henry David Thoreau", language: 'en' },
-    { quote: "The secret of happiness is freedom, and the secret of freedom is courage.", author: "Thucydides", language: 'en' },
-    { quote: "They tried to bury us. They didn't know we were seeds.", author: "Mexican Proverb", language: 'en' },
-    { quote: "No one is free until we are all free.", author: "Emma Lazarus", language: 'en' },
-    { quote: "Injustice anywhere is a threat to justice everywhere.", author: "Martin Luther King Jr.", language: 'en' },
-    { quote: "You cannot buy the revolution. You cannot make the revolution. You can only be the revolution.", author: "Ursula K. Le Guin", language: 'en' },
-    { quote: "The duty of youth is to challenge corruption.", author: "Kurt Cobain", language: 'en' },
-    { quote: "When the people fear the government there is tyranny, when the government fears the people there is liberty.", author: "Thomas Jefferson", language: 'en' },
-    { quote: "I am no longer accepting the things I cannot change. I am changing the things I cannot accept.", author: "Angela Davis", language: 'en' },
-    { quote: "It is not the consciousness of men that determines their being, but their social being that determines their consciousness.", author: "Karl Marx", language: 'en' },
-    { quote: "The oppressed are allowed once every few years to decide which particular representatives of the oppressing class are to represent and repress them.", author: "Karl Marx", language: 'en' },
-    { quote: "A riot is the language of the unheard.", author: "Martin Luther King Jr.", language: 'en' },
-    { quote: "Better to die fighting for freedom than be a prisoner all the days of your life.", author: "Bob Marley", language: 'en' },
-    { quote: "We must always take sides. Neutrality helps the oppressor, never the victim.", author: "Elie Wiesel", language: 'en' },
-    { quote: "The people who are crazy enough to think they can change the world are the ones who do.", author: "Steve Jobs", language: 'en' },
-    { quote: "First they ignore you, then they ridicule you, then they fight you, and then you win.", author: "Mahatma Gandhi", language: 'en' },
-    { quote: "Be the change you wish to see in the world.", author: "Mahatma Gandhi", language: 'en' },
-    { quote: "In a gentle way, you can shake the world.", author: "Mahatma Gandhi", language: 'en' },
-    { quote: "Power concedes nothing without a demand. It never did and it never will.", author: "Frederick Douglass", language: 'en' }
+  // ── Mir Taqi Mir (Kulliyat-e-Mir) ─────────────────────────────────────────
+  {
+    quote: 'پتّا پتّا بُوٹا بُوٹا حال ہمارا جانے ہے\nجانے نہ جانے گُل ہی نہ جانے، باغ تو سارا جانے ہے',
+    author: 'Mir Taqi Mir',
+    language: 'ur',
+    transliteration: 'Patta patta boota boota haal hamaara jaane hai\nJaane na jaane gul hi na jaane, baagh to saara jaane hai',
+    translation: 'Every leaf, every plant knows my condition — whether the rose knows or not, the whole garden knows.',
+    source: 'Kulliyat-e-Mir',
+  },
+  {
+    quote: 'ابتدائے عشق ہے روتا ہے کیا\nآگے آگے دیکھیے ہوتا ہے کیا',
+    author: 'Mir Taqi Mir',
+    language: 'ur',
+    transliteration: 'Ibtida-e-ishq hai rota hai kya\nAage aage dekhiye hota hai kya',
+    translation: 'This is only love’s beginning — why already weep? Wait and watch what is yet to come.',
+    source: 'Kulliyat-e-Mir',
+  },
+  {
+    quote: 'میرؔ کیا سادہ ہیں، بیمار ہوئے جس کے سبب\nاُسی عطّار کے لونڈے سے دوا لیتے ہیں',
+    author: 'Mir Taqi Mir',
+    language: 'ur',
+    transliteration: 'Mir kya saade hain, beemaar hue jis ke sabab\nUsi attaar ke launde se dawa lete hain',
+    translation: 'How innocent Mir is — the very one who made him ill, from that perfumer’s lad he begs his cure.',
+    source: 'Kulliyat-e-Mir',
+  },
+  {
+    quote: 'ہستی اپنی حباب کی سی ہے\nیہ نمائش سراب کی سی ہے',
+    author: 'Mir Taqi Mir',
+    language: 'ur',
+    transliteration: 'Hasti apni habab ki si hai\nYeh numaaish saraab ki si hai',
+    translation: 'My existence is like a bubble; this whole show is like a mirage.',
+    source: 'Kulliyat-e-Mir',
+  },
+  {
+    quote: 'دیکھ تو دل کہ جاں سے اٹھتا ہے\nیہ دھواں سا کہاں سے اٹھتا ہے',
+    author: 'Mir Taqi Mir',
+    language: 'ur',
+    transliteration: 'Dekh to dil ke jaan se uthta hai\nYeh dhuaan sa kahaan se uthta hai',
+    translation: 'Look — does it rise from the heart, or from the soul? Where does this smoke arise from?',
+    source: 'Kulliyat-e-Mir',
+  },
+  {
+    quote: 'اُلٹی ہو گئیں سب تدبیریں کچھ نہ دوا نے کام کیا\nدیکھا اس بیماریِ دل نے آخر کام تمام کیا',
+    author: 'Mir Taqi Mir',
+    language: 'ur',
+    transliteration: 'Ulti ho gayin sab tadbeerein kuchh na dawa ne kaam kiya\nDekha is beemaari-e-dil ne aakhir kaam tamaam kiya',
+    translation: 'Every plan went awry, no medicine availed — see how this heart-sickness, in the end, finished me off.',
+    source: 'Kulliyat-e-Mir',
+  },
+  {
+    quote: 'نازکی اس کے لب کی کیا کہئے\nپنکھڑی اِک گلاب کی سی ہے',
+    author: 'Mir Taqi Mir',
+    language: 'ur',
+    transliteration: 'Naazuki us ke lab ki kya kahiye\nPankhdi ik gulab ki si hai',
+    translation: 'How shall I describe the delicacy of her lips? They are like the petal of a single rose.',
+    source: 'Kulliyat-e-Mir',
+  },
+  {
+    quote: 'شام ہی سے بجھا سا رہتا ہے\nدل ہوا ہے چراغ مفلس کا',
+    author: 'Mir Taqi Mir',
+    language: 'ur',
+    transliteration: 'Shaam hi se bujha sa rehta hai\nDil hua hai chiraagh muflis ka',
+    translation: 'From dusk onward it stays half-extinguished — my heart has become a beggar’s lamp.',
+    source: 'Kulliyat-e-Mir',
+  },
+
+  // ── Allama Iqbal ─────────────────────────────────────────────────────────
+  {
+    quote: 'خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے\nخدا بندے سے خود پوچھے، بتا تیری رضا کیا ہے',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Khudi ko kar buland itna ke har taqdeer se pehle\nKhuda bande se khud poochhe, bata teri raza kya hai',
+    translation: 'Raise your selfhood so high that, before every fate, God Himself asks His servant: tell me, what is your will?',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'ستاروں سے آگے جہاں اور بھی ہیں\nابھی عشق کے امتحاں اور بھی ہیں',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Sitaaron se aage jahaan aur bhi hain\nAbhi ishq ke imtihaan aur bhi hain',
+    translation: 'Beyond the stars there are worlds yet more — many trials of love still remain.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'تو شاہیں ہے، پرواز ہے کام تیرا\nتیرے سامنے آسماں اور بھی ہیں',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Tu shaheen hai, parwaaz hai kaam tera\nTere saamne aasmaan aur bhi hain',
+    translation: 'You are a falcon — flight is your calling. Before you lie skies yet greater.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'نہیں تیرا نشیمن قصرِ سلطانی کے گنبد پر\nتو شاہیں ہے، بسیرا کر پہاڑوں کی چٹانوں پر',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Nahi tera nasheman qasr-e-sultani ke gumbad par\nTu shaheen hai, basera kar pahaaron ki chataanon par',
+    translation: 'Your nest is not on the dome of the king’s palace — you are a falcon; make your home on the crags of mountains.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'اپنے من میں ڈوب کر پا جا سراغِ زندگی\nتو اگر میرا نہیں بنتا، نہ بن، اپنا تو بن',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Apne man mein doob kar paa ja suraagh-e-zindagi\nTu agar mera nahi banta, na ban, apna to ban',
+    translation: 'Plunge into your own self and find life’s trace; if you will not be mine, then at least be your own.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'اے طائرِ لاہوتی! اس رزق سے موت اچھی\nجس رزق سے آتی ہو پرواز میں کوتاہی',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Ae taa’ir-e-laahooti! is rizq se maut achhi\nJis rizq se aati ho parwaaz mein kotaahi',
+    translation: 'O divine bird, death is better than that sustenance which shortens your flight.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'ڈھونڈنے والا ستاروں کی گزر گاہوں کا\nاپنے افکار کی دنیا میں سفر کر نہ سکا',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Dhoondne wala sitaaron ki guzargaahon ka\nApne afkaar ki duniya mein safar kar na saka',
+    translation: 'The seeker of the highways of stars could not journey into the world of his own thoughts.',
+    source: 'Zarb-e-Kalim',
+  },
+  {
+    quote: 'محبت مجھے ان جوانوں سے ہے\nستاروں پہ جو ڈالتے ہیں کمند',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Mohabbat mujhe un jawaanon se hai\nSitaaron pe jo daalte hain kamand',
+    translation: 'My love is for those young men who cast their lassoes at the stars.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'خدا تجھے کسی طوفاں سے آشنا کر دے\nکہ تیرے بحر کی موجوں میں اضطراب نہیں',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Khuda tujhe kisi toofaan se aashna kar de\nKe tere bahr ki maujon mein iztiraab nahi',
+    translation: 'May God acquaint you with some storm — for the waves of your sea contain no restlessness.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'غلامی میں نہ کام آتی ہیں شمشیریں نہ تدبیریں\nجو ہو ذوقِ یقیں پیدا تو کٹ جاتی ہیں زنجیریں',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Ghulami mein na kaam aati hain shamsheerein na tadbeerein\nJo ho zauq-e-yaqeen paida to kat jaati hain zanjeerein',
+    translation: 'In bondage neither swords nor strategies avail — once a taste for certainty is born, the chains break of themselves.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'کبھی اے حقیقتِ منتظر! نظر آ لباسِ مجاز میں\nکہ ہزاروں سجدے تڑپ رہے ہیں مری جبینِ نیاز میں',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Kabhi ae haqeeqat-e-muntazar! nazar aa libaas-e-majaaz mein\nKe hazaaron sajde tadap rahe hain meri jabeen-e-niyaaz mein',
+    translation: 'O awaited Reality, appear once in the garb of metaphor — a thousand prostrations writhe upon my brow of supplication.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'خرد نے کہہ بھی دیا "لا الٰہ" تو کیا حاصل\nدل و نگاہ مسلماں نہیں تو کچھ بھی نہیں',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Khirad ne keh bhi diya "la ilaaha" to kya haasil\nDil-o-nigaah Musalmaan nahi to kuchh bhi nahi',
+    translation: 'Even if the intellect declares "there is no god" — what use, if heart and gaze are not those of a believer?',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'اقبالؔ بڑا اپدیشک ہے، من باتوں میں موہ لیتا ہے\nگفتار کا یہ غازی تو بنا، کردار کا غازی بن نہ سکا',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Iqbal bada updeshak hai, man baaton mein moh leta hai\nGuftaar ka ye ghazi to bana, kirdaar ka ghazi ban na saka',
+    translation: 'Iqbal is a great preacher — he charms the heart with words. He became a champion of speech, but could not become a champion of conduct.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'نہیں ہے ناامید اقبالؔ اپنی کشتِ ویراں سے\nذرا نم ہو تو یہ مٹی بڑی زرخیز ہے ساقی',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Nahi hai naumeed Iqbal apni kisht-e-veeraan se\nZara nam ho to ye mitti badi zarkhez hai saaqi',
+    translation: 'Iqbal does not despair of his barren field — give it a little moisture, O cup-bearer, and this soil is very fertile.',
+    source: 'Bal-e-Jibril',
+  },
+  {
+    quote: 'نگاہِ بلند، سخن دلنواز، جاں پُرسوز\nیہی ہے رختِ سفر میرِ کارواں کے لیے',
+    author: 'Allama Iqbal',
+    language: 'ur',
+    transliteration: 'Nigaah-e-buland, sukhan dilnawaaz, jaan pursoz\nYahi hai rakht-e-safar Meer-e-Karwaan ke liye',
+    translation: 'A lofty gaze, heart-winning speech, a soul aflame — these are the travel-gear of the caravan’s leader.',
+    source: 'Bal-e-Jibril',
+  },
+
+  // ── Faiz Ahmed Faiz ──────────────────────────────────────────────────────
+  {
+    quote: 'بول کہ لب آزاد ہیں تیرے\nبول، زباں اب تک تیری ہے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Bol ke lab azad hain tere\nBol, zubaan ab tak teri hai',
+    translation: 'Speak, for your lips are free; speak, your tongue is still your own.',
+    source: 'Bol (Naqsh-e-Faryadi)',
+  },
+  {
+    quote: 'ہم دیکھیں گے\nلازم ہے کہ ہم بھی دیکھیں گے\nوہ دن کہ جس کا وعدہ ہے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Hum dekhenge\nLazim hai ke hum bhi dekhenge\nWoh din ke jis ka waada hai',
+    translation: 'We shall witness — it is certain that we too shall witness that day which has been promised.',
+    source: 'Hum Dekhenge',
+  },
+  {
+    quote: 'مجھ سے پہلی سی محبت میرے محبوب نہ مانگ\nمیں نے سمجھا تھا کہ تو ہے تو درخشاں ہے حیات',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Mujh se pehli si mohabbat mere mehboob na maang\nMaine samjha tha ke tu hai to darakhshaan hai hayaat',
+    translation: 'Do not ask of me, my love, the love I once gave you. I had thought: if you exist, life is radiance.',
+    source: 'Naqsh-e-Faryadi',
+  },
+  {
+    quote: 'یہ داغ داغ اُجالا، یہ شب گزیدہ سحر\nوہ انتظار تھا جس کا، یہ وہ سحر تو نہیں',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Yeh daagh daagh ujala, yeh shab-gazida sahar\nWoh intezaar tha jis ka, yeh woh sahar to nahi',
+    translation: 'This stained light, this night-bitten dawn — this is not the morning we had awaited.',
+    source: 'Subh-e-Azadi (Dast-e-Saba)',
+  },
+  {
+    quote: 'گلوں میں رنگ بھرے، بادِ نوبہار چلے\nچلے بھی آؤ کہ گلشن کا کاروبار چلے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Gulon mein rang bhare, baad-e-naubahaar chale\nChale bhi aao ke gulshan ka kaarobaar chale',
+    translation: 'Let colour fill the flowers; let the new spring breeze blow — come, then, so the garden’s business may resume.',
+    source: 'Dast-e-Tah-e-Sang',
+  },
+  {
+    quote: 'آئیے ہاتھ اٹھائیں ہم بھی\nہم جنہیں رسمِ دعا یاد نہیں',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Aaiye haath uthaayein hum bhi\nHum jinhein rasm-e-dua yaad nahi',
+    translation: 'Come, let us too raise our hands in prayer — we, who no longer remember the rites of supplication.',
+    source: 'Dast-e-Saba',
+  },
+  {
+    quote: 'دل نہ امّید تو نہیں، ناکام ہی تو ہے\nلمبی ہے غم کی شام، مگر شام ہی تو ہے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Dil na umeed to nahi, naakaam hi to hai\nLambi hai gham ki shaam, magar shaam hi to hai',
+    translation: 'The heart is not without hope — only unfulfilled. The evening of grief is long — but it is, after all, only an evening.',
+    source: 'Dast-e-Saba',
+  },
+  {
+    quote: 'مقامِ فیضؔ کوئی راہ میں جچا ہی نہیں\nجو کوئے یار سے نکلے تو سوئے دار چلے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Maqaam-e-Faiz koi raah mein jacha hi nahi\nJo koo-e-yaar se nikle to soo-e-daar chale',
+    translation: 'No station on the way pleased Faiz — leaving the beloved’s street, he set out straight for the gallows.',
+  },
+  {
+    quote: 'نثار میں تری گلیوں کے اے وطن، کہ جہاں\nچلی ہے رسم کہ کوئی نہ سر اٹھا کے چلے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Nisaar main teri galiyon ke ae watan, ke jahaan\nChali hai rasm ke koi na sar utha ke chale',
+    translation: 'I lay myself down for your alleys, O homeland — where the custom is that no one walks with head held high.',
+    source: 'Dast-e-Saba',
+  },
+  {
+    quote: 'رات یوں دل میں تری کھوئی ہوئی یاد آئی\nجیسے ویرانے میں چپکے سے بہار آ جائے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Raat yun dil mein teri khoyi hui yaad aayi\nJaise veerane mein chupke se bahaar aa jaaye',
+    translation: 'Tonight your lost memory came to my heart as if, in a wasteland, spring arrived in silence.',
+    source: 'Naqsh-e-Faryadi',
+  },
+  {
+    quote: 'وہ بات سارے فسانے میں جس کا ذکر نہ تھا\nوہ بات اُن کو بہت ناگوار گزری ہے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Woh baat saare fasaane mein jis ka zikr na tha\nWoh baat un ko bahut naagawaar guzri hai',
+    translation: 'That one thing — the very thing the whole tale never mentioned — that is what they found most unbearable.',
+    source: 'Sar-e-Wadi-e-Seena',
+  },
+  {
+    quote: 'ہم پرورشِ لوحِ قلم کرتے رہیں گے\nجو دل پہ گزرتی ہے رقم کرتے رہیں گے',
+    author: 'Faiz Ahmed Faiz',
+    language: 'ur',
+    transliteration: 'Hum parwarish-e-lauh-o-qalam karte rahenge\nJo dil pe guzarti hai raqam karte rahenge',
+    translation: 'We will keep nurturing tablet and pen — whatever passes over the heart, we will keep writing down.',
+  },
+
+  // ── Jaun Elia ────────────────────────────────────────────────────────────
+  {
+    quote: 'ہم رہے بھی تو کیا رہے یارو\nیعنی اپنا ہی نام رہنے دیا',
+    author: 'Jaun Elia',
+    language: 'ur',
+    transliteration: 'Hum rahe bhi to kya rahe yaaro\nYa’ni apna hi naam rehne diya',
+    translation: 'And what kind of remaining was ours, friends — we left behind only our name.',
+  },
+  {
+    quote: 'اب نہیں کوئی بات خطرے کی\nاب سبھی کو سبھی سے خطرہ ہے',
+    author: 'Jaun Elia',
+    language: 'ur',
+    transliteration: 'Ab nahi koi baat khatre ki\nAb sabhi ko sabhi se khatra hai',
+    translation: 'Nothing dangerous remains to be said — now everyone is a danger to everyone.',
+  },
+  {
+    quote: 'میں بھی بہت عجیب ہوں اتنا عجیب ہوں کہ بس\nخود کو تباہ کر لیا اور ملال بھی نہیں',
+    author: 'Jaun Elia',
+    language: 'ur',
+    transliteration: 'Main bhi bahut ajeeb hoon itna ajeeb hoon ke bas\nKhud ko tabaah kar liya aur malaal bhi nahi',
+    translation: 'I too am strange — so strange that I ruined myself, and don’t even regret it.',
+  },
+  {
+    quote: 'اب تو ہر وقت یہی ہوتا ہے\nکچھ نہیں ہوتا تو کیا ہوتا ہے',
+    author: 'Jaun Elia',
+    language: 'ur',
+    transliteration: 'Ab to har waqt yahi hota hai\nKuchh nahi hota to kya hota hai',
+    translation: 'Now this is all that happens at every moment: nothing happens — and what is that, if not something?',
+  },
+  {
+    quote: 'ایک ہی حادثہ تو ہے اور وہ یہ\nآج تک بات ہی نہیں ہوئی',
+    author: 'Jaun Elia',
+    language: 'ur',
+    transliteration: 'Ek hi haadsa to hai aur woh ye\nAaj tak baat hi nahi hui',
+    translation: 'There is only one disaster, and it is this: to this day, we have never spoken.',
+  },
+  {
+    quote: 'جو گزاری نہ جا سکی ہم سے\nہم نے وہ زندگی گزاری ہے',
+    author: 'Jaun Elia',
+    language: 'ur',
+    transliteration: 'Jo guzaari na ja saki hum se\nHum ne woh zindagi guzaari hai',
+    translation: 'The life that could not be lived — that is the life I have lived.',
+  },
+
+  // ── Ahmed Faraz ──────────────────────────────────────────────────────────
+  {
+    quote: 'اب کے ہم بچھڑے تو شاید کبھی خوابوں میں ملیں\nجس طرح سوکھے ہوئے پھول کتابوں میں ملیں',
+    author: 'Ahmed Faraz',
+    language: 'ur',
+    transliteration: 'Ab ke hum bichhde to shaayad kabhi khwaabon mein milein\nJis tarah sookhe hue phool kitaabon mein milein',
+    translation: 'If we part now, perhaps we will meet only in dreams — the way dried flowers are found in old books.',
+  },
+  {
+    quote: 'سنا ہے لوگ اسے آنکھ بھر کے دیکھتے ہیں\nسو اس کے شہر میں کچھ دن ٹھہر کے دیکھتے ہیں',
+    author: 'Ahmed Faraz',
+    language: 'ur',
+    transliteration: 'Suna hai log use aankh bhar ke dekhte hain\nSo us ke shehr mein kuchh din thehar ke dekhte hain',
+    translation: 'I’ve heard they look at her with eyes filled to the brim — so let me linger a few days in her city, and see.',
+  },
+  {
+    quote: 'زندگی سے یہی گلہ ہے مجھے\nتو بہت دیر سے ملا ہے مجھے',
+    author: 'Ahmed Faraz',
+    language: 'ur',
+    transliteration: 'Zindagi se yahi gila hai mujhe\nTu bahut der se mila hai mujhe',
+    translation: 'This is my one complaint with life: that you came to me too late.',
+  },
+  {
+    quote: 'رنجش ہی سہی، دل ہی دکھانے کے لیے آ\nآ پھر سے مجھے چھوڑ کے جانے کے لیے آ',
+    author: 'Ahmed Faraz',
+    language: 'ur',
+    transliteration: 'Ranjish hi sahi, dil hi dukhaane ke liye aa\nAa phir se mujhe chhod ke jaane ke liye aa',
+    translation: 'Let it even be quarrel — come at least to wound the heart; come once more, if only to leave me again.',
+  },
+  {
+    quote: 'یہ کیا کہ سب سے بیاں دلِ حال ہم نے کیا\nجو غم خاص تھا اس کو بھی عام ہم نے کیا',
+    author: 'Ahmed Faraz',
+    language: 'ur',
+    transliteration: 'Ye kya ke sab se bayaan-e-dil-e-haal hum ne kiya\nJo gham khaas tha us ko bhi aam hum ne kiya',
+    translation: 'What kind of folly was this — to tell my heart’s state to all? The grief that was private, I made common.',
+  },
+  {
+    quote: 'شکوہ ظلمتِ شب سے تو کہیں بہتر تھا\nاپنے حصے کی کوئی شمع جلاتے جاتے',
+    author: 'Ahmed Faraz',
+    language: 'ur',
+    transliteration: 'Shikwa zulmat-e-shab se to kaheen behtar tha\nApne hisse ki koi shama jalaate jaate',
+    translation: 'Far better than complaining of the night’s darkness — to have lit, in passing, the small lamp that was your share.',
+  },
+  {
+    quote: 'اب کے تجدیدِ وفا کا نہیں امکاں جاناں\nیاد کیا تجھ کو دلائیں ترا پیماں جاناں',
+    author: 'Ahmed Faraz',
+    language: 'ur',
+    transliteration: 'Ab ke tajdeed-e-wafa ka nahi imkaan jaanaan\nYaad kya tujh ko dilaayein tera paimaan jaanaan',
+    translation: 'There is no chance, this time, of renewing the vow, beloved — what use to remind you of your promise?',
+  },
+
+  // ── Parveen Shakir ───────────────────────────────────────────────────────
+  {
+    quote: 'وہ تو خوشبو ہے، ہواؤں میں بکھر جائے گا\nمسئلہ پھول کا ہے، پھول کدھر جائے گا',
+    author: 'Parveen Shakir',
+    language: 'ur',
+    transliteration: 'Woh to khushboo hai, hawaaon mein bikhar jaayega\nMasla phool ka hai, phool kidhar jaayega',
+    translation: 'He is fragrance — he will scatter in the winds; the trouble is the flower’s — where will the flower go?',
+    source: 'Khushboo',
+  },
+  {
+    quote: 'کیسے کہہ دوں کہ مجھے چھوڑ دیا ہے اس نے\nبات تو سچ ہے مگر بات ہے رسوائی کی',
+    author: 'Parveen Shakir',
+    language: 'ur',
+    transliteration: 'Kaise keh doon ke mujhe chhod diya hai us ne\nBaat to sach hai magar baat hai ruswaai ki',
+    translation: 'How can I say that he has left me? It is true — but it is a thing of disgrace.',
+    source: 'Khushboo',
+  },
+  {
+    quote: 'میں سچ کہوں گی، مگر پھر بھی ہار جاؤں گی\nوہ جھوٹ بولے گا اور لاجواب کر دے گا',
+    author: 'Parveen Shakir',
+    language: 'ur',
+    transliteration: 'Main sach kahoongi, magar phir bhi haar jaaungi\nWoh jhoot bolega aur laajawaab kar dega',
+    translation: 'I shall speak the truth — and still, I will lose. He will lie, and leave me with no reply.',
+    source: 'Khushboo',
+  },
+  {
+    quote: 'وہ کہیں بھی گیا، لوٹا تو میرے پاس آیا\nبس یہی بات ہے اچھی میرے ہرجائی کی',
+    author: 'Parveen Shakir',
+    language: 'ur',
+    transliteration: 'Woh kaheen bhi gaya, lauta to mere paas aaya\nBas yahi baat hai achhi mere harjaai ki',
+    translation: 'Wherever he went, when he returned, he came to me — that, alone, is the redeeming thing about my faithless one.',
+    source: 'Khushboo',
+  },
+  {
+    quote: 'اس نے جلتی ہوئی پیشانی پہ جب ہاتھ رکھا\nروح تک آ گئی تاثیرِ مسیحائی کی',
+    author: 'Parveen Shakir',
+    language: 'ur',
+    transliteration: 'Us ne jalti hui peshaani pe jab haath rakha\nRooh tak aa gayi taaseer-e-maseehaayi ki',
+    translation: 'When he placed his hand upon my burning brow, the healing of a messiah reached down even into my soul.',
+    source: 'Khushboo',
+  },
+
+  // ── Sahir Ludhianvi ──────────────────────────────────────────────────────
+  {
+    quote: 'یہ محلوں، یہ تختوں، یہ تاجوں کی دنیا\nیہ انسان کے دشمن سماجوں کی دنیا',
+    author: 'Sahir Ludhianvi',
+    language: 'ur',
+    transliteration: 'Yeh mehlon, yeh takhton, yeh taajon ki duniya\nYeh insaan ke dushman samaajon ki duniya',
+    translation: 'This world of palaces, thrones, and crowns — this world of societies that are enemies of mankind.',
+    source: 'Talkhiyaan',
+  },
+  {
+    quote: 'تاج تیرے لیے اِک مظہرِ الفت ہی سہی\nتجھ کو اس وادیٔ رنگیں سے عقیدت ہی سہی\nمیرے محبوب کہیں اور ملا کر مجھ سے',
+    author: 'Sahir Ludhianvi',
+    language: 'ur',
+    transliteration: 'Taj tere liye ik mazhar-e-ulfat hi sahi\nTujh ko is waadi-e-rangeen se aqeedat hi sahi\nMere mehboob kaheen aur mila kar mujh se',
+    translation: 'For you, the Taj may be a symbol of love; for you, this colourful valley may hold devotion — but, my beloved, meet me somewhere else.',
+    source: 'Taj Mahal (Talkhiyaan)',
+  },
+  {
+    quote: 'چلو اک بار پھر سے، اجنبی بن جائیں ہم دونوں',
+    author: 'Sahir Ludhianvi',
+    language: 'ur',
+    transliteration: 'Chalo ik baar phir se, ajnabi ban jaayein hum donon',
+    translation: 'Come, once more, let us become strangers to each other.',
+    source: 'Talkhiyaan',
+  },
+  {
+    quote: 'اور بھی غم ہیں زمانے میں محبت کے سوا\nراحتیں اور بھی ہیں وصل کی راحت کے سوا',
+    author: 'Sahir Ludhianvi',
+    language: 'ur',
+    transliteration: 'Aur bhi gham hain zamaane mein mohabbat ke siwa\nRaahatein aur bhi hain wasl ki raahat ke siwa',
+    translation: 'There are sorrows in the world other than love; there are pleasures other than the pleasure of union.',
+    source: 'Talkhiyaan',
+  },
+  {
+    quote: 'میں ہر اِک پل کا شاعر ہوں، ہر اِک پل میری کہانی ہے\nہر اِک پل میری ہستی ہے، ہر اِک پل میری جوانی ہے',
+    author: 'Sahir Ludhianvi',
+    language: 'ur',
+    transliteration: 'Main har ik pal ka shaayar hoon, har ik pal meri kahaani hai\nHar ik pal meri hasti hai, har ik pal meri jawaani hai',
+    translation: 'I am the poet of every moment — every moment my story; every moment my being; every moment my youth.',
+    source: 'Kabhi Kabhie',
+  },
+
+  // ── Habib Jalib ──────────────────────────────────────────────────────────
+  {
+    quote: 'دیپ جس کا محلّات ہی میں جلے\nچند لوگوں کی خوشیوں کو لے کر چلے\nایسے دستور کو، صبحِ بے نور کو\nمیں نہیں مانتا، میں نہیں جانتا',
+    author: 'Habib Jalib',
+    language: 'ur',
+    transliteration: 'Deep jis ka mahallaat hi mein jale\nChand logon ki khushiyon ko le kar chale\nAise dastoor ko, subh-e-be-noor ko\nMain nahi maanta, main nahi jaanta',
+    translation: 'A lamp that burns only in palaces, that carries the joys of a few — such a constitution, such a lightless dawn, I do not accept, I do not know.',
+    source: 'Dastoor',
+  },
+  {
+    quote: 'میں بھی خائف نہیں تختۂ دار سے\nمیں بھی منصور ہوں، کہہ دو اغیار سے\nظلم کی بات کو، جہل کی رات کو\nمیں نہیں مانتا، میں نہیں جانتا',
+    author: 'Habib Jalib',
+    language: 'ur',
+    transliteration: 'Main bhi khaaif nahi takhta-e-daar se\nMain bhi Mansoor hoon, keh do aghyaar se\nZulm ki baat ko, jahl ki raat ko\nMain nahi maanta, main nahi jaanta',
+    translation: 'I, too, do not fear the gallows; I, too, am Mansoor — tell my opponents so. Tyranny’s talk, ignorance’s night — I do not accept, I do not know.',
+    source: 'Dastoor',
+  },
+  {
+    quote: 'محبت گولیوں سے بو رہے ہو\nوطن کا چہرہ خون سے دھو رہے ہو',
+    author: 'Habib Jalib',
+    language: 'ur',
+    transliteration: 'Mohabbat goliyon se bo rahe ho\nWatan ka chehra khoon se dho rahe ho',
+    translation: 'You are sowing love with bullets; you are washing the homeland’s face with blood.',
+  },
+
+  // ── Nasir Kazmi ──────────────────────────────────────────────────────────
+  {
+    quote: 'دل میں اِک لہر سی اٹھی ہے ابھی\nکوئی تازہ ہوا چلی ہے ابھی',
+    author: 'Nasir Kazmi',
+    language: 'ur',
+    transliteration: 'Dil mein ik lehar si uthi hai abhi\nKoi taaza hawa chali hai abhi',
+    translation: 'A wave has just risen in the heart; some fresh wind has just begun to blow.',
+  },
+  {
+    quote: 'گئے دنوں کا سراغ لے کر کدھر سے آیا، کدھر گیا وہ',
+    author: 'Nasir Kazmi',
+    language: 'ur',
+    transliteration: 'Gaye dinon ka suraagh le kar kidhar se aaya, kidhar gaya woh',
+    translation: 'Bringing news of bygone days, where did he come from, and where did he go?',
+  },
+
+  // ── Wasi Shah ────────────────────────────────────────────────────────────
+  {
+    quote: 'محبتیں جب شمار میں آ جائیں\nدل کا بھرم ٹوٹ جاتا ہے',
+    author: 'Wasi Shah',
+    language: 'ur',
+    transliteration: 'Mohabbatein jab shumaar mein aa jaayein\nDil ka bharam toot jaata hai',
+    translation: 'Once love begins to be counted, the heart’s illusion shatters.',
+  },
+
+  // ── Ibn-e-Insha ──────────────────────────────────────────────────────────
+  {
+    quote: 'اِنشاؔ جی اٹھو، اب کوچ کرو، اِس شہر میں جی کا لگانا کیا',
+    author: 'Ibn-e-Insha',
+    language: 'ur',
+    transliteration: 'Insha ji utho, ab kooch karo, is shehr mein ji ka lagaana kya',
+    translation: 'Insha, rise — depart now. What is the use of giving your heart to this city?',
+  },
+  {
+    quote: 'کل چودہویں کی رات تھی، شب بھر رہا چرچا تیرا\nکچھ نے کہا یہ چاند ہے، کچھ نے کہا چہرہ تیرا',
+    author: 'Ibn-e-Insha',
+    language: 'ur',
+    transliteration: 'Kal chaudhveen ki raat thi, shab bhar raha charcha tera\nKuchh ne kaha yeh chaand hai, kuchh ne kaha chehra tera',
+    translation: 'Last night was the fourteenth — all night long the talk was of you. Some said, "this is the moon"; some said, "this is your face."',
+  },
+
+  // ── Gulzar ───────────────────────────────────────────────────────────────
+  {
+    quote: 'آنکھوں کو ویزا نہیں لگتا، خوابوں کی سرحد ہوتی نہیں\nبند آنکھوں سے روز میں سرحد پار چلا جاتا ہوں',
+    author: 'Gulzar',
+    language: 'ur',
+    transliteration: 'Aankhon ko visa nahi lagta, khwaabon ki sarhad hoti nahi\nBand aankhon se roz main sarhad paar chala jaata hoon',
+    translation: 'Eyes need no visa; dreams have no border. With eyes shut, I cross the border every day.',
+  },
+  {
+    quote: 'مجھ کو بھی ترکیب سکھا یار جلاہے\nاکثر تجھ کو دیکھا ہے کہ تانا بُنتے\nجب کوئی تاگا ٹوٹ گیا یا کھوٹ گیا\nجوڑ کے اور سرا کوئی، باندھ کے گٹھلی\nآگے بُننے لگتے ہو',
+    author: 'Gulzar',
+    language: 'ur',
+    transliteration: 'Mujh ko bhi tarkeeb sikha yaar julaahe\nAksar tujh ko dekha hai ke taana bunte\nJab koi taaga toot gaya ya khot gaya\nJod ke aur sira koi, baandh ke gathli\nAage bunne lagte ho',
+    translation: 'Teach me your method too, weaver friend — I have often watched you at the loom: when a thread breaks or runs short, you tie another end, knot it, and go on weaving.',
+  },
+
+  // ── Rahat Indori ─────────────────────────────────────────────────────────
+  {
+    quote: 'جو آج صاحبِ مسند ہیں، کل نہیں ہوں گے\nکرائے دار ہیں، ذاتی مکان تھوڑی ہے',
+    author: 'Rahat Indori',
+    language: 'ur',
+    transliteration: 'Jo aaj saahib-e-masnad hain, kal nahi honge\nKiraayedaar hain, zaati makaan thodi hai',
+    translation: 'Those seated on the throne today will not be there tomorrow — they are tenants, this is no private estate.',
+  },
+  {
+    quote: 'اگر خلاف ہیں، ہونے دو، جان تھوڑی ہے\nیہ سب دھواں ہے، کوئی آسمان تھوڑی ہے',
+    author: 'Rahat Indori',
+    language: 'ur',
+    transliteration: 'Agar khilaaf hain, hone do, jaan thodi hai\nYeh sab dhuaan hai, koi aasmaan thodi hai',
+    translation: 'If they are against me — let them be; it is no matter of life. All this is smoke; it is hardly the sky.',
+  },
+  {
+    quote: 'سبھی کا خون شامل ہے یہاں کی مٹی میں\nکسی کے باپ کا ہندوستان تھوڑی ہے',
+    author: 'Rahat Indori',
+    language: 'ur',
+    transliteration: 'Sabhi ka khoon shaamil hai yahaan ki mitti mein\nKisi ke baap ka Hindustan thodi hai',
+    translation: 'Everyone’s blood is mixed in this soil — Hindustan does not belong to anybody’s father.',
+  },
+  {
+    quote: 'سرحدوں پر بہت تناؤ ہے کیا\nکچھ پتا تو کرو الیکشن ہے',
+    author: 'Rahat Indori',
+    language: 'ur',
+    transliteration: 'Sarhadon par bahut tanaao hai kya\nKuchh pata to karo election hai',
+    translation: 'Is there too much tension on the borders? Find out — perhaps an election is near.',
+  },
+
+  // ── Bashir Badr ──────────────────────────────────────────────────────────
+  {
+    quote: 'کوئی ہاتھ بھی نہ ملائے گا جو گلے ملو گے تپاک سے\nیہ نئے مزاج کا شہر ہے، ذرا فاصلے سے ملا کرو',
+    author: 'Bashir Badr',
+    language: 'ur',
+    transliteration: 'Koi haath bhi na milaayega jo gale milo ge tapaak se\nYeh naye mizaaj ka shehr hai, zara faasle se mila karo',
+    translation: 'No one will even shake your hand if you embrace too warmly — this is a city of new moods; meet at a slight distance.',
+  },
+  {
+    quote: 'اجالا اپنے حصّے کا اگر سورج نہیں دیتا\nتو پھر اپنی جلا کر ہی روشنی اپنی بنا لیتے ہیں',
+    author: 'Bashir Badr',
+    language: 'ur',
+    transliteration: 'Ujaala apne hisse ka agar sooraj nahi deta\nTo phir apni jalaa kar hi roshni apni bana lete hain',
+    translation: 'If the sun does not give us our share of light, then we burn ourselves to make our own.',
+  },
+  {
+    quote: 'دشمنی جم کر کرو، لیکن یہ گنجائش رہے\nجب کبھی ہم دوست ہو جائیں تو شرمندہ نہ ہوں',
+    author: 'Bashir Badr',
+    language: 'ur',
+    transliteration: 'Dushmani jam kar karo, lekin ye gunjaaish rahe\nJab kabhi hum dost ho jaayein to sharminda na hon',
+    translation: 'Be enemies, by all means — but leave this much room: that if one day we become friends, we won’t feel ashamed.',
+  },
+
+  // ── Daag Dehlvi ──────────────────────────────────────────────────────────
+  {
+    quote: 'خوب پردہ ہے کہ چلمن سے لگے بیٹھے ہیں\nصاف چھپتے بھی نہیں سامنے آتے بھی نہیں',
+    author: 'Daag Dehlvi',
+    language: 'ur',
+    transliteration: 'Khoob parda hai ke chilman se lage baithe hain\nSaaf chhupte bhi nahi saamne aate bhi nahi',
+    translation: 'A fine veil indeed: she sits leaning against the curtain — she neither hides herself fully, nor comes out into view.',
+  },
+
+  // ── Hasrat Mohani ────────────────────────────────────────────────────────
+  {
+    quote: 'چپکے چپکے رات دن آنسو بہانا یاد ہے\nہم کو اب تک عاشقی کا وہ زمانہ یاد ہے',
+    author: 'Hasrat Mohani',
+    language: 'ur',
+    transliteration: 'Chupke chupke raat din aansoo bahaana yaad hai\nHum ko ab tak aashiqi ka woh zamaana yaad hai',
+    translation: 'I remember the silent shedding of tears, day and night; even now I remember those days of love.',
+  },
+
+  // ── Majrooh Sultanpuri ───────────────────────────────────────────────────
+  {
+    quote: 'میں اکیلا ہی چلا تھا جانبِ منزل مگر\nلوگ ساتھ آتے گئے اور کارواں بنتا گیا',
+    author: 'Majrooh Sultanpuri',
+    language: 'ur',
+    transliteration: 'Main akela hi chala tha jaanib-e-manzil magar\nLog saath aate gaye aur kaarwaan banta gaya',
+    translation: 'I had set out toward my destination alone — yet people kept joining, and a caravan was formed.',
+  },
+
+  // ── Hindi · Dushyant Kumar (Saaye Mein Dhoop) ────────────────────────────
+  {
+    quote: 'हो गई है पीर पर्वत-सी पिघलनी चाहिए\nइस हिमालय से कोई गंगा निकलनी चाहिए',
+    author: 'Dushyant Kumar',
+    language: 'hi',
+    transliteration: 'Ho gayi hai peer parvat-si pighalni chaahiye\nIs Himaalay se koi Ganga nikalni chaahiye',
+    translation: 'The pain has grown mountain-like — it must melt; from this Himalaya, some Ganges must flow.',
+    source: 'Saaye Mein Dhoop',
+  },
+  {
+    quote: 'सिर्फ़ हंगामा खड़ा करना मेरा मक़सद नहीं\nमेरी कोशिश है कि ये सूरत बदलनी चाहिए',
+    author: 'Dushyant Kumar',
+    language: 'hi',
+    transliteration: 'Sirf hangaama khada karna mera maqsad nahi\nMeri koshish hai ke ye soorat badalni chaahiye',
+    translation: 'Merely raising an uproar is not my aim — my effort is that this state of things must change.',
+    source: 'Saaye Mein Dhoop',
+  },
+  {
+    quote: 'कैसे आकाश में सूराख़ नहीं हो सकता\nएक पत्थर तो तबीयत से उछालो यारो',
+    author: 'Dushyant Kumar',
+    language: 'hi',
+    transliteration: 'Kaise aakaash mein sooraakh nahi ho sakta\nEk patthar to tabeeyat se uchhaalo yaaro',
+    translation: 'How can a hole not appear in the sky? Friends, throw at least one stone with all your heart.',
+    source: 'Saaye Mein Dhoop',
+  },
+  {
+    quote: 'कहाँ तो तय था चिराग़ाँ हर एक घर के लिए\nकहाँ चिराग़ मयस्सर नहीं शहर के लिए',
+    author: 'Dushyant Kumar',
+    language: 'hi',
+    transliteration: 'Kahaan to tay tha chiraaghaan har ek ghar ke liye\nKahaan chiraagh mayassar nahi shehar ke liye',
+    translation: 'Lamps were promised for every house — and here, not even one lamp is to be had for the whole city.',
+    source: 'Saaye Mein Dhoop',
+  },
+
+  // ── Hindi · Ramdhari Singh Dinkar ────────────────────────────────────────
+  {
+    quote: 'क्षमा शोभती उस भुजंग को जिसके पास गरल हो\nउसको क्या जो दंतहीन विषहीन विनीत सरल हो',
+    author: 'Ramdhari Singh Dinkar',
+    language: 'hi',
+    transliteration: 'Kshama shobhti us bhujang ko jiske paas garal ho\nUs ko kya jo dant-heen vish-heen vineet saral ho',
+    translation: 'Forgiveness adorns the serpent who carries venom — what does it mean for one toothless, poisonless, meek and simple?',
+    source: 'Rashmirathi',
+  },
+  {
+    quote: 'सिंहासन ख़ाली करो कि जनता आती है',
+    author: 'Ramdhari Singh Dinkar',
+    language: 'hi',
+    transliteration: 'Sinhaasan khaali karo ke janta aati hai',
+    translation: 'Vacate the throne — the people are coming.',
+    source: 'Parashuram ki Pratiksha',
+  },
+  {
+    quote: 'जब नाश मनुज पर छाता है\nपहले विवेक मर जाता है',
+    author: 'Ramdhari Singh Dinkar',
+    language: 'hi',
+    transliteration: 'Jab naash manuj par chhaata hai\nPehle vivek mar jaata hai',
+    translation: 'When ruin falls upon a man, his discernment dies first.',
+    source: 'Rashmirathi',
+  },
+
+  // ── Hindi · Kabir (dohas) ────────────────────────────────────────────────
+  {
+    quote: 'बुरा जो देखन मैं चला, बुरा न मिलिया कोय\nजो दिल खोजा आपना, मुझसे बुरा न कोय',
+    author: 'Kabir',
+    language: 'hi',
+    transliteration: 'Bura jo dekhan main chala, bura na miliya koy\nJo dil khoja aapna, mujh-se bura na koy',
+    translation: 'I went searching for the wicked, but found none; when I searched my own heart, no one was wickeder than I.',
+    source: 'Kabir Dohe',
+  },
+  {
+    quote: 'साईं इतना दीजिए, जा में कुटुंब समाय\nमैं भी भूखा न रहूँ, साधु न भूखा जाय',
+    author: 'Kabir',
+    language: 'hi',
+    transliteration: 'Saaeen itna deejiye, ja mein kutumb samaay\nMain bhi bhookha na rahoon, saadhu na bhookha jaay',
+    translation: 'O Lord, give me only enough to hold my household — that I do not go hungry, nor any seeker leave my door hungry.',
+    source: 'Kabir Dohe',
+  },
+  {
+    quote: 'पोथी पढ़ि पढ़ि जग मुआ, पंडित भया न कोय\nढाई आखर प्रेम का, पढ़े सो पंडित होय',
+    author: 'Kabir',
+    language: 'hi',
+    transliteration: 'Pothi padhi padhi jag mua, pandit bhaya na koy\nDhaai aakhar prem ka, padhe so pandit hoy',
+    translation: 'The world died reading book after book — yet none became truly wise; whoever reads the two-and-a-half letters of love, that one is wise.',
+    source: 'Kabir Dohe',
+  },
+  {
+    quote: 'माटी कहे कुम्हार से, तू क्या रौंदे मोय\nएक दिन ऐसा आएगा, मैं रौंदूँगी तोय',
+    author: 'Kabir',
+    language: 'hi',
+    transliteration: 'Maati kahe kumhaar se, tu kya raunde moy\nEk din aisa aayega, main raundoongi toy',
+    translation: 'The clay says to the potter, "Why do you trample me? A day will come when I shall trample you."',
+    source: 'Kabir Dohe',
+  },
+  {
+    quote: 'जैसा भोजन खाइए, तैसा ही मन होय\nजैसा पानी पीजिए, तैसी वाणी होय',
+    author: 'Kabir',
+    language: 'hi',
+    transliteration: 'Jaisa bhojan khaaiye, taisa hi man hoy\nJaisa paani peejiye, taisi vaani hoy',
+    translation: 'As is the food you eat, so becomes your mind; as is the water you drink, so becomes your speech.',
+    source: 'Kabir Dohe',
+  },
+
+  // ── Hindi · Rahim ────────────────────────────────────────────────────────
+  {
+    quote: 'रहिमन धागा प्रेम का, मत तोड़ो चटकाय\nटूटे से फिर ना जुड़े, जुड़े गाँठ पड़ जाय',
+    author: 'Rahim',
+    language: 'hi',
+    transliteration: 'Rahiman dhaaga prem ka, mat todo chatkaay\nToote se phir na jude, jude gaanth pad jaay',
+    translation: 'Rahim says: do not snap the thread of love; once broken, it does not rejoin — and if it does, a knot remains.',
+    source: 'Rahim Dohe',
+  },
+  {
+    quote: 'बड़े बड़ाई न करें, बड़े न बोलें बोल\nरहिमन हीरा कब कहे, लाख टका मेरा मोल',
+    author: 'Rahim',
+    language: 'hi',
+    transliteration: 'Bade badaai na karein, bade na bolen bol\nRahiman heera kab kahe, laakh taka mera mol',
+    translation: 'The truly great do not boast, nor speak boastful words. When does a diamond ever say, "my price is a hundred thousand"?',
+    source: 'Rahim Dohe',
+  },
+
+  // ── Hindi · Mahadevi Verma ───────────────────────────────────────────────
+  {
+    quote: 'मैं नीर भरी दुख की बदली',
+    author: 'Mahadevi Verma',
+    language: 'hi',
+    transliteration: 'Main neer bhari dukh ki badli',
+    translation: 'I am a cloud of sorrow, brimming with tears.',
+    source: 'Sandhya Geet',
+  },
+
+  // ── Punjabi · Bulleh Shah ────────────────────────────────────────────────
+  {
+    quote: 'ਪੜ੍ਹ ਪੜ੍ਹ ਆਲਮ ਫ਼ਾਜ਼ਲ ਹੋਇਆ\nਕਦੇ ਆਪਣੇ ਆਪ ਨੂੰ ਪੜ੍ਹਿਆ ਨਹੀਂ',
+    author: 'Bulleh Shah',
+    language: 'pa',
+    transliteration: 'Padh padh aalam faazil hoya\nKade aapne aap nu padhya nahi',
+    translation: 'You read and read and became a learned scholar — but you never read your own self.',
+  },
+  {
+    quote: 'ਮਸਜਿਦ ਢਾ ਦੇ, ਮੰਦਰ ਢਾ ਦੇ, ਢਾ ਦੇ ਜੋ ਕੁਝ ਢਾਉਂਦਾ\nਪਰ ਕਿਸੇ ਦਾ ਦਿਲ ਨਾ ਢਾਵੀਂ, ਰੱਬ ਦਿਲਾਂ ਵਿੱਚ ਰਹਿੰਦਾ',
+    author: 'Bulleh Shah',
+    language: 'pa',
+    transliteration: 'Masjid dha de, mandir dha de, dha de jo kujh dhaunda\nPar kise da dil na dhaaween, Rabb dilaan vich rehnda',
+    translation: 'Tear down the mosque, tear down the temple — tear down whatever you can — but do not break a heart, for God dwells in hearts.',
+  },
+  {
+    quote: 'ਬੁੱਲ੍ਹਾ ਕੀ ਜਾਣਾਂ ਮੈਂ ਕੌਣ',
+    author: 'Bulleh Shah',
+    language: 'pa',
+    transliteration: 'Bullha ki jaanaan main kaun',
+    translation: 'Bulleh, what do I know of who I am?',
+  },
+  {
+    quote: 'ਇਲਮੋਂ ਬਸ ਕਰੀਂ ਓ ਯਾਰ',
+    author: 'Bulleh Shah',
+    language: 'pa',
+    transliteration: 'Ilmon bas kareen o yaar',
+    translation: 'Enough of bookish knowledge, my friend.',
+  },
+
+  // ── Punjabi · Pash ───────────────────────────────────────────────────────
+  {
+    quote: 'ਸਭ ਤੋਂ ਖ਼ਤਰਨਾਕ ਹੁੰਦਾ ਹੈ ਸਾਡੇ ਸੁਪਨਿਆਂ ਦਾ ਮਰ ਜਾਣਾ',
+    author: 'Pash',
+    language: 'pa',
+    transliteration: 'Sabh ton khatarnaak hunda hai saade supniyaan da mar jaana',
+    translation: 'Most dangerous of all is the death of our dreams.',
+  },
+  {
+    quote: 'ਮੈਂ ਘਾਹ ਹਾਂ, ਮੈਂ ਤੁਹਾਡੇ ਹਰ ਕੀਤੇ ਤੇ ਉੱਗ ਆਵਾਂਗਾ',
+    author: 'Pash',
+    language: 'pa',
+    transliteration: 'Main ghaah haan, main tuhaade har keete te ugg aavaanga',
+    translation: 'I am grass — I will grow back upon everything you do.',
+  },
+  {
+    quote: 'ਅਸੀਂ ਲੜਾਂਗੇ ਸਾਥੀ, ਉਦਾਸ ਮੌਸਮ ਦੇ ਵਿਰੁੱਧ',
+    author: 'Pash',
+    language: 'pa',
+    transliteration: 'Aseen ladaange saathi, udaas mausam de viruddh',
+    translation: 'We will fight, comrade — against this melancholy season.',
+  },
+
+  // ── Punjabi · Shiv Kumar Batalvi ─────────────────────────────────────────
+  {
+    quote: 'ਮਾਏ ਨੀ ਮਾਏ! ਮੈਂ ਇੱਕ ਸ਼ਿਕਰਾ ਯਾਰ ਬਣਾਇਆ',
+    author: 'Shiv Kumar Batalvi',
+    language: 'pa',
+    transliteration: 'Maaye ni maaye! main ikk shikra yaar banaaya',
+    translation: 'O mother, mother — I made friends with a hawk.',
+  },
+  {
+    quote: 'ਅਸਾਂ ਤਾਂ ਜੋਬਨ ਰੁੱਤੇ ਮਰਨਾ',
+    author: 'Shiv Kumar Batalvi',
+    language: 'pa',
+    transliteration: 'Asaan taan joban rutte marna',
+    translation: 'I, for one, am to die in the season of my youth.',
+  },
+
+  // ── Punjabi · Amrita Pritam ──────────────────────────────────────────────
+  {
+    quote: 'ਅੱਜ ਆਖਾਂ ਵਾਰਿਸ ਸ਼ਾਹ ਨੂੰ, ਕਿਤਿਓਂ ਕਬਰਾਂ ਵਿੱਚੋਂ ਬੋਲ',
+    author: 'Amrita Pritam',
+    language: 'pa',
+    transliteration: 'Ajj aakhaan Waris Shah nu, kition kabraan vichon bol',
+    translation: 'Today I call upon Waris Shah — speak from somewhere within your grave.',
+    source: 'Ajj Aakhaan Waris Shah Nu',
+  },
+  {
+    quote: 'ਮੈਂ ਤੈਨੂੰ ਫਿਰ ਮਿਲਾਂਗੀ, ਕਿੱਥੇ ਕਿਵੇਂ ਪਤਾ ਨਹੀਂ',
+    author: 'Amrita Pritam',
+    language: 'pa',
+    transliteration: 'Main tenu phir milaangi, kitthe kiven pata nahi',
+    translation: 'I will meet you again — where, how, I do not know.',
+    source: 'Main Tenu Phir Milaangi',
+  },
+
+  // ── Punjabi · Surjit Patar ───────────────────────────────────────────────
+  {
+    quote: 'ਕੁਝ ਕਿਹਾ ਤਾਂ ਹਨੇਰਾ ਜਰੇਗਾ ਕਿਵੇਂ\nਚੁੱਪ ਰਿਹਾ ਤਾਂ ਸ਼ਮਾਦਾਨ ਕੀ ਕਹਿਣਗੇ',
+    author: 'Surjit Patar',
+    language: 'pa',
+    transliteration: 'Kujh kiha taan hanera jarega kiven\nChup riha taan shamaadaan ki kehnge',
+    translation: 'If I speak, how will the darkness bear it? If I stay silent, what will the lamps say?',
+  },
+
+  // ── Persian · Rumi (Masnavi-e-Ma'navi & Divan-e-Shams) ───────────────────
+  {
+    quote: 'بشنو از نی چون حکایت می‌کند\nاز جدایی‌ها شکایت می‌کند',
+    author: 'Rumi',
+    language: 'fa',
+    transliteration: 'Bishnaw az nay chun hikaayat mi-kunad\nAz judaayee-haa shikaayat mi-kunad',
+    translation: 'Listen to the reed, how it tells its tale, complaining of separations.',
+    source: 'Masnavi-e-Ma’navi',
+  },
+  {
+    quote: 'هر کسی کاو دور ماند از اصل خویش\nباز جوید روزگار وصل خویش',
+    author: 'Rumi',
+    language: 'fa',
+    transliteration: 'Har kasi k-oo door maand az asl-e-khwesh\nBaaz jooyad rozgaar-e-wasl-e-khwesh',
+    translation: 'Whoever is parted from his origin longs for the day of his return.',
+    source: 'Masnavi-e-Ma’navi',
+  },
+  {
+    quote: 'تو مگو ما را بدان شه بار نیست\nبا کریمان کارها دشوار نیست',
+    author: 'Rumi',
+    language: 'fa',
+    transliteration: 'Tu magoo maa-raa badaan shah baar neest\nBaa kareemaan kaar-haa dushwaar neest',
+    translation: 'Do not say we have no audience with that king — with the generous, no work is hard.',
+    source: 'Masnavi-e-Ma’navi',
+  },
+  {
+    quote: 'بنمای رخ که باغ و گلستانم آرزوست\nبگشای لب که قند فراوانم آرزوست',
+    author: 'Rumi',
+    language: 'fa',
+    transliteration: 'Binmaa rukh ke baagh-o-gulistaanam aarzoost\nBigshaa lab ke qand-e-faraawaanam aarzoost',
+    translation: 'Show your face — I long for a garden and a rose-bed; open your lips — I long for abundant sweetness.',
+    source: 'Divan-e-Shams',
+  },
+  {
+    quote: 'از محبت تلخ‌ها شیرین شود\nاز محبت مس‌ها زرین شود',
+    author: 'Rumi',
+    language: 'fa',
+    transliteration: 'Az mohabbat talkh-haa shireen shawad\nAz mohabbat mis-haa zarreen shawad',
+    translation: 'By love, bitter things turn sweet; by love, copper turns into gold.',
+    source: 'Masnavi-e-Ma’navi',
+  },
+  {
+    quote: 'چه تدبیر ای مسلمانان که من خود را نمی‌دانم\nنه ترسا نه یهودی‌ام نه گبر و نه مسلمانم',
+    author: 'Rumi',
+    language: 'fa',
+    transliteration: 'Che tadbeer ai musalmaanaan ke man khud-raa nameedaanam\nNa tarsaa na yahoodee-am na gabr o na musalmaanam',
+    translation: 'What plan, O Muslims? — I do not know who I am: not Christian, not Jew, not Zoroastrian, not Muslim.',
+    source: 'Divan-e-Shams',
+  },
+
+  // ── Persian · Hafez ──────────────────────────────────────────────────────
+  {
+    quote: 'هرگز نمیرد آن که دلش زنده شد به عشق\nثبت است بر جریدهٔ عالم دوام ما',
+    author: 'Hafez',
+    language: 'fa',
+    transliteration: 'Hargez na-meerad aan ke dilash zindeh shod be ishq\nSabt ast bar jareeda-ye aalam dawaam-e-maa',
+    translation: 'Never dies the one whose heart was made alive by love — our endurance is recorded on the world’s register.',
+    source: 'Divan-e-Hafez',
+  },
+
+  // ── Persian · Saadi ──────────────────────────────────────────────────────
+  {
+    quote: 'بنی آدم اعضای یکدیگرند\nکه در آفرینش ز یک گوهرند',
+    author: 'Saadi Shirazi',
+    language: 'fa',
+    transliteration: 'Bani Aadam a’zaa-ye yek deegar-and\nKe dar aafareenash ze yek gohar-and',
+    translation: 'Human beings are members of one another; in creation, they are of one essence.',
+    source: 'Gulistan',
+  },
+
+  // ── English · Marcus Aurelius (Meditations) ──────────────────────────────
+  {
+    quote: 'You have power over your mind — not outside events. Realize this, and you will find strength.',
+    author: 'Marcus Aurelius',
+    language: 'en',
+    source: 'Meditations',
+  },
+  {
+    quote: 'The happiness of your life depends upon the quality of your thoughts.',
+    author: 'Marcus Aurelius',
+    language: 'en',
+    source: 'Meditations',
+  },
+  {
+    quote: 'Waste no more time arguing about what a good man should be. Be one.',
+    author: 'Marcus Aurelius',
+    language: 'en',
+    source: 'Meditations',
+  },
+  {
+    quote: 'When you arise in the morning, think of what a precious privilege it is to be alive — to breathe, to think, to enjoy, to love.',
+    author: 'Marcus Aurelius',
+    language: 'en',
+    source: 'Meditations',
+  },
+  {
+    quote: 'Confine yourself to the present.',
+    author: 'Marcus Aurelius',
+    language: 'en',
+    source: 'Meditations',
+  },
+
+  // ── English · Seneca ─────────────────────────────────────────────────────
+  {
+    quote: 'We suffer more often in imagination than in reality.',
+    author: 'Seneca',
+    language: 'en',
+    source: 'Letters from a Stoic',
+  },
+  {
+    quote: 'It is not that we have a short time to live, but that we waste a lot of it.',
+    author: 'Seneca',
+    language: 'en',
+    source: 'On the Shortness of Life',
+  },
+  {
+    quote: 'Difficulties strengthen the mind, as labor does the body.',
+    author: 'Seneca',
+    language: 'en',
+  },
+  {
+    quote: 'Luck is what happens when preparation meets opportunity.',
+    author: 'Seneca',
+    language: 'en',
+  },
+
+  // ── English · Epictetus (Enchiridion / Discourses) ───────────────────────
+  {
+    quote: 'It is not what happens to you, but how you react to it that matters.',
+    author: 'Epictetus',
+    language: 'en',
+    source: 'Enchiridion',
+  },
+  {
+    quote: 'Wealth consists not in having great possessions, but in having few wants.',
+    author: 'Epictetus',
+    language: 'en',
+  },
+  {
+    quote: 'First say to yourself what you would be; and then do what you have to do.',
+    author: 'Epictetus',
+    language: 'en',
+    source: 'Discourses',
+  },
+  {
+    quote: 'Man is not worried by real problems so much as by his imagined anxieties about real problems.',
+    author: 'Epictetus',
+    language: 'en',
+  },
+
+  // ── English · Khalil Gibran (The Prophet) ────────────────────────────────
+  {
+    quote: 'Out of suffering have emerged the strongest souls; the most massive characters are seared with scars.',
+    author: 'Khalil Gibran',
+    language: 'en',
+  },
+  {
+    quote: 'Your children are not your children. They are the sons and daughters of Life’s longing for itself.',
+    author: 'Khalil Gibran',
+    language: 'en',
+    source: 'The Prophet',
+  },
+  {
+    quote: 'And ever has it been that love knows not its own depth until the hour of separation.',
+    author: 'Khalil Gibran',
+    language: 'en',
+    source: 'The Prophet',
+  },
+
+  // ── English · Pablo Neruda ───────────────────────────────────────────────
+  {
+    quote: 'I want to do with you what spring does with the cherry trees.',
+    author: 'Pablo Neruda',
+    language: 'en',
+    source: 'Twenty Love Poems and a Song of Despair',
+  },
+  {
+    quote: 'You can cut all the flowers but you cannot keep spring from coming.',
+    author: 'Pablo Neruda',
+    language: 'en',
+  },
 ];
 
-// Hindi Rebellion Poetry Quotes (30)
-const HINDI_QUOTES: MultilingualQuote[] = [
-    { quote: "सिंहासन खाली करो कि जनता आती है।", author: "रामधारी सिंह दिनकर", language: 'hi', transliteration: "Singhasan khali karo ki janta aati hai.", translation: "Vacate the throne, for the people are coming." },
-    { quote: "क्षमा शोभती उस भुजंग को जिसके पास गरल हो।", author: "रामधारी सिंह दिनकर", language: 'hi', transliteration: "Kshama shobhti us bhujang ko jiske paas garal ho.", translation: "Forgiveness suits the serpent who has venom." },
-    { quote: "हो गई है पीर पर्वत-सी पिघलनी चाहिए।", author: "दुष्यंत कुमार", language: 'hi', transliteration: "Ho gayi hai peer parvat-si pighalni chahiye.", translation: "The pain has become mountain-like, it must melt." },
-    { quote: "सिर्फ हंगामा खड़ा करना मेरा मकसद नहीं, मेरी कोशिश है कि ये सूरत बदलनी चाहिए।", author: "दुष्यंत कुमार", language: 'hi', transliteration: "Sirf hangama khada karna mera maqsad nahi, meri koshish hai ki ye soorat badalni chahiye.", translation: "Creating chaos is not my aim, my effort is to change this situation." },
-    { quote: "कहाँ तो तय था चिरागाँ हरेक घर के लिए, कहाँ चिराग मयस्सर नहीं शहर के लिए।", author: "दुष्यंत कुमार", language: 'hi', transliteration: "Kahan to tay tha chiragaan harek ghar ke liye, kahan chiraag mayassar nahi shahar ke liye.", translation: "Where lamps were promised for every home, now not even one lamp is available for the whole city." },
-    { quote: "इस देश की आत्मा जब जागेगी, तो राजनीति झुक जाएगी।", author: "रामधारी सिंह दिनकर", language: 'hi', transliteration: "Is desh ki aatma jab jagegi, to rajneeti jhuk jayegi.", translation: "When the soul of this nation awakens, politics will bow down." },
-    { quote: "मत कहो आकाश में कोहरा घना है, यह किसी की व्यक्तिगत आलोचना है।", author: "दुष्यंत कुमार", language: 'hi', transliteration: "Mat kaho aakash mein kohra ghana hai, yeh kisi ki vyaktigat aalochna hai.", translation: "Don't say there's thick fog in the sky, this is someone's personal criticism." },
-    { quote: "वो मुट्ठी में बंद रखे हैं इंसाफ का सूरज, अब इस धरती पर रौशनी करनी होगी।", author: "गोरख पांडे", language: 'hi', transliteration: "Wo mutthi mein band rakhe hain insaaf ka suraj, ab is dharti par raushni karni hogi.", translation: "They have clenched the sun of justice in their fist, now we must bring light to this earth." },
-    { quote: "जो नहीं है भोग के उपयोगी वह सब मेरा है।", author: "गोरख पांडे", language: 'hi', transliteration: "Jo nahi hai bhog ke upyogi woh sab mera hai.", translation: "Everything that is not useful for consumption is mine." },
-    { quote: "समझौता नहीं होगा, बहुत तेज रफ्तार है जिंदगी की।", author: "गोरख पांडे", language: 'hi', transliteration: "Samjhauta nahi hoga, bahut tez raftaar hai zindagi ki.", translation: "There will be no compromise, life moves too fast." },
-    { quote: "जब तोप मुकाबिल हो तो अखबार निकालो।", author: "अकबर इलाहाबादी", language: 'hi', transliteration: "Jab top muqabil ho to akhbaar nikalo.", translation: "When cannons confront you, publish newspapers." },
-    { quote: "मैं जब पैदा हुआ, दुनिया थी एक जंग की, मैं जब मरूँगा, दुनिया होगी एक गाँव की।", author: "नागार्जुन", language: 'hi', transliteration: "Main jab paida hua, duniya thi ek jung ki, main jab marunga, duniya hogi ek gaon ki.", translation: "When I was born, the world was at war; when I die, it will be a village." },
-    { quote: "आओ मिलकर जंग लड़ें, अपनी मुक्ति के लिए।", author: "नागार्जुन", language: 'hi', transliteration: "Aao milkar jung laden, apni mukti ke liye.", translation: "Come, let us fight together for our liberation." },
-    { quote: "कल तक जहाँ चिंगारियाँ थीं, आज वहाँ शोले हैं।", author: "नागार्जुन", language: 'hi', transliteration: "Kal tak jahan chingariyan thi, aaj wahan shole hain.", translation: "Where there were sparks yesterday, today there are flames." },
-    { quote: "जब भी उठी है तलवार, लिखी गई है तारीख।", author: "धूमिल", language: 'hi', transliteration: "Jab bhi uthi hai talwar, likhi gayi hai tareekh.", translation: "Whenever the sword has risen, history has been written." },
-    { quote: "एक आदमी रोटी बेलता है, एक आदमी रोटी खाता है, एक तीसरा आदमी है जो न रोटी बेलता है न रोटी खाता है, वह सिर्फ रोटी से खेलता है।", author: "धूमिल", language: 'hi', transliteration: "Ek aadmi roti belta hai, ek aadmi roti khata hai, ek teesra aadmi hai jo na roti belta hai na roti khata hai, woh sirf roti se khelta hai.", translation: "One man makes bread, one eats it, a third neither makes nor eats — he only plays with it." },
-    { quote: "मुझे चाहिए मेरे हक की जमीन।", author: "धूमिल", language: 'hi', transliteration: "Mujhe chahiye mere haq ki zameen.", translation: "I want the land that is my right." },
-    { quote: "सत्ता की भाषा में बोलता हूँ, लेकिन विरोध में।", author: "केदारनाथ सिंह", language: 'hi', transliteration: "Satta ki bhasha mein bolta hoon, lekin virodh mein.", translation: "I speak in the language of power, but in opposition." },
-    { quote: "जो घर जलते देखे हैं, वे जानते हैं आग का मतलब।", author: "केदारनाथ सिंह", language: 'hi', transliteration: "Jo ghar jalte dekhe hain, ve jaante hain aag ka matlab.", translation: "Those who have seen homes burn know the meaning of fire." },
-    { quote: "हमें जीना है अपनी शर्तों पर।", author: "मुक्तिबोध", language: 'hi', transliteration: "Humein jeena hai apni sharton par.", translation: "We must live on our own terms." },
-    { quote: "अंधेरे में एक चिनगारी भी काफी है।", author: "मुक्तिबोध", language: 'hi', transliteration: "Andhere mein ek chingari bhi kaafi hai.", translation: "Even a single spark is enough in the darkness." },
-    { quote: "जो तूफान से डर गया, वह खत्म हो गया।", author: "मुक्तिबोध", language: 'hi', transliteration: "Jo toofan se dar gaya, woh khatm ho gaya.", translation: "He who feared the storm perished." },
-    { quote: "मेरी मिट्टी में आग है, मेरे खून में विद्रोह।", author: "सुभद्रा कुमारी चौहान", language: 'hi', transliteration: "Meri mitti mein aag hai, mere khoon mein vidroh.", translation: "There is fire in my soil, rebellion in my blood." },
-    { quote: "खूब लड़ी मर्दानी वह तो झाँसी वाली रानी थी।", author: "सुभद्रा कुमारी चौहान", language: 'hi', transliteration: "Khoob ladi mardani woh to Jhansi wali rani thi.", translation: "She fought bravely like a man, she was the Queen of Jhansi." },
-    { quote: "सरफरोशी की तमन्ना अब हमारे दिल में है।", author: "राम प्रसाद बिस्मिल", language: 'hi', transliteration: "Sarfaroshi ki tamanna ab hamare dil mein hai.", translation: "The desire to sacrifice our lives is now in our hearts." },
-    { quote: "उठो, जागो, और तब तक मत रुको जब तक लक्ष्य प्राप्त न हो जाए।", author: "स्वामी विवेकानंद", language: 'hi', transliteration: "Utho, jago, aur tab tak mat ruko jab tak lakshya prapt na ho jaye.", translation: "Arise, awake, and stop not till the goal is reached." },
-    { quote: "तुम मुझे खून दो, मैं तुम्हें आज़ादी दूँगा।", author: "सुभाष चंद्र बोस", language: 'hi', transliteration: "Tum mujhe khoon do, main tumhein azaadi dunga.", translation: "Give me blood, and I will give you freedom." },
-    { quote: "दुश्मन की गोलियों का हम सामना करेंगे, आज़ाद हैं आज़ाद रहेंगे।", author: "चंद्रशेखर आज़ाद", language: 'hi', transliteration: "Dushman ki goliyon ka hum samna karenge, azad hain azad rahenge.", translation: "We will face the enemy's bullets, we are free and will remain free." },
-    { quote: "जिंदगी तो अपने दम पर जी जाती है, दूसरों के कंधों पर तो जनाज़े उठाए जाते हैं।", author: "भगत सिंह", language: 'hi', transliteration: "Zindagi to apne dam par ji jaati hai, doosron ke kandhon par to janaze uthaye jaate hain.", translation: "Life is lived on one's own strength; on others' shoulders, only funerals are carried." },
-    { quote: "इंकलाब जिंदाबाद!", author: "भगत सिंह", language: 'hi', transliteration: "Inquilab Zindabad!", translation: "Long live the revolution!" }
-];
-
-// Urdu Rebellion Poetry Quotes (30)
-const URDU_QUOTES: MultilingualQuote[] = [
-    { quote: "بول کہ لب آزاد ہیں تیرے", author: "فیض احمد فیض", language: 'ur', transliteration: "Bol ke lab azad hain tere", translation: "Speak, for your lips are free." },
-    { quote: "لازم ہے کہ ہم بھی دیکھیں گے", author: "فیض احمد فیض", language: 'ur', transliteration: "Lazim hai ke hum bhi dekhenge", translation: "It is certain that we too shall witness." },
-    { quote: "ہم دیکھیں گے، لازم ہے کہ ہم بھی دیکھیں گے، وہ دن کہ جس کا وعدہ ہے", author: "فیض احمد فیض", language: 'ur', transliteration: "Hum dekhenge, lazim hai ke hum bhi dekhenge, woh din ke jis ka waada hai", translation: "We shall witness, it is certain that we shall see that promised day." },
-    { quote: "مت سمجھو مجھے ختم گلی، میں تو ایک موڑ ہوں", author: "فیض احمد فیض", language: 'ur', transliteration: "Mat samjho mujhe khatam gali, main to ek mor hoon", translation: "Don't think I'm a dead end, I am but a turn." },
-    { quote: "دستور اے محکوم سنو، جب ظلم ہو تو ٹوٹ جائے", author: "حبیب جالب", language: 'ur', transliteration: "Dastoor ae mehkoom suno, jab zulm ho to toot jaye", translation: "O oppressed, hear the law — when there is tyranny, break it." },
-    { quote: "ایسے دستور کو، سبھ کی تقدیر کو، میں نہیں مانتا، میں نہیں جانتا", author: "حبیب جالب", language: 'ur', transliteration: "Aise dastoor ko, subh ki taqdeer ko, main nahi maanta, main nahi jaanta", translation: "Such a constitution, everyone's fate — I do not accept, I do not know." },
-    { quote: "جس دھج سے کوئی مقتل میں گیا، وہ شان سلامت رہتی ہے", author: "بہادر شاہ ظفر", language: 'ur', transliteration: "Jis dhaj se koi maqtal mein gaya, woh shaan salamat rehti hai", translation: "The dignity with which one goes to the gallows, that honor remains forever." },
-    { quote: "یہ داغ داغ اجالا، یہ شب گزیدہ سحر", author: "فیض احمد فیض", language: 'ur', transliteration: "Yeh daagh daagh ujala, yeh shab-gazida sahar", translation: "This stained light, this night-bitten dawn." },
-    { quote: "اب کے ہم بچھڑے تو شاید کبھی خوابوں میں ملیں", author: "احمد فراز", language: 'ur', transliteration: "Ab ke hum bichhde to shayad kabhi khwabon mein milein", translation: "If we part now, perhaps we'll meet only in dreams." },
-    { quote: "میں نے ظالم سے کہا، تجھے تیرے ظلم کا پھل ملے گا", author: "احمد فراز", language: 'ur', transliteration: "Maine zalim se kaha, tujhe tere zulm ka phal milega", translation: "I told the tyrant, you will reap what you sow." },
-    { quote: "زندگی لے کے چلو، کہ زندگی ہے بہت", author: "ساحر لدھیانوی", language: 'ur', transliteration: "Zindagi le ke chalo, ke zindagi hai bahut", translation: "Carry on with life, for life is much." },
-    { quote: "یہ محلوں، یہ تختوں، یہ تاجوں کی دنیا، یہ انسان کے دشمن سماجوں کی دنیا", author: "ساحر لدھیانوی", language: 'ur', transliteration: "Yeh mehlon, yeh takhton, yeh taajon ki duniya, yeh insaan ke dushman samaajon ki duniya", translation: "This world of palaces, thrones, and crowns — this world of societies that are enemies of mankind." },
-    { quote: "وہ سبز مدینے کا رہنے والا، جہاں آدمی آدمی کا بھائی ہو", author: "ساحر لدھیانوی", language: 'ur', transliteration: "Woh sabz madine ka rehne wala, jahan aadmi aadmi ka bhai ho", translation: "That dweller of the green city, where man is brother to man." },
-    { quote: "میں اکیلا ہی چلا تھا جانب منزل مگر، لوگ ساتھ آتے گئے اور کارواں بنتا گیا", author: "مجروح سلطان پوری", language: 'ur', transliteration: "Main akela hi chala tha janib-e-manzil magar, log saath aate gaye aur karwan banta gaya", translation: "I walked alone towards my destination, but people kept joining and a caravan formed." },
-    { quote: "جوش جنوں میں ہے اضطراب کیا، ہم سے ٹکرائے تو سمندر تھا", author: "جوش ملیح آبادی", language: 'ur', transliteration: "Josh-e-junoon mein hai iztarab kya, hum se takraye to samandar tha", translation: "What is this restlessness in the fervor of passion? When it clashed with us, it was an ocean." },
-    { quote: "میں بھی منہ میں زبان رکھتا ہوں، کاش پوچھو کہ مدعا کیا ہے", author: "میر تقی میر", language: 'ur', transliteration: "Main bhi munh mein zubaan rakhta hoon, kaash poocho ke mudda'a kya hai", translation: "I too have a tongue in my mouth, I wish you'd ask what I mean." },
-    { quote: "سینے میں جلن آنکھوں میں طوفان سا کیوں ہے، اس شہر میں ہر شخص پریشان سا کیوں ہے", author: "کیفی اعظمی", language: 'ur', transliteration: "Seene mein jalan aankhon mein toofan sa kyun hai, is shehr mein har shakhs pareshan sa kyun hai", translation: "Why is there burning in the chest, a storm in the eyes? Why does everyone in this city seem troubled?" },
-    { quote: "اٹھ میری جان، میرے ساتھ ہی چلنا ہے تجھے", author: "کیفی اعظمی", language: 'ur', transliteration: "Uth meri jaan, mere saath hi chalna hai tujhe", translation: "Rise, my love, you must walk with me." },
-    { quote: "اک انقلاب چاہیے، اک اور انقلاب چاہیے", author: "علامہ اقبال", language: 'ur', transliteration: "Ek inqilab chahiye, ek aur inqilab chahiye", translation: "A revolution is needed, another revolution is needed." },
-    { quote: "خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے، خدا بندے سے خود پوچھے بتا تیری رضا کیا ہے", author: "علامہ اقبال", language: 'ur', transliteration: "Khudi ko kar buland itna ke har taqdeer se pehle, Khuda bande se khud poochhe bata teri raza kya hai", translation: "Elevate your self so high that before every destiny, God Himself asks: tell me, what is your will?" },
-    { quote: "ستاروں سے آگے جہاں اور بھی ہیں", author: "علامہ اقبال", language: 'ur', transliteration: "Sitaron se aage jahan aur bhi hain", translation: "Beyond the stars, there are worlds yet more." },
-    { quote: "غلامی میں نہ کام آتی ہیں شمشیریں نہ تدبیریں", author: "علامہ اقبال", language: 'ur', transliteration: "Ghulami mein na kaam aati hain shamsheeren na tadbeerein", translation: "In slavery, neither swords nor strategies are of use." },
-    { quote: "مجھے عشق ہے انقلابوں سے، مجھے عشق ہے آندھیوں سے", author: "جون ایلیا", language: 'ur', transliteration: "Mujhe ishq hai inqilabon se, mujhe ishq hai aandhiyon se", translation: "I am in love with revolutions, I am in love with storms." },
-    { quote: "آج کا غم، کل کی خوشی ہے، یہ بات سمجھ لینا چاہیے", author: "جون ایلیا", language: 'ur', transliteration: "Aaj ka gham, kal ki khushi hai, yeh baat samajh lena chahiye", translation: "Today's sorrow is tomorrow's joy — understand this." },
-    { quote: "ہم ٹوٹ کر بکھر گئے لیکن، ہمارے ٹکڑے بھی روشن ہیں", author: "جون ایلیا", language: 'ur', transliteration: "Hum toot kar bikhar gaye lekin, hamare tukde bhi roshan hain", translation: "We shattered and scattered, but even our pieces are radiant." },
-    { quote: "وہ لوگ بہت خوش نصیب تھے جو عشق کو کام سمجھتے تھے", author: "واصف علی واصف", language: 'ur', transliteration: "Woh log bahut khushnaseeb the jo ishq ko kaam samajhte the", translation: "Those were fortunate who considered love their work." },
-    { quote: "جو کچھ بھی ہے، وقت کے ساتھ بدل جائے گا", author: "پرویز شاکر", language: 'ur', transliteration: "Jo kuch bhi hai, waqt ke saath badal jayega", translation: "Whatever is, will change with time." },
-    { quote: "ہمارے خون میں آگ ہے، ہماری روح میں طوفان", author: "احسان دانش", language: 'ur', transliteration: "Hamare khoon mein aag hai, hamari rooh mein toofan", translation: "There is fire in our blood, a storm in our soul." },
-    { quote: "جرات ہو تو راستے نکل آتے ہیں", author: "احسان دانش", language: 'ur', transliteration: "Jurrat ho to raaste nikal aate hain", translation: "If you have courage, paths will emerge." },
-    { quote: "سر جھکاؤ گے تو پتھر دیوتا بن جائے گا، اتنا مت چاہو اسے وہ بیوفا بن جائے گا", author: "راحت اندوری", language: 'ur', transliteration: "Sar jhukaoge to patthar devta ban jayega, itna mat chaho use woh bewafa ban jayega", translation: "If you bow your head, even a stone becomes a god; don't want it so much, it will become unfaithful." }
-];
-
-// Punjabi Rebellion Poetry Quotes (30)
-const PUNJABI_QUOTES: MultilingualQuote[] = [
-    { quote: "ਸਭ ਤੋਂ ਖ਼ਤਰਨਾਕ ਹੁੰਦਾ ਹੈ ਸਾਡੇ ਸੁਪਨਿਆਂ ਦਾ ਮਰ ਜਾਣਾ।", author: "ਪਾਸ਼", language: 'pa', transliteration: "Sabh ton khatarnak hunda hai saade supniyan da mar jaana.", translation: "Most dangerous is the death of our dreams." },
-    { quote: "ਮੈਂ ਘਾਹ ਹਾਂ, ਮੈਂ ਤੁਹਾਡੇ ਹਰ ਕੀਤੇ ਤੇ ਉੱਗ ਆਵਾਂਗਾ।", author: "ਪਾਸ਼", language: 'pa', transliteration: "Main ghaah haan, main tuhade har keete te ugg aavanga.", translation: "I am grass, I will grow on everything you do." },
-    { quote: "ਅਸੀਂ ਲੜਾਂਗੇ ਸਾਥੀ, ਉਦਾਸ ਮੌਸਮ ਦੇ ਵਿਰੁੱਧ।", author: "ਪਾਸ਼", language: 'pa', transliteration: "Aseen ladaange saathi, udaas mausam de viruddh.", translation: "We will fight, comrade, against the sad season." },
-    { quote: "ਤੁਸੀਂ ਜਿੱਤ ਕੇ ਵੀ ਹਾਰ ਗਏ, ਅਸੀਂ ਹਾਰ ਕੇ ਵੀ ਜਿੱਤ ਗਏ।", author: "ਪਾਸ਼", language: 'pa', transliteration: "Tuseen jitt ke vi haar gaye, aseen haar ke vi jitt gaye.", translation: "You lost even in victory, we won even in defeat." },
-    { quote: "ਜੋ ਵੀ ਮੈਂ ਲਿਖਦਾ ਹਾਂ, ਉਹ ਇਨਕਲਾਬ ਲਈ ਲਿਖਦਾ ਹਾਂ।", author: "ਪਾਸ਼", language: 'pa', transliteration: "Jo vi main likhda haan, uh inqilab lai likhda haan.", translation: "Whatever I write, I write for revolution." },
-    { quote: "ਰੱਬ ਤੋਂ ਵੀ ਤੇ ਮੈਥੋਂ ਵੀ ਉੱਚੀ ਮਨੁੱਖਤਾ ਹੈ।", author: "ਬੁੱਲ੍ਹੇ ਸ਼ਾਹ", language: 'pa', transliteration: "Rabb ton vi te maithon vi uchhi manukhtaa hai.", translation: "Higher than God, higher than me, is humanity." },
-    { quote: "ਪੜ੍ਹ ਪੜ੍ਹ ਇਲਮ ਤੇ ਫ਼ਾਜ਼ਿਲ ਹੋਇਆ, ਤੇ ਕਦੇ ਆਪਣੇ ਆਪ ਨੂੰ ਪੜ੍ਹਿਆ ਹੀ ਨਹੀਂ।", author: "ਬੁੱਲ੍ਹੇ ਸ਼ਾਹ", language: 'pa', transliteration: "Padh padh ilm te faazil hoya, te kade aapne aap nu padhya hi nahi.", translation: "You read and became learned, but never read yourself." },
-    { quote: "ਮਸਜਿਦ ਢਾਹ ਦੇ, ਮੰਦਰ ਢਾਹ ਦੇ, ਢਾਹ ਦੇ ਜੋ ਕੁਝ ਢਾਹੁੰਦਾ, ਪਰ ਕਿਸੇ ਦਾ ਦਿਲ ਨਾ ਢਾਹੀਂ।", author: "ਬੁੱਲ੍ਹੇ ਸ਼ਾਹ", language: 'pa', transliteration: "Masjid dhaah de, mandir dhaah de, dhaah de jo kujh dhaahunda, par kise da dil na dhaaheen.", translation: "Tear down the mosque, tear down the temple, tear down whatever you can, but don't break anyone's heart." },
-    { quote: "ਜਿੱਥੇ ਵੀ ਜ਼ੁਲਮ ਹੈ, ਉੱਥੇ ਮੈਂ ਖੜ੍ਹਾ ਹਾਂ।", author: "ਸੰਤ ਰਾਮ ਉਦਾਸੀ", language: 'pa', transliteration: "Jitthe vi zulm hai, uthe main khada haan.", translation: "Wherever there is tyranny, I stand there." },
-    { quote: "ਮੇਰੀ ਕਵਿਤਾ ਮੇਰਾ ਹਥਿਆਰ ਹੈ।", author: "ਸੰਤ ਰਾਮ ਉਦਾਸੀ", language: 'pa', transliteration: "Meri kavita mera hathiyaar hai.", translation: "My poetry is my weapon." },
-    { quote: "ਅਸੀਂ ਮਜ਼ਦੂਰ ਹਾਂ, ਅਸੀਂ ਕਿਸਾਨ ਹਾਂ, ਅਸੀਂ ਹੀ ਤਾਕਤ ਹਾਂ।", author: "ਸੰਤ ਰਾਮ ਉਦਾਸੀ", language: 'pa', transliteration: "Aseen mazdoor haan, aseen kisaan haan, aseen hi taakat haan.", translation: "We are workers, we are farmers, we are the power." },
-    { quote: "ਜਦੋਂ ਤੱਕ ਜ਼ਿੰਦਾ ਹਾਂ, ਲੜਦਾ ਰਹਾਂਗਾ।", author: "ਸੰਤ ਰਾਮ ਉਦਾਸੀ", language: 'pa', transliteration: "Jadon tak zinda haan, ladda rahanga.", translation: "As long as I live, I will keep fighting." },
-    { quote: "ਮੈਂ ਤੈਨੂੰ ਫਿਰ ਮਿਲਾਂਗੀ, ਕਿੱਥੇ ਕਿਵੇਂ ਪਤਾ ਨਹੀਂ।", author: "ਅੰਮ੍ਰਿਤਾ ਪ੍ਰੀਤਮ", language: 'pa', transliteration: "Main tenu phir millangi, kithe kiven pata nahi.", translation: "I will meet you again, where and how, I don't know." },
-    { quote: "ਅੱਜ ਆਖਾਂ ਵਾਰਿਸ ਸ਼ਾਹ ਨੂੰ, ਕਿਤੇ ਕਬਰਾਂ ਵਿੱਚੋਂ ਬੋਲ।", author: "ਅੰਮ੍ਰਿਤਾ ਪ੍ਰੀਤਮ", language: 'pa', transliteration: "Ajj aakhan Waris Shah nu, kite kabran vichon bol.", translation: "Today I call upon Waris Shah, speak from your grave." },
-    { quote: "ਜਿਹੜੇ ਦਰਦ ਨੂੰ ਸਮਝਦੇ ਨੇ, ਉਹ ਚੁੱਪ ਰਹਿੰਦੇ ਨੇ।", author: "ਅੰਮ੍ਰਿਤਾ ਪ੍ਰੀਤਮ", language: 'pa', transliteration: "Jihde dard nu samjhde ne, uh chup rehnde ne.", translation: "Those who understand pain remain silent." },
-    { quote: "ਮੇਰੇ ਹੱਥਾਂ ਵਿੱਚ ਕਲਮ ਹੈ, ਤੇਰੇ ਹੱਥਾਂ ਵਿੱਚ ਤਲਵਾਰ।", author: "ਸੁਰਜੀਤ ਪਾਤਰ", language: 'pa', transliteration: "Mere hatthan vich kalam hai, tere hatthan vich talwaar.", translation: "In my hands is a pen, in yours a sword." },
-    { quote: "ਮੈਂ ਉਹ ਸ਼ਬਦ ਹਾਂ ਜੋ ਕਦੇ ਚੁੱਪ ਨਹੀਂ ਹੁੰਦਾ।", author: "ਸੁਰਜੀਤ ਪਾਤਰ", language: 'pa', transliteration: "Main uh shabad haan jo kade chup nahi hunda.", translation: "I am the word that never falls silent." },
-    { quote: "ਰਾਤ ਭਾਵੇਂ ਜਿੰਨੀ ਵੀ ਲੰਬੀ ਹੋਵੇ, ਸਵੇਰ ਜ਼ਰੂਰ ਆਉਂਦੀ ਹੈ।", author: "ਸੁਰਜੀਤ ਪਾਤਰ", language: 'pa', transliteration: "Raat bhaven jinni vi lambi hove, sawer zaroor aundi hai.", translation: "No matter how long the night, morning always comes." },
-    { quote: "ਮੈਂ ਬਾਗ਼ੀ ਹਾਂ, ਮੈਨੂੰ ਬਾਗ਼ੀ ਰਹਿਣ ਦਿਓ।", author: "ਲਾਲ ਸਿੰਘ ਦਿਲ", language: 'pa', transliteration: "Main baaghi haan, mainu baaghi rehn dio.", translation: "I am a rebel, let me remain a rebel." },
-    { quote: "ਜਿੱਥੇ ਵੀ ਜ਼ੁਲਮ ਹੈ, ਮੇਰੀ ਆਵਾਜ਼ ਉੱਥੇ ਪਹੁੰਚੇਗੀ।", author: "ਲਾਲ ਸਿੰਘ ਦਿਲ", language: 'pa', transliteration: "Jitthe vi zulm hai, meri awaaz uthe pahunchegi.", translation: "Wherever there is injustice, my voice will reach there." },
-    { quote: "ਮੈਂ ਉਹ ਅੱਗ ਹਾਂ ਜੋ ਬੁਝਦੀ ਨਹੀਂ।", author: "ਲਾਲ ਸਿੰਘ ਦਿਲ", language: 'pa', transliteration: "Main uh agg haan jo bujhdi nahi.", translation: "I am the fire that does not extinguish." },
-    { quote: "ਮੈਂ ਤੇਰੇ ਅੱਗੇ ਨਹੀਂ ਝੁਕਦਾ।", author: "ਲਾਲ ਸਿੰਘ ਦਿਲ", language: 'pa', transliteration: "Main tere agge nahi jhukda.", translation: "I do not bow before you." },
-    { quote: "ਇੱਕ ਚਿੰਗਾਰੀ ਬੱਸ ਕਾਫ਼ੀ ਹੈ ਜੰਗਲ ਨੂੰ ਸਾੜਨ ਲਈ।", author: "ਸ਼ਿਵ ਕੁਮਾਰ ਬਟਾਲਵੀ", language: 'pa', transliteration: "Ikk chingaari bass kaafi hai jungle nu saarhan lai.", translation: "One spark is enough to burn the forest." },
-    { quote: "ਮੈਂ ਦਰਦ ਨੂੰ ਸ਼ਬਦਾਂ ਵਿੱਚ ਬੰਨ੍ਹਦਾ ਹਾਂ।", author: "ਸ਼ਿਵ ਕੁਮਾਰ ਬਟਾਲਵੀ", language: 'pa', transliteration: "Main dard nu shabdan vich bannhda haan.", translation: "I bind pain into words." },
-    { quote: "ਮੇਰਾ ਦਰਦ ਹੀ ਮੇਰੀ ਤਾਕਤ ਹੈ।", author: "ਸ਼ਿਵ ਕੁਮਾਰ ਬਟਾਲਵੀ", language: 'pa', transliteration: "Mera dard hi meri taakat hai.", translation: "My pain is my strength." },
-    { quote: "ਲੂਣਾ ਵਰਗੀ ਧੀ ਜੰਮੀ, ਸੂਰਜ ਵਰਗਾ ਪੁੱਤ।", author: "ਸ਼ਿਵ ਕੁਮਾਰ ਬਟਾਲਵੀ", language: 'pa', transliteration: "Luna wargi dhi jammi, suraj warga putt.", translation: "A daughter like Luna was born, a son like the sun." },
-    { quote: "ਜਦੋਂ ਜ਼ੁਲਮ ਕਾਨੂੰਨ ਬਣ ਜਾਵੇ, ਬਗ਼ਾਵਤ ਫ਼ਰਜ਼ ਹੈ।", author: "ਭਗਤ ਸਿੰਘ", language: 'pa', transliteration: "Jadon zulm kanoon ban jave, baghawat farz hai.", translation: "When tyranny becomes law, rebellion is duty." },
-    { quote: "ਮੈਂ ਨਾਸਤਿਕ ਕਿਉਂ ਹਾਂ।", author: "ਭਗਤ ਸਿੰਘ", language: 'pa', transliteration: "Main naastik kyon haan.", translation: "Why I am an atheist." },
-    { quote: "ਇਨਕਲਾਬ ਜ਼ਿੰਦਾਬਾਦ!", author: "ਭਗਤ ਸਿੰਘ", language: 'pa', transliteration: "Inqilab Zindabad!", translation: "Long live the revolution!" }
-];
-
-// Combine all quotes
-const ALL_QUOTES: MultilingualQuote[] = [...ENGLISH_QUOTES, ...HINDI_QUOTES, ...URDU_QUOTES, ...PUNJABI_QUOTES];
-
-// Get a multilingual quote - shuffles every 15 minutes
-function getMultilingualQuote(date: Date): MultilingualQuote {
-    // Calculate 15-minute intervals since start of year
-    const startOfYear = new Date(date.getFullYear(), 0, 1).getTime();
-    const intervalMs = 15 * 60 * 1000; // 15 minutes in milliseconds
-    const intervalIndex = Math.floor((date.getTime() - startOfYear) / intervalMs);
-
-    // Rotate through languages: 0=English, 1=Hindi, 2=Urdu, 3=Punjabi
-    const languageIndex = intervalIndex % 4;
-    const languages = ['en', 'hi', 'ur', 'pa'] as const;
-    const selectedLanguage = languages[languageIndex];
-
-    // Get quotes for selected language
-    const languageQuotes = ALL_QUOTES.filter(q => q.language === selectedLanguage);
-
-    // Select quote within that language pool
-    const quoteIndex = Math.floor(intervalIndex / 4) % languageQuotes.length;
-
-    return languageQuotes[quoteIndex];
+function dateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
-// Get cache key based on 15-minute interval
-function getIntervalCacheKey(date: Date): string {
-    const startOfYear = new Date(date.getFullYear(), 0, 1).getTime();
-    const intervalMs = 15 * 60 * 1000;
-    const intervalIndex = Math.floor((date.getTime() - startOfYear) / intervalMs);
-    return `${date.getFullYear()}-${intervalIndex}`;
+// djb2 — small, deterministic, no deps. Used to map a date string to an index.
+function djb2(s: string): number {
+  let hash = 5381;
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) + hash) ^ s.charCodeAt(i);
+  }
+  return hash >>> 0;
 }
 
-// Instant quote loading - returns immediately with curated content
+// Module-level session lock: once a quote is chosen for the current local
+// date, every subsequent call in this tab returns the same one — even if the
+// user navigates to a sibling page and back. No localStorage, no server.
+let sessionDateKey: string | null = null;
+let sessionQuote: MultilingualQuote | null = null;
+
 export function getPhilosophicalQuoteInstant(date: Date): MultilingualQuote {
-    const cacheKey = getIntervalCacheKey(date);
-
-    // Check cache first
-    const cached = quoteCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-        const { timestamp, ...quote } = cached;
-        return quote;
-    }
-
-    // Return curated quote instantly
-    return getMultilingualQuote(date);
+  const key = dateKey(date);
+  if (sessionDateKey === key && sessionQuote) return sessionQuote;
+  sessionDateKey = key;
+  sessionQuote = QUOTES[djb2(key) % QUOTES.length];
+  return sessionQuote;
 }
-
-// Background AI quote generation - doesn't block the UI
-export async function generateAIPhilosophicalQuote(date: Date): Promise<MultilingualQuote> {
-    const cacheKey = getIntervalCacheKey(date);
-
-    // Check cache first
-    const cached = quoteCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-        const { timestamp, ...quote } = cached;
-        return quote;
-    }
-
-    if (!ai) {
-        return getMultilingualQuote(date);
-    }
-
-    try {
-        const prompt = `Generate a profound, thought-provoking quote from a famous philosopher that would inspire deep reflection. The quote should be:
-1. From a well-known philosopher (Socrates, Plato, Aristotle, Marcus Aurelius, Epictetus, Seneca, Nietzsche, Kant, etc.)
-2. Profound and meaningful for daily reflection
-3. 1-2 sentences maximum
-4. Timeless and universally applicable
-5. Format as: "Quote text" - Philosopher Name
-
-Make it different from common quotes and choose something that would make someone pause and think deeply about life, wisdom, or human nature.`;
-
-        const response = await ai.models.generateContent({
-            model: 'sonar-pro',
-            contents: prompt,
-        });
-
-        const fullText = response.text.trim();
-        const parts = fullText.split(' - ');
-
-        if (parts.length >= 2) {
-            const quoteText = parts[0].replace(/^["']|["']$/g, '').trim();
-            const author = parts[1].trim();
-
-            const quote: MultilingualQuote = { quote: quoteText, author, language: 'en' };
-
-            // Cache the result
-            quoteCache.set(cacheKey, {
-                ...quote,
-                timestamp: Date.now()
-            });
-
-            return quote;
-        } else {
-            // Fallback if parsing fails
-            return getMultilingualQuote(date);
-        }
-    } catch (error) {
-        console.error("Error generating philosophical quote:", error);
-        return getMultilingualQuote(date);
-    }
-}
-
-// Show a subtle loading indicator for AI quote generation
-export function showQuoteLoadingIndicator() {
-    const lifePointerEl = document.getElementById('life-pointer-display-day');
-    if (lifePointerEl) {
-        const loadingIndicator = lifePointerEl.querySelector('.loading-indicator');
-        if (!loadingIndicator) {
-            const indicator = document.createElement('div');
-            indicator.className = 'loading-indicator text-xs text-gray-500 mt-2 opacity-70';
-            indicator.textContent = '✨ Generating personalized quote...';
-            lifePointerEl.appendChild(indicator);
-        }
-    }
-}
-
-// Hide the loading indicator
-export function hideQuoteLoadingIndicator() {
-    const lifePointerEl = document.getElementById('life-pointer-display-day');
-    if (lifePointerEl) {
-        const loadingIndicator = lifePointerEl.querySelector('.loading-indicator');
-        if (loadingIndicator) {
-            loadingIndicator.remove();
-        }
-    }
-}
-
