@@ -103,8 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const form = document.getElementById('add-task-form-todo') as HTMLFormElement | null;
   const input = document.getElementById('todo-input') as HTMLInputElement | null;
 
-  form?.addEventListener('submit', async event => {
-    event.preventDefault();
+  const submitTask = async () => {
     if (!input) return;
     const sanitized = sanitizeTaskInput(input.value.trim());
     if (!sanitized) {
@@ -114,6 +113,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     tasks = [...tasks, { text: sanitized, completed: false }];
     input.value = '';
     await persist();
+  };
+
+  form?.addEventListener('submit', async event => {
+    event.preventDefault();
+    await submitTask();
+  });
+
+  // Belt-and-braces: some mobile browsers (notably older iOS Safari) don't
+  // always fire implicit form submission for single-field forms even with a
+  // submit button. Catch Enter on the input directly so Return on the
+  // mobile keyboard always works.
+  input?.addEventListener('keydown', async event => {
+    if (event.key !== 'Enter' || event.isComposing) return;
+    event.preventDefault();
+    await submitTask();
   });
 
   const listEl = document.getElementById(LIST_ID);

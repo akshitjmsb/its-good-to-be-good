@@ -24,17 +24,22 @@
             <h1 class="todo-title">To Do</h1>
         </header>
 
-        <form id="add-task-form-todo" class="todo-add-form" autocomplete="off">
+        <form id="add-task-form-todo" class="todo-add-form" autocomplete="off" action="#">
             <input
                 id="todo-input"
                 type="text"
                 inputmode="text"
+                enterkeyhint="done"
                 autocomplete="off"
                 autocapitalize="sentences"
                 spellcheck="true"
                 placeholder="Add a task and press return"
                 aria-label="Add a task"
             >
+            <!-- Mobile Safari needs an explicit submit control to fire the
+                 form's submit event reliably when Return is pressed in a
+                 single-field form. Hidden visually but kept in the form. -->
+            <button type="submit" class="sr-only" tabindex="-1" aria-hidden="true">Add task</button>
         </form>
 
         <p id="todo-counter" class="todo-counter" aria-live="polite"></p>
