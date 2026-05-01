@@ -735,7 +735,7 @@ button.preview-card {
 
 .nav-carousel {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.25rem;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
@@ -743,7 +743,7 @@ button.preview-card {
     scrollbar-width: none;
     /* Leave a little breathing room at the start so the first card can
        fully snap into view from the left edge. */
-    scroll-padding-inline: 0.5rem;
+    scroll-padding-inline: 0.25rem;
     /* Ensure flex children can shrink below their content width. */
     min-width: 0;
 }
