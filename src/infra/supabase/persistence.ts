@@ -10,7 +10,7 @@ const MAX_CHAT_HISTORY = 100;
  * Deletes the user's existing rows then inserts the new ones in a single
  * round-trip. Empty inputs short-circuit after the delete.
  */
-export async function replaceAll<TRow extends Record<string, unknown>>(
+export async function replaceAllForUser<TRow extends Record<string, unknown>>(
   table: string,
   userId: string,
   rows: TRow[]
@@ -76,7 +76,7 @@ export async function saveChatHistory(
         text: msg.text,
       }));
 
-    await replaceAll('chat_history', userId, payload);
+    await replaceAllForUser('chat_history', userId, payload);
   } catch (error) {
     console.error('Error saving chat history:', error);
     throw error;
@@ -113,7 +113,7 @@ export async function saveTasks(userId: string, tasks: Task[]): Promise<void> {
       text: task.text,
       completed: task.completed,
     }));
-    await replaceAll('tasks', userId, tasksToInsert);
+    await replaceAllForUser('tasks', userId, tasksToInsert);
   } catch (error) {
     console.error('Error saving tasks:', error);
     throw error;
@@ -159,7 +159,7 @@ export async function savePoetryRecents(
       language: recent.language,
       timestamp: recent.timestamp,
     }));
-    await replaceAll('poetry_recents', userId, recentsToInsert);
+    await replaceAllForUser('poetry_recents', userId, recentsToInsert);
   } catch (error) {
     console.error('Error saving poetry recents:', error);
     throw error;

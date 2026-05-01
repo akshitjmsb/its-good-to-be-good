@@ -31,6 +31,19 @@ export function renderTasks(tasks: Task[], listId: string) {
     // Note: Event listeners are attached separately with userId
 }
 
+function persistAndRender(
+    userId: string,
+    tasks: Task[],
+    mainRender: () => void,
+    errorContext: string
+) {
+    saveTasksToSupabase(userId, tasks)
+        .then(() => mainRender())
+        .catch(error => {
+            console.error(`Error ${errorContext}:`, error);
+        });
+}
+
 function handleTaskSubmit(e: Event, tasks: Task[], userId: string, mainRender: () => void) {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
@@ -45,15 +58,10 @@ function handleTaskSubmit(e: Event, tasks: Task[], userId: string, mainRender: (
     if (sanitizedText) {
         tasks.push({ text: sanitizedText, completed: false });
         input.value = '';
-        saveTasksToSupabase(userId, tasks).then(() => {
-            mainRender();
-        }).catch(error => {
-            console.error('Error saving task:', error);
-        });
+        persistAndRender(userId, tasks, mainRender, 'saving task');
     } else {
-        // Show user feedback for invalid input
         console.warn('Task input was rejected due to security concerns');
-        input.value = ''; // Clear the input
+        input.value = '';
     }
 }
 
@@ -61,11 +69,7 @@ export function handleTaskDelete(target: HTMLElement, tasks: Task[], userId: str
     const index = parseInt(target.dataset.index || '-1');
     if (index > -1) {
         tasks.splice(index, 1);
-        saveTasksToSupabase(userId, tasks).then(() => {
-            mainRender();
-        }).catch(error => {
-            console.error('Error deleting task:', error);
-        });
+        persistAndRender(userId, tasks, mainRender, 'deleting task');
     }
 }
 
@@ -73,11 +77,7 @@ export function handleTaskToggle(target: HTMLInputElement, tasks: Task[], userId
     const index = parseInt(target.dataset.index || '-1');
     if (index > -1) {
         tasks[index].completed = !tasks[index].completed;
-        saveTasksToSupabase(userId, tasks).then(() => {
-            mainRender();
-        }).catch(error => {
-            console.error('Error toggling task:', error);
-        });
+        persistAndRender(userId, tasks, mainRender, 'toggling task');
     }
 }
 
@@ -85,6 +85,11 @@ function attachTaskEventListeners(listId: string, userId: string) {
     const listEl = document.getElementById(listId);
     if (!listEl || listEl.dataset.listenersAttached === 'true') return;
     listEl.dataset.listenersAttached = 'true';
+
+    const persistAndRerender = async (tasks: Task[]) => {
+        await saveTasksToSupabase(userId, tasks);
+        renderTasks(tasks, listId);
+    };
 
     // Use delegated listeners so handlers survive list rerenders.
     listEl.addEventListener('click', async (e) => {
@@ -94,13 +99,10 @@ function attachTaskEventListeners(listId: string, userId: string) {
         if (deleteBtn) {
             const index = parseInt(deleteBtn.dataset.index || '-1');
             if (index > -1) {
-                // Get tasks from centralized storage
                 const tasks = await loadTasksFromSupabase(userId);
                 if (tasks[index]) {
                     tasks.splice(index, 1);
-                    await saveTasksToSupabase(userId, tasks);
-                    // Re-render the tasks
-                    renderTasks(tasks, listId);
+                    await persistAndRerender(tasks);
                 }
             }
             return;
@@ -112,19 +114,15 @@ function attachTaskEventListeners(listId: string, userId: string) {
         }
     });
 
-    // Add change listener for checkboxes
     listEl.addEventListener('change', async (e) => {
         const target = e.target as HTMLInputElement;
         if (target.type === 'checkbox') {
             const index = parseInt(target.dataset.index || '-1');
             if (index > -1) {
-                // Get tasks from centralized storage
                 const tasks = await loadTasksFromSupabase(userId);
                 if (tasks[index]) {
                     tasks[index].completed = target.checked;
-                    await saveTasksToSupabase(userId, tasks);
-                    // Re-render the tasks
-                    renderTasks(tasks, listId);
+                    await persistAndRerender(tasks);
                 }
             }
         }

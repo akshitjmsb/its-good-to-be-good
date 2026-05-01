@@ -34,7 +34,11 @@ vi.mock('../../../lib/supabase', () => ({
   supabase: buildSupabaseMock(),
 }));
 
-import { recordPoetrySelection, replaceAll, saveTasks } from '../persistence';
+import {
+  recordPoetrySelection,
+  replaceAllForUser,
+  saveTasks,
+} from '../persistence';
 
 beforeEach(() => {
   recorder.table = undefined;
@@ -48,16 +52,18 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('replaceAll', () => {
+describe('replaceAllForUser', () => {
   it('deletes the user rows and inserts the new payload', async () => {
-    await replaceAll('tasks', 'user-1', [{ user_id: 'user-1', text: 'a' }]);
+    await replaceAllForUser('tasks', 'user-1', [
+      { user_id: 'user-1', text: 'a' },
+    ]);
     expect(recorder.table).toBe('tasks');
     expect(recorder.deletedFor).toBe('user-1');
     expect(recorder.inserted).toEqual([{ user_id: 'user-1', text: 'a' }]);
   });
 
   it('skips the insert when rows is empty (delete-only)', async () => {
-    await replaceAll('tasks', 'user-2', []);
+    await replaceAllForUser('tasks', 'user-2', []);
     expect(recorder.deletedFor).toBe('user-2');
     expect(recorder.inserted).toBeUndefined();
   });
@@ -65,7 +71,7 @@ describe('replaceAll', () => {
   it('throws when the insert returns an error', async () => {
     recorder.insertError = { message: 'boom' };
     await expect(
-      replaceAll('tasks', 'user-3', [{ user_id: 'user-3' }])
+      replaceAllForUser('tasks', 'user-3', [{ user_id: 'user-3' }])
     ).rejects.toEqual({ message: 'boom' });
   });
 });
