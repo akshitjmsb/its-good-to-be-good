@@ -1042,6 +1042,12 @@ button.preview-card {
     min-height: 44px;
 }
 
+.quantum-skip {
+    margin-top: 0.5rem;
+    min-height: 44px;
+    color: #6b7280;
+}
+
 .quantum-history-section {
     margin-top: 1.5rem;
 }
