@@ -1,8 +1,7 @@
 import { getModulesByCategory } from '../domains/modules/registry';
 import type { JourneyModuleId, LearnModuleId } from '../domains/modules/types';
 
-// Icon SVG string generators for vanilla JS - Sharp, clean line art style
-export const learnIconSvgs: Record<LearnModuleId, string> = {
+const learnIconSvgs: Record<LearnModuleId, string> = {
     'world-order': `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10" />
@@ -103,8 +102,7 @@ export const learnIconSvgs: Record<LearnModuleId, string> = {
     `
 };
 
-// Navigation button icons - Black and white SVG icons for main navigation
-export const journeyIconSvgs: Record<JourneyModuleId, string> = {
+const journeyIconSvgs: Record<JourneyModuleId, string> = {
     todo: `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 12l2 2 4-4" />

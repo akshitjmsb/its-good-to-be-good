@@ -65,22 +65,6 @@ function handleTaskSubmit(e: Event, tasks: Task[], userId: string, mainRender: (
     }
 }
 
-export function handleTaskDelete(target: HTMLElement, tasks: Task[], userId: string, mainRender: () => void) {
-    const index = parseInt(target.dataset.index || '-1');
-    if (index > -1) {
-        tasks.splice(index, 1);
-        persistAndRender(userId, tasks, mainRender, 'deleting task');
-    }
-}
-
-export function handleTaskToggle(target: HTMLInputElement, tasks: Task[], userId: string, mainRender: () => void) {
-    const index = parseInt(target.dataset.index || '-1');
-    if (index > -1) {
-        tasks[index].completed = !tasks[index].completed;
-        persistAndRender(userId, tasks, mainRender, 'toggling task');
-    }
-}
-
 function attachTaskEventListeners(listId: string, userId: string) {
     const listEl = document.getElementById(listId);
     if (!listEl || listEl.dataset.listenersAttached === 'true') return;
@@ -139,8 +123,7 @@ export function attachTaskListeners(listId: string, userId: string) {
     attachTaskEventListeners(listId, userId);
 }
 
-// Function to show sync status
-export function showSyncStatus(listId: string, isSyncing: boolean = true) {
+function showSyncStatus(listId: string, isSyncing: boolean = true) {
     const indicator = document.getElementById(`sync-indicator-${listId}`);
     if (indicator) {
         if (isSyncing) {
@@ -157,8 +140,7 @@ export function showSyncStatus(listId: string, isSyncing: boolean = true) {
     }
 }
 
-// Function to refresh tasks from cloud storage
-export async function refreshTasksFromCloud(listId: string, userId: string) {
+async function refreshTasksFromCloud(listId: string, userId: string) {
     try {
         showSyncStatus(listId, true);
         const tasks = await loadTasksFromSupabase(userId);

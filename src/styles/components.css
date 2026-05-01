@@ -278,7 +278,7 @@ button.preview-card {
     border: 1px solid #e5e7eb; 
 }
 
-.gemini-btn {
+.panel-btn {
     border: 1px solid #e2e8f0;
     padding: 0.5rem 1rem;
     border-radius: 9999px;
@@ -287,24 +287,7 @@ button.preview-card {
     color: #4a5568;
 }
 
-.gemini-btn:hover { background-color: #f0f4f9; }
-
-.chat-message { 
-    padding: 0.5rem 1rem; 
-    border-radius: 1rem; 
-    margin-bottom: 0.5rem; 
-    max-width: 80%; 
-}
-
-.user-message { 
-    background-color: #e5e7eb; 
-    align-self: flex-end; 
-}
-
-.gemini-message { 
-    background-color: #f3f4f6; 
-    align-self: flex-start; 
-}
+.panel-btn:hover { background-color: #f0f4f9; }
 
 .task-item { 
     display: flex; 

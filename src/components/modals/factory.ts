@@ -3,30 +3,19 @@
  * Provides common patterns for modal operations
  */
 
-export interface ModalElements {
+interface ModalElements {
     modal: HTMLElement;
     content: HTMLElement;
     title?: HTMLElement;
 }
 
-export interface ModalConfig {
+interface ModalConfig {
     modalId: string;
     contentId: string;
     titleId?: string;
     loadingMessage?: string;
 }
 
-export function saveSessionContent(
-    _topic: string,
-    _content: unknown,
-    _title?: string
-): void {
-    window.dispatchEvent(new CustomEvent('session-created'));
-}
-
-/**
- * Get modal elements by IDs
- */
 export function getModalElements(config: ModalConfig): ModalElements | null {
     const modal = document.getElementById(config.modalId);
     const content = document.getElementById(config.contentId);
@@ -46,9 +35,6 @@ export function getModalElements(config: ModalConfig): ModalElements | null {
     return elements;
 }
 
-/**
- * Show modal with loading state
- */
 export function showModalWithLoading(
     elements: ModalElements,
     loadingMessage: string = 'Loading...'
@@ -61,17 +47,6 @@ export function showModalWithLoading(
     elements.content.appendChild(message);
 }
 
-/**
- * Hide modal
- */
-export function hideModal(elements: ModalElements): void {
-    elements.modal.classList.add('hidden');
-    elements.modal.classList.remove('flex');
-}
-
-/**
- * Show error in modal
- */
 export function showModalError(
     elements: ModalElements,
     message: string = 'An error occurred. Please try again.'
@@ -82,16 +57,10 @@ export function showModalError(
     elements.content.appendChild(error);
 }
 
-/**
- * Set modal content
- */
 export function setModalContent(elements: ModalElements, html: string): void {
     elements.content.innerHTML = html;
 }
 
-/**
- * Set modal title
- */
 export function setModalTitle(elements: ModalElements, title: string): void {
     if (elements.title) {
         elements.title.textContent = title;
@@ -99,44 +68,8 @@ export function setModalTitle(elements: ModalElements, title: string): void {
 }
 
 /**
- * Generic modal handler type
- */
-export type ContentFetcher<T> = () => Promise<T>;
-export type ContentRenderer<T> = (data: T) => string;
-
-/**
- * Create a simple modal handler
- * Handles: open modal, show loading, fetch content, render or show error
- */
-export function createSimpleModalHandler<T>(
-    config: ModalConfig,
-    fetcher: ContentFetcher<T>,
-    renderer: ContentRenderer<T>,
-    errorMessage?: string
-): () => Promise<void> {
-    return async () => {
-        const elements = getModalElements(config);
-        if (!elements) return;
-
-        showModalWithLoading(elements, config.loadingMessage);
-
-        try {
-            const data = await fetcher();
-            if (data) {
-                setModalContent(elements, renderer(data));
-            } else {
-                showModalError(elements, errorMessage || 'Could not load content.');
-            }
-        } catch (error) {
-            console.error(`Error in modal ${config.modalId}:`, error);
-            showModalError(elements, errorMessage || 'An error occurred.');
-        }
-    };
-}
-
-/**
- * Modal configuration registry
- * Maps modal names to their configuration
+ * Modal configuration registry — single source of truth for DOM ids and
+ * loading copy across modal handlers.
  */
 export const MODAL_CONFIGS: Record<string, ModalConfig> = {
     coffee: {
@@ -188,10 +121,3 @@ export const MODAL_CONFIGS: Record<string, ModalConfig> = {
         loadingMessage: 'Loading exercise plan...'
     }
 };
-
-/**
- * Get a modal config by name
- */
-export function getModalConfig(name: string): ModalConfig | undefined {
-    return MODAL_CONFIGS[name];
-}

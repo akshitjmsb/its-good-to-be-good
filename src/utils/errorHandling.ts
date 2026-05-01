@@ -157,20 +157,3 @@ export async function withErrorHandling<T>(
     }
 }
 
-/**
- * Wrapper for sync functions with error handling
- */
-export function withSyncErrorHandling<T>(
-    fn: () => T,
-    context: string,
-    fallback?: T
-): T | undefined {
-    try {
-        return fn();
-    } catch (error) {
-        const appError = ErrorHandler.handleUnknownError(error, context);
-        ErrorHandler.logError(appError);
-        ErrorHandler.showUserError(appError);
-        return fallback;
-    }
-}

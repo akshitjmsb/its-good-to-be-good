@@ -276,30 +276,3 @@ export function hideQuoteLoadingIndicator() {
     }
 }
 
-// Legacy function for backward compatibility - now uses instant loading
-export async function getPhilosophicalQuote(date: Date): Promise<MultilingualQuote> {
-    return getPhilosophicalQuoteInstant(date);
-}
-
-export async function getReflectionPrompt(quote: string, author: string) {
-    const reflectionPromptDisplay = document.getElementById('reflection-prompt-display-day');
-    if (!reflectionPromptDisplay) return;
-
-    if (!ai) {
-        reflectionPromptDisplay.textContent = 'AI functionality is not available. Please check your API key configuration.';
-        return;
-    }
-
-    reflectionPromptDisplay.textContent = 'Generating a reflection prompt...';
-    try {
-        const prompt = `Based on this philosophical quote: "${quote}" by ${author}, generate a short, insightful, and personal reflection question to help me think deeper about it. Frame it as a question I can ask myself. Do not use asterisks.`;
-        const response = await ai.models.generateContent({
-            model: 'sonar-pro',
-            contents: prompt,
-        });
-        reflectionPromptDisplay.textContent = response.text.replace(/\*/g, '');
-    } catch (error) {
-        console.error("Error generating reflection prompt:", error);
-        reflectionPromptDisplay.textContent = 'Could not generate a prompt. Please try again.';
-    }
-}

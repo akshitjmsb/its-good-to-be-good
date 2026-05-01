@@ -3,9 +3,8 @@
  * Provides canonical time handling for consistent date operations
  */
 
-// Global variable for testing time zones
 // eslint-disable-next-line prefer-const
-export let testTimeOverride: Date | null = null;
+let testTimeOverride: Date | null = null;
 
 /**
  * Gets the current date and hour based on a canonical timezone ('America/New_York')

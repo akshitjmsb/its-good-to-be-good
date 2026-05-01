@@ -287,7 +287,7 @@
 
 /* Button improvements for touch */
 @media (max-width: 768px) {
-    .gemini-btn {
+    .panel-btn {
         padding: 0.75rem 1.5rem !important;
         font-size: 1rem !important;
         min-height: 44px;
@@ -407,7 +407,7 @@
 }
 
 /* Focus improvements for accessibility */
-.gemini-btn:focus,
+.panel-btn:focus,
 .preview-card:focus,
 .add-task-form input:focus,
 .add-task-form button:focus {
@@ -417,7 +417,7 @@
 
 /* Touch target improvements */
 .preview-card,
-.gemini-btn,
+.panel-btn,
 .add-task-form button,
 .task-item input[type="checkbox"] {
     touch-action: manipulation;
