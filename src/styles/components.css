@@ -946,3 +946,166 @@ button.preview-card {
         font-size: 1rem;
     }
 }
+
+/* ── Quantum timer ───────────────────────────────────────────────────────── */
+/* Shared between the home widget (in the corner of index.html) and the
+   dedicated quantum.html page. Uses only the locked grey ramp. */
+
+/* Break treatment — replaces the old text-red-500 + animate-pulse Tailwind
+   classes with a token-friendly muted pulse using the home grey ramp. */
+.timer-break {
+    color: #6b7280;
+    animation: quantum-break-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes quantum-break-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+}
+
+/* Dedicated Quantum page chrome */
+
+.quantum-page .quantum-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.quantum-back {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0.25rem 0 -0.5rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0.5rem;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.quantum-back:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+}
+
+.quantum-back:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.quantum-page .quantum-title {
+    flex: 1;
+    text-align: center;
+    margin: 0;
+    margin-right: 4.5rem;
+    font-size: 1.5rem;
+}
+
+.quantum-stage {
+    text-align: center;
+    padding: 2rem 1rem 2.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .quantum-stage {
+        border-radius: 0.5rem;
+    }
+}
+
+.quantum-display {
+    font-family: 'Special Elite', monospace;
+    font-size: 3.5rem;
+    line-height: 1;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+}
+
+.quantum-status {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0 0 1.25rem 0;
+    letter-spacing: 0.025em;
+    min-height: 1.2em;
+}
+
+.quantum-btn {
+    min-width: 120px;
+    min-height: 44px;
+}
+
+.quantum-history-section {
+    margin-top: 1.5rem;
+}
+
+.quantum-history-heading {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.75rem 0;
+    text-align: center;
+}
+
+.quantum-history {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.quantum-history__entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.875rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-family: 'Special Elite', monospace;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.quantum-history__label {
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.quantum-history__time {
+    color: #6b7280;
+    font-size: 0.8rem;
+    letter-spacing: 0.025em;
+}
+
+.quantum-history__empty {
+    color: #6b7280;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    text-align: center;
+    margin: 0;
+    padding: 1rem 0;
+    letter-spacing: 0.025em;
+}
+
+@media (max-width: 640px) {
+    .quantum-page .quantum-title {
+        font-size: 1.25rem;
+        margin-right: 4rem;
+    }
+
+    .quantum-display {
+        font-size: 2.75rem;
+    }
+
+    .quantum-stage {
+        padding: 1.5rem 0.75rem 2rem;
+    }
+}
