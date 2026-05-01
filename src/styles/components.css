@@ -650,15 +650,81 @@ button.preview-card {
         padding: 0.5rem;
         min-height: 60px;
     }
-    
+
     .nav-icon {
         width: 20px;
         height: 20px;
         margin-bottom: 4px;
     }
-    
+
     .nav-item h2 {
         font-size: 0.75rem;
+    }
+}
+
+/* ── Home navigation carousel ────────────────────────────────────────────── */
+/* Mobile-first: a horizontal flex strip that scrolls with snap. On tablet
+   and up the strip stops scrolling and the items grow to fill the row. */
+
+.nav-carousel-wrap {
+    position: relative;
+}
+
+/* Subtle right-edge fade hinting that there's more to scroll on mobile.
+   Uses --home-surface (#ffffff) so it blends into the app-container. */
+.nav-carousel-wrap::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1.5rem;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff);
+}
+
+.nav-carousel {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Leave a little breathing room at the start so the first card can
+       fully snap into view from the left edge. */
+    scroll-padding-inline: 0.5rem;
+    /* Ensure flex children can shrink below their content width. */
+    min-width: 0;
+}
+
+.nav-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.nav-carousel > .nav-item {
+    /* ~2.5–3 cards visible on a 375 px viewport (38 vw ≈ 142 px there);
+       clamp keeps cards readable on very small or very large mobiles. */
+    flex: 0 0 clamp(110px, 38vw, 160px);
+    scroll-snap-align: center;
+    min-height: 44px; /* WCAG touch target */
+}
+
+@media (min-width: 769px) {
+    .nav-carousel-wrap::after {
+        display: none;
+    }
+
+    .nav-carousel {
+        overflow: visible;
+        scroll-snap-type: none;
+        scroll-padding-inline: 0;
+    }
+
+    .nav-carousel > .nav-item {
+        /* On tablet+ all six fit; let them share space evenly. */
+        flex: 1 1 0;
+        min-width: 0;
     }
 }
 

@@ -75,28 +75,6 @@
     gap: 0.5rem; /* Improved gap for better mobile spacing */
 }
 
-/* Main navigation grid responsive design - override grid-cols-6 for mobile */
-@media (max-width: 768px) {
-    .grid.grid-cols-6 {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 0.5rem !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .grid.grid-cols-6 {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.375rem !important;
-    }
-}
-
-@media (max-width: 375px) {
-    .grid.grid-cols-6 {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.25rem !important;
-    }
-}
-
 /* Mobile navigation item optimizations for touch targets */
 @media (max-width: 768px) {
     .nav-item {
