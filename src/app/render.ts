@@ -4,16 +4,6 @@ import { renderDeepDiveScaffold } from '../components/quoteDeepDive';
 import { Task } from '../types';
 import { escapeHtml } from '../utils/escapeHtml';
 
-export function updateDynamicIcon(): void {
-  const iconEl = document.getElementById(
-    'dynamic-time-icon'
-  ) as HTMLElement | null;
-  if (!iconEl) return;
-
-  iconEl.textContent = '✨';
-  iconEl.className = 'theme-icon';
-}
-
 export function renderQuoteHTML(quote: MultilingualQuote): string {
   const isMultilingual =
     quote.language !== 'en' && (quote.transliteration || quote.translation);

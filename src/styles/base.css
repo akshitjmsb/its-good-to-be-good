@@ -70,13 +70,11 @@ h3 { font-size: 1rem; margin-bottom: 0.5rem; color: #374151; }
 
 .footer-btn { text-decoration: underline; font-size: 0.8rem; margin: 0 0.5rem; color: #6b7280; }
 
-.theme-icon { 
-    font-size: 1.5rem; 
-    margin-left: 0.5rem; 
+.theme-icon {
+    font-size: 1.5rem;
+    margin-left: 0.5rem;
     transition: all 0.3s ease;
 }
-.theme-icon.day-mode { color: #f59e0b; }
-.theme-icon.night-mode { color: #6366f1; }
 
 /* Paragraph and text element colors */
 p { color: #374151; }

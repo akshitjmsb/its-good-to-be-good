@@ -17,7 +17,7 @@ import {
   renderNavigationIcons,
 } from '../utils/iconRenderer';
 import { createAppRuntimeStore } from './state';
-import { renderDayModule, updateDynamicIcon } from './render';
+import { renderDayModule } from './render';
 import { initializeSchedulers } from './scheduler';
 
 function showSyncStatus(message: string, isFinal = false): void {
@@ -75,7 +75,6 @@ export async function bootstrapApp(): Promise<void> {
     ) as HTMLElement | null;
     dayModule?.classList.add('active');
 
-    updateDynamicIcon();
     renderNavigationIcons();
     const { todaysQuote, currentUserId } = store.getState();
     renderDayModule(todaysQuote, tasks);
