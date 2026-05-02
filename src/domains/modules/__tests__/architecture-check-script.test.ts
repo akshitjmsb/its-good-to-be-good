@@ -73,10 +73,13 @@ function createFixture(root: string) {
     }
 
     if (module.ownerPath === 'src/components/modals/exercise/controller.ts') {
+      // Exercise is self-contained — no domain-service import required,
+      // only the forbidden infra/ai import is checked. A bare module
+      // satisfies the (now-relaxed) rule.
       writeFixtureFile(
         root,
         module.ownerPath,
-        "import { getWeeklyExercise } from '../../../domains/content/service';\nexport function showExerciseModal() { return getWeeklyExercise; }\n"
+        "export function showExerciseModal() {}\n"
       );
       return;
     }

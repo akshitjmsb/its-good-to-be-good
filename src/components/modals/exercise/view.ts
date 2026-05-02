@@ -1,331 +1,229 @@
+/**
+ * Monthly calendar view for the Exercise modal.
+ *
+ *   ◀ May 2026 ▶
+ *   Sun Mon Tue Wed Thu Fri Sat
+ *    .  Push  .   Pull  .  Legs Upper        ← per-cell label
+ *
+ * Tap any day → expanded plan renders below. Today is outlined; the
+ * actively-selected day is filled.
+ */
+
 import { createSafeHtml, escapeHtml } from '../../../utils/escapeHtml';
-import { ExerciseDay, ExerciseItem, WeeklyExerciseContent } from './types';
+import { type DayPlan, type Exercise, getDayPlan } from './data';
 
-const WEEK_DAYS = [
-  'sunday',
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-] as const;
+const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
+const TYPE_LABELS = {
+  push: 'Push',
+  pull: 'Pull',
+  legs: 'Legs',
+  upper: 'Upper',
+  rest: 'Rest',
+} as const;
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-
-export function getStartOfWeek(date: Date): Date {
-  const startOfWeek = new Date(date);
-  const day = startOfWeek.getDay();
-  const diff = startOfWeek.getDate() - day;
-  startOfWeek.setDate(diff);
-  startOfWeek.setHours(0, 0, 0, 0);
-  return startOfWeek;
+interface ViewState {
+  displayedMonth: Date; // first day of the month being shown in the grid
+  selectedDay: Date; // day whose plan appears in the panel
+  today: Date;
 }
 
-function dayType(day: ExerciseDay | undefined): string {
-  return (day?.type ?? '').toLowerCase();
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function typeLabel(type: string): string {
-  if (!type) return '';
-  return type.charAt(0).toUpperCase() + type.slice(1);
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
-export function renderWeeklyExerciseContent(
-  container: HTMLElement,
-  weeklyData: WeeklyExerciseContent,
-  currentDate: Date
-) {
-  // Drop any handler from a prior open before we rebuild the DOM. Together
-  // with the per-mount replacement inside initializeCardNavigation, this
-  // guarantees at most one document-level keydown listener at a time.
-  teardownCardKeydownHandler();
+function formatMonthTitle(date: Date): string {
+  return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
 
-  const dayOfWeek = currentDate.getDay();
-  const currentDay = WEEK_DAYS[dayOfWeek];
-  const currentDayData = weeklyData[currentDay];
-  const currentType = dayType(currentDayData);
+function formatPanelDate(date: Date): string {
+  return date.toLocaleString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+}
 
-  container.innerHTML = `
-    <div class="exercise-container">
-      <div class="exercise-header">
-        <div class="current-day-badge ${currentType}-badge">
-          ${escapeHtml(typeLabel(currentType))}
-        </div>
-      </div>
-      <div class="day-selector">
-        ${WEEK_DAYS.map((day, index) => {
-          const data = weeklyData[day];
-          const isActive = day === currentDay;
-          const t = dayType(data);
-          return `
-            <button class="day-button ${isActive ? 'active' : ''}" data-day="${day}">
-              <span class="day-name">${DAY_LABELS[index]}</span>
-              <span class="workout-type">${escapeHtml(typeLabel(t))}</span>
-            </button>
-          `;
-        }).join('')}
-      </div>
-      <div class="exercise-content">
-        ${renderDayContent(currentDayData)}
-      </div>
-    </div>
-  `;
+function dateAttr(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
-  initializeDayNavigation(container, weeklyData);
-  if (currentType !== 'rest') {
-    initializeCardNavigation(container, currentDayData);
+function parseDateAttr(value: string | null): Date | null {
+  if (!value) return null;
+  const parts = value.split('-');
+  if (parts.length !== 3) return null;
+  const [y, m, d] = parts.map(Number);
+  if ([y, m, d].some(n => Number.isNaN(n))) return null;
+  return new Date(y, m - 1, d);
+}
+
+function buildMonthCells(state: ViewState): string {
+  const first = state.displayedMonth;
+  const monthIndex = first.getMonth();
+  // Pad with empty cells before day-1 so the calendar aligns to weekdays.
+  const padBefore = first.getDay();
+  // 6 weeks × 7 days = 42 — guarantees a stable height as months change.
+  const TOTAL_CELLS = 42;
+  const cells: string[] = [];
+
+  for (let i = 0; i < TOTAL_CELLS; i++) {
+    const offset = i - padBefore;
+    const cellDate = new Date(first.getFullYear(), monthIndex, 1 + offset);
+    const inMonth = cellDate.getMonth() === monthIndex;
+
+    if (!inMonth) {
+      cells.push('<div class="exercise-cal__cell exercise-cal__cell--empty" aria-hidden="true"></div>');
+      continue;
+    }
+
+    const plan = getDayPlan(cellDate);
+    const isToday = isSameDay(cellDate, state.today);
+    const isSelected = isSameDay(cellDate, state.selectedDay);
+    const classes = [
+      'exercise-cal__cell',
+      `exercise-cal__cell--${plan.type}`,
+      isToday ? 'is-today' : '',
+      isSelected ? 'is-selected' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    cells.push(`
+      <button type="button" class="${classes}" data-date="${dateAttr(cellDate)}" aria-pressed="${isSelected}" aria-label="${escapeHtml(formatPanelDate(cellDate))}, ${TYPE_LABELS[plan.type]}">
+        <span class="exercise-cal__num">${cellDate.getDate()}</span>
+        <span class="exercise-cal__type">${TYPE_LABELS[plan.type]}</span>
+      </button>
+    `);
   }
+  return cells.join('');
 }
 
-function renderDayContent(dayData: ExerciseDay): string {
-  if (dayType(dayData) === 'rest') return renderRestDayContent(dayData);
-  return renderWorkoutCards(dayData);
-}
-
-function renderRestDayContent(dayData: ExerciseDay): string {
-  const activities = dayData.activities ?? [];
+function renderExercise(exercise: Exercise, index: number): string {
   return `
-    <div class="rest-day-content">
-      <div class="rest-title">Rest Day</div>
-      <div class="rest-message">Take it easy and focus on recovery</div>
-      ${
-        activities.length
-          ? `
-        <div class="rest-suggestions">
-          <h4>Suggested Activities</h4>
-          <ul>
-            ${activities.map(activity => `<li>${createSafeHtml(activity)}</li>`).join('')}
-          </ul>
-        </div>
-      `
-          : ''
-      }
-      ${dayData.notes ? `<p class="rest-notes">${createSafeHtml(dayData.notes)}</p>` : ''}
-    </div>
-  `;
-}
-
-function renderWorkoutCards(workoutData: ExerciseDay): string {
-  const exercises = workoutData?.exercises ?? [];
-  if (!exercises.length) {
-    return '<p class="exercise-empty">No exercises planned for today.</p>';
-  }
-
-  return `
-    <div class="workout-cards-container">
-      <div class="exercise-counter">Exercise 1 of ${exercises.length}</div>
-      <div class="cards-wrapper">
-        ${exercises.map((exercise, index) => renderExerciseCard(exercise, index + 1)).join('')}
+    <article class="exercise-entry" aria-posinset="${index + 1}">
+      <header class="exercise-entry__header">
+        <h4 class="exercise-entry__name">${createSafeHtml(exercise.name)}</h4>
+        <p class="exercise-entry__muscles">${createSafeHtml(exercise.muscleGroups)}</p>
+      </header>
+      <div class="exercise-entry__details">
+        <span class="exercise-entry__detail">${escapeHtml(String(exercise.sets))} × ${escapeHtml(String(exercise.reps))}</span>
+        <span class="exercise-entry__detail exercise-entry__detail--muted">${escapeHtml(String(exercise.rest))} rest</span>
       </div>
-      ${
-        exercises.length > 1
-          ? `
-        <div class="card-indicators" role="tablist">
-          ${exercises
-            .map(
-              (_, index) =>
-                `<button type="button" class="indicator ${index === 0 ? 'active' : ''}" data-card-index="${index}" aria-label="Show exercise ${index + 1}"></button>`
-            )
-            .join('')}
-        </div>
-      `
-          : ''
-      }
-      ${
-        workoutData.notes
-          ? `<p class="workout-notes">${createSafeHtml(workoutData.notes)}</p>`
-          : ''
-      }
-    </div>
-  `;
-}
-
-function renderExerciseCard(exercise: ExerciseItem, number: number): string {
-  const exerciseName = exercise.name || 'Exercise';
-  const muscleGroups = exercise.muscleGroups || exercise.target || 'Full body';
-  const sets = exercise.sets || '3-4';
-  const reps = exercise.reps || '8-12';
-  const rest = exercise.rest || '90s';
-  const instructions = exercise.instructions ?? '';
-  const tips = exercise.tips ?? '';
-
-  return `
-    <article class="exercise-card" data-exercise="${number}">
-      <div class="card-content">
-        <h4 class="exercise-title">${createSafeHtml(exerciseName)}</h4>
-        <p class="muscle-groups">${createSafeHtml(muscleGroups)}</p>
-        <div class="exercise-details">
-          <span class="sets-reps">${escapeHtml(String(sets))} sets × ${escapeHtml(String(reps))} reps</span>
-          <span class="rest-time">${escapeHtml(String(rest))} rest</span>
-        </div>
-        ${
-          instructions
-            ? `
-          <section class="exercise-section">
-            <h5 class="exercise-section__heading">Form</h5>
-            <p class="exercise-section__body">${createSafeHtml(instructions)}</p>
-          </section>
-        `
-            : ''
-        }
-        ${
-          tips
-            ? `
-          <section class="exercise-section">
-            <h5 class="exercise-section__heading">Tip</h5>
-            <p class="exercise-section__body">${createSafeHtml(tips)}</p>
-          </section>
-        `
-            : ''
-        }
-      </div>
+      <section class="exercise-entry__section">
+        <h5 class="exercise-entry__heading">Form</h5>
+        <p class="exercise-entry__body">${createSafeHtml(exercise.instructions)}</p>
+      </section>
+      <section class="exercise-entry__section">
+        <h5 class="exercise-entry__heading">Tip</h5>
+        <p class="exercise-entry__body">${createSafeHtml(exercise.tips)}</p>
+      </section>
     </article>
   `;
 }
 
-function initializeDayNavigation(
-  container: HTMLElement,
-  weeklyData: WeeklyExerciseContent
-) {
-  const dayButtons = container.querySelectorAll<HTMLButtonElement>('.day-button');
-  const exerciseContent = container.querySelector<HTMLElement>('.exercise-content');
-  const currentDayBadge = container.querySelector<HTMLElement>('.current-day-badge');
-  if (!dayButtons.length || !exerciseContent || !currentDayBadge) return;
-
-  dayButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const selectedDay = button.getAttribute('data-day');
-      if (!selectedDay || !weeklyData[selectedDay]) return;
-
-      dayButtons.forEach(btn => btn.classList.remove('active'));
-      button.classList.add('active');
-
-      const data = weeklyData[selectedDay];
-      const t = dayType(data);
-      currentDayBadge.className = `current-day-badge ${t}-badge`;
-      currentDayBadge.textContent = typeLabel(t);
-
-      exerciseContent.innerHTML = renderDayContent(data);
-
-      if (t !== 'rest') {
-        initializeCardNavigation(container, data);
-      } else {
-        // Day-switch into a rest day: tear down any keydown listener from the
-        // previous workout day so it doesn't fire on now-detached cards.
-        teardownCardKeydownHandler();
+function renderRestPanel(plan: DayPlan): string {
+  const activities = plan.activities ?? [];
+  return `
+    <div class="exercise-rest">
+      <p class="exercise-rest__title">Rest day.</p>
+      <p class="exercise-rest__body">Recovery is when the work pays off — train hard tomorrow, today is for moving easy and refueling.</p>
+      ${
+        activities.length
+          ? `
+        <h5 class="exercise-entry__heading">Optional</h5>
+        <ul class="exercise-rest__list">
+          ${activities.map(a => `<li>${createSafeHtml(a)}</li>`).join('')}
+        </ul>
+      `
+          : ''
       }
-    });
-  });
+    </div>
+  `;
 }
 
-// One global keydown handler at a time. Re-mounting the carousel (day switch
-// or modal close) replaces it, preventing the multi-listener leak the
-// previous implementation accumulated on every day click.
-let activeKeydownHandler: ((event: KeyboardEvent) => void) | null = null;
-
-function teardownCardKeydownHandler(): void {
-  if (activeKeydownHandler) {
-    document.removeEventListener('keydown', activeKeydownHandler);
-    activeKeydownHandler = null;
-  }
+function renderPanel(state: ViewState): string {
+  const plan = getDayPlan(state.selectedDay);
+  const dateLabel = formatPanelDate(state.selectedDay);
+  const heading = `${dateLabel} · ${TYPE_LABELS[plan.type]}`;
+  const body =
+    plan.type === 'rest'
+      ? renderRestPanel(plan)
+      : `<div class="exercise-entries">${(plan.exercises ?? []).map(renderExercise).join('')}</div>`;
+  return `
+    <section class="exercise-panel" aria-live="polite">
+      <h3 class="exercise-panel__heading">${escapeHtml(heading)}</h3>
+      ${body}
+    </section>
+  `;
 }
 
-function initializeCardNavigation(
-  container: HTMLElement,
-  workoutData: ExerciseDay
-) {
-  teardownCardKeydownHandler();
+function renderShell(state: ViewState): string {
+  return `
+    <div class="exercise-view">
+      <header class="exercise-cal__header">
+        <button type="button" class="exercise-cal__nav" data-nav="prev" aria-label="Previous month">←</button>
+        <span class="exercise-cal__title">${escapeHtml(formatMonthTitle(state.displayedMonth))}</span>
+        <button type="button" class="exercise-cal__nav" data-nav="next" aria-label="Next month">→</button>
+      </header>
+      <div class="exercise-cal__weekdays" aria-hidden="true">
+        ${WEEKDAY_LABELS.map(l => `<span>${l}</span>`).join('')}
+      </div>
+      <div class="exercise-cal__grid" role="grid">
+        ${buildMonthCells(state)}
+      </div>
+      ${renderPanel(state)}
+    </div>
+  `;
+}
 
-  const exercises = workoutData?.exercises ?? [];
-  if (exercises.length <= 1) return;
-
-  const cards = container.querySelectorAll<HTMLElement>('.exercise-card');
-  const indicators = container.querySelectorAll<HTMLElement>('.indicator');
-  const counter = container.querySelector<HTMLElement>('.exercise-counter');
-  const cardsWrapper = container.querySelector<HTMLElement>('.cards-wrapper');
-  if (!cards.length || !cardsWrapper || !counter) return;
-
-  let currentIndex = 0;
-  const total = exercises.length;
-  cards[0].classList.add('active');
-  indicators[0]?.classList.add('active');
-
-  function goToCard(index: number): void {
-    if (index < 0 || index >= total || index === currentIndex) return;
-
-    cards[currentIndex].classList.remove('active');
-    cards[currentIndex].classList.add('prev');
-    cards[index].classList.remove('prev');
-    cards[index].classList.add('active');
-
-    indicators[currentIndex]?.classList.remove('active');
-    indicators[index]?.classList.add('active');
-    counter!.textContent = `Exercise ${index + 1} of ${total}`;
-    currentIndex = index;
-
-    setTimeout(() => {
-      cards.forEach(card => card.classList.remove('prev'));
-    }, 300);
-  }
-
-  function nextCard() {
-    if (currentIndex < total - 1) goToCard(currentIndex + 1);
-  }
-  function prevCard() {
-    if (currentIndex > 0) goToCard(currentIndex - 1);
-  }
-
-  // Indicator clicks.
-  indicators.forEach((indicator, index) => {
-    indicator.addEventListener('click', () => goToCard(index));
-  });
-
-  // Touch swipe — only consume the gesture once horizontal motion clearly
-  // dominates, so vertical scrolling inside the modal still works.
-  let startX = 0;
-  let startY = 0;
-  let axis: 'horizontal' | 'vertical' | 'unknown' = 'unknown';
-  const AXIS_THRESHOLD = 8;
-  const SWIPE_THRESHOLD = 50;
-
-  cardsWrapper.addEventListener('touchstart', (event: TouchEvent) => {
-    const touch = event.touches[0];
-    startX = touch.clientX;
-    startY = touch.clientY;
-    axis = 'unknown';
-  }, { passive: true });
-
-  cardsWrapper.addEventListener(
-    'touchmove',
-    (event: TouchEvent) => {
-      const touch = event.touches[0];
-      const dx = touch.clientX - startX;
-      const dy = touch.clientY - startY;
-      if (axis === 'unknown') {
-        if (Math.abs(dx) < AXIS_THRESHOLD && Math.abs(dy) < AXIS_THRESHOLD) return;
-        axis = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
-      }
-      if (axis === 'horizontal') event.preventDefault();
-    },
-    { passive: false }
-  );
-
-  cardsWrapper.addEventListener('touchend', (event: TouchEvent) => {
-    if (axis !== 'horizontal') return;
-    const touch = event.changedTouches[0];
-    const dx = touch.clientX - startX;
-    if (Math.abs(dx) <= SWIPE_THRESHOLD) return;
-    if (dx < 0) nextCard();
-    else prevCard();
-  });
-
-  // Arrow-key navigation. Single registration (teardown above clears any
-  // prior handler) so day-switching no longer accumulates listeners.
-  const keyHandler = (event: KeyboardEvent) => {
-    if (event.key === 'ArrowLeft') prevCard();
-    else if (event.key === 'ArrowRight') nextCard();
+export function renderExerciseView(container: HTMLElement, today: Date): void {
+  const state: ViewState = {
+    displayedMonth: startOfMonth(today),
+    selectedDay: today,
+    today,
   };
-  document.addEventListener('keydown', keyHandler);
-  activeKeydownHandler = keyHandler;
+
+  function paint(): void {
+    container.innerHTML = renderShell(state);
+  }
+
+  // Single delegated click handler on the container — survives every
+  // re-paint and means we never need a second listener.
+  container.addEventListener('click', event => {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const navBtn = target.closest<HTMLButtonElement>('.exercise-cal__nav');
+    if (navBtn) {
+      const direction = navBtn.dataset.nav === 'prev' ? -1 : 1;
+      const next = new Date(
+        state.displayedMonth.getFullYear(),
+        state.displayedMonth.getMonth() + direction,
+        1
+      );
+      state.displayedMonth = next;
+      paint();
+      return;
+    }
+
+    const cell = target.closest<HTMLButtonElement>('.exercise-cal__cell');
+    if (cell && !cell.classList.contains('exercise-cal__cell--empty')) {
+      const picked = parseDateAttr(cell.dataset.date ?? null);
+      if (!picked) return;
+      state.selectedDay = picked;
+      paint();
+    }
+  });
+
+  paint();
 }

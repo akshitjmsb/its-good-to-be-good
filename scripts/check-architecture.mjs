@@ -256,6 +256,10 @@ async function validateLayerBoundaries() {
 }
 
 async function validateModalControllerBoundaries() {
+  // Modal controllers must not import infra/ai directly. Most also need a
+  // domain service (UI -> domain -> infra). Exercise is intentionally
+  // self-contained against a curated local pool, so it has no required
+  // domain import — only the forbidden one is enforced.
   const checks = [
     {
       path: 'src/components/modals/analytics/controller.ts',
@@ -265,7 +269,7 @@ async function validateModalControllerBoundaries() {
     {
       path: 'src/components/modals/exercise/controller.ts',
       forbidden: '../../../infra/ai',
-      required: '../../../domains/content/service',
+      required: null,
     },
   ];
 
@@ -277,7 +281,7 @@ async function validateModalControllerBoundaries() {
         `${check.path} must not import "${check.forbidden}". Use domain services instead.`
       );
     }
-    if (!source.includes(check.required)) {
+    if (check.required && !source.includes(check.required)) {
       fail(
         `${check.path} must import "${check.required}" to keep UI -> domain -> infra layering.`
       );

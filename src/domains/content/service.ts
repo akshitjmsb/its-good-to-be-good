@@ -1,11 +1,9 @@
 import {
-  generateWeeklyExerciseContent,
   getOrGenerateDynamicContent,
   getOrGeneratePlanForDate,
 } from '../../infra/ai/generators';
 import {
   AnalyticsContent,
-  ExerciseWeeklyContent,
   FoodPlanText,
   GuitarPoolItem,
   PhysicsContent,
@@ -52,12 +50,3 @@ export async function getFoodPlan(
   return await getOrGeneratePlanForDate(userId, date, dateKey);
 }
 
-export async function getWeeklyExercise(
-  userId: string,
-  startDate: Date
-): Promise<ExerciseWeeklyContent | null> {
-  return (await generateWeeklyExerciseContent(
-    userId,
-    startDate
-  )) as ExerciseWeeklyContent | null;
-}

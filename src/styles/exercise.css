@@ -1,383 +1,326 @@
-/* Exercise modal — re-skinned to the locked home design tokens.
-   Special Elite font, grey ramp only, no accent colours, no uppercase
-   in body text. Distinguished day types by label, not by hue. */
+/* Exercise modal — monthly calendar + per-day plan panel.
+   Locked design tokens only. Special Elite, grey ramp, soft shadows. */
 
-.exercise-container {
-    max-width: 100%;
-    margin: 0 auto;
-}
-
-.exercise-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-/* Current-day badge: a single pill that simply names the day type. The
-   five workout types share the same palette — discrimination by label,
-   not colour. */
-.current-day-badge,
-.push-badge,
-.pull-badge,
-.legs-badge,
-.upper-badge,
-.rest-badge {
-    display: inline-block;
-    padding: 0.375rem 0.875rem;
-    border-radius: 9999px;
+.exercise-view {
     font-family: 'Special Elite', monospace;
-    font-size: 0.8rem;
     color: #374151;
-    background-color: #f8f9fa;
-    border: 1px solid #e5e7eb;
+}
+
+/* ── Calendar header ─────────────────────────────────────────────────────── */
+
+.exercise-cal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.exercise-cal__title {
+    flex: 1;
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    color: #374151;
     letter-spacing: 0.025em;
 }
 
-/* Day selector — horizontal strip of 7 buttons. */
-.day-selector {
-    display: flex;
-    gap: 0.375rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    background-color: #f8f9fa;
+.exercise-cal__nav {
+    background: none;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    padding: 0.375rem 0.75rem;
+    min-width: 44px;
+    min-height: 44px;
+    color: #6b7280;
+    cursor: pointer;
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    line-height: 1;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.day-selector::-webkit-scrollbar {
-    display: none;
+.exercise-cal__nav:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
 }
 
-.day-button {
-    flex: 1 1 0;
-    min-width: 56px;
+.exercise-cal__nav:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.exercise-cal__nav:active {
+    transform: scale(0.95);
+}
+
+/* ── Weekday header ──────────────────────────────────────────────────────── */
+
+.exercise-cal__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+    margin-bottom: 0.25rem;
+    text-align: center;
+}
+
+.exercise-cal__weekdays span {
+    font-size: 0.7rem;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0;
+}
+
+/* ── Calendar grid ───────────────────────────────────────────────────────── */
+
+.exercise-cal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.exercise-cal__cell {
+    aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.125rem;
-    padding: 0.5rem 0.25rem;
+    padding: 0.25rem 0.125rem;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
     color: #374151;
     cursor: pointer;
-    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     font-family: 'Special Elite', monospace;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
 }
 
-.day-button:hover {
+.exercise-cal__cell:hover {
+    background-color: #f8f9fa;
     border-color: #d1d5db;
-    background-color: #f3f4f6;
 }
 
-.day-button:focus {
+.exercise-cal__cell:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
 }
 
-.day-button.active {
+.exercise-cal__cell--empty {
+    background: transparent;
+    border: 1px dashed transparent;
+    box-shadow: none;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Rest cells stay slightly muted to read as "off" days at a glance. */
+.exercise-cal__cell--rest {
+    background-color: #f8f9fa;
+    color: #9ca3af;
+}
+
+.exercise-cal__cell.is-today {
     border-color: #374151;
+    border-width: 1.5px;
+}
+
+.exercise-cal__cell.is-selected {
     background-color: #374151;
+    border-color: #374151;
     color: #ffffff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.day-name {
-    font-size: 0.8rem;
-    color: inherit;
+.exercise-cal__cell.is-selected.exercise-cal__cell--rest {
+    color: #ffffff;
 }
 
-.day-button .workout-type {
-    font-size: 0.7rem;
-    color: inherit;
-    opacity: 0.7;
+.exercise-cal__num {
+    font-size: 0.95rem;
+    line-height: 1;
 }
 
-/* Workout cards container */
-.workout-cards-container {
-    margin-bottom: 1rem;
-}
-
-.exercise-counter {
-    text-align: center;
-    font-family: 'Special Elite', monospace;
-    font-size: 0.8rem;
-    color: #6b7280;
-    margin-bottom: 0.75rem;
+.exercise-cal__type {
+    font-size: 0.6rem;
+    line-height: 1;
     letter-spacing: 0.025em;
+    opacity: 0.85;
 }
 
-.cards-wrapper {
-    position: relative;
-    min-height: 220px;
-    overflow: hidden;
-    border-radius: 0.5rem;
-    margin-bottom: 0.75rem;
+/* ── Day panel ───────────────────────────────────────────────────────────── */
+
+.exercise-panel {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1rem;
 }
 
-.exercise-card {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background-color: #f8f9fa;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    opacity: 0;
-    transform: translateX(100%);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    overflow-y: auto;
-    max-height: 60vh;
-}
-
-.exercise-card.active {
-    opacity: 1;
-    transform: translateX(0);
-    position: relative;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.exercise-card.prev {
-    transform: translateX(-100%);
-}
-
-.card-content {
-    padding: 1.25rem;
-    color: #374151;
+.exercise-panel__heading {
     font-family: 'Special Elite', monospace;
-}
-
-.exercise-title {
-    font-family: 'Special Elite', monospace;
-    font-size: 1.15rem;
+    font-size: 0.95rem;
     color: #374151;
-    margin: 0 0 0.25rem 0;
-    line-height: 1.3;
-}
-
-.muscle-groups {
-    font-size: 0.85rem;
-    color: #6b7280;
     margin: 0 0 0.875rem 0;
     letter-spacing: 0.025em;
 }
 
-.exercise-details {
+/* Each exercise card in the day's plan */
+
+.exercise-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.exercise-entry {
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.875rem 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.exercise-entry__header {
+    margin-bottom: 0.5rem;
+}
+
+.exercise-entry__name {
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    color: #374151;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.exercise-entry__muscles {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0.125rem 0 0;
+    letter-spacing: 0.025em;
+}
+
+.exercise-entry__details {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.875rem;
+    gap: 0.875rem;
+    margin-bottom: 0.625rem;
+    padding-bottom: 0.625rem;
     border-bottom: 1px solid #e5e7eb;
 }
 
-.sets-reps,
-.rest-time {
+.exercise-entry__detail {
     font-family: 'Special Elite', monospace;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #374151;
     letter-spacing: 0.025em;
 }
 
-.rest-time {
+.exercise-entry__detail--muted {
     color: #6b7280;
 }
 
-/* Per-card form / tip sections — same heading treatment as the deep dive */
-.exercise-section {
-    margin-top: 0.75rem;
+.exercise-entry__section {
+    margin-top: 0.625rem;
 }
 
-.exercise-section:first-of-type {
+.exercise-entry__section:first-of-type {
     margin-top: 0;
 }
 
-.exercise-section__heading {
+.exercise-entry__heading {
     font-family: 'Special Elite', monospace;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: #6b7280;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin: 0 0 0.25rem 0;
 }
 
-.exercise-section__body {
-    font-size: 0.9rem;
+.exercise-entry__body {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
     color: #374151;
     line-height: 1.5;
     margin: 0;
 }
 
-.workout-notes {
-    margin: 0.75rem 0 0;
-    padding: 0.625rem 0.75rem;
-    font-size: 0.85rem;
-    color: #6b7280;
+/* Rest panel */
+
+.exercise-rest {
     background-color: #f8f9fa;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
-    line-height: 1.5;
-}
-
-.exercise-empty {
-    text-align: center;
-    color: #6b7280;
-    padding: 2rem 1rem;
-    font-family: 'Special Elite', monospace;
-    letter-spacing: 0.025em;
-}
-
-/* Card indicators */
-.card-indicators {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-}
-
-.indicator {
-    width: 8px;
-    height: 8px;
-    padding: 0;
-    border-radius: 50%;
-    background-color: #d1d5db;
-    border: none;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-    cursor: pointer;
-}
-
-.indicator:hover {
-    background-color: #9ca3af;
-}
-
-.indicator.active {
-    background-color: #374151;
-    transform: scale(1.2);
-}
-
-.indicator:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-}
-
-/* Rest day */
-.rest-day-content {
-    text-align: center;
-    padding: 1.5rem 1rem;
-    background-color: #f8f9fa;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
+    padding: 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.rest-title {
+.exercise-rest__title {
     font-family: 'Special Elite', monospace;
-    font-size: 1.25rem;
+    font-size: 1rem;
     color: #374151;
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.5rem;
 }
 
-.rest-message {
+.exercise-rest__body {
     font-family: 'Special Elite', monospace;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #6b7280;
-    margin: 0 0 1rem 0;
+    line-height: 1.5;
+    margin: 0 0 0.75rem;
 }
 
-.rest-suggestions {
-    text-align: left;
-    max-width: 360px;
-    margin: 0 auto;
-}
-
-.rest-suggestions h4 {
-    font-family: 'Special Elite', monospace;
-    font-size: 0.7rem;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 0 0 0.375rem 0;
-}
-
-.rest-suggestions ul {
+.exercise-rest__list {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0.25rem 0 0;
 }
 
-.rest-suggestions li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e5e7eb;
-    color: #374151;
+.exercise-rest__list li {
     font-family: 'Special Elite', monospace;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    color: #374151;
+    padding: 0.375rem 0;
+    border-bottom: 1px solid #e5e7eb;
 }
 
-.rest-suggestions li:last-child {
+.exercise-rest__list li:last-child {
     border-bottom: none;
 }
 
-.rest-notes {
-    margin-top: 0.875rem;
-    font-size: 0.8rem;
-    color: #6b7280;
-    font-style: italic;
-}
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
 
-/* Mobile */
 @media (max-width: 640px) {
-    .day-selector {
-        gap: 0.25rem;
-        padding: 0.375rem;
+    .exercise-cal__title {
+        font-size: 0.9rem;
     }
 
-    .day-button {
-        min-width: 48px;
-        padding: 0.375rem 0.25rem;
+    .exercise-cal__weekdays span {
+        font-size: 0.65rem;
     }
 
-    .day-name {
-        font-size: 0.75rem;
-    }
-
-    .day-button .workout-type {
-        font-size: 0.625rem;
-    }
-
-    .card-content {
-        padding: 1rem;
-    }
-
-    .exercise-title {
-        font-size: 1.05rem;
-    }
-
-    .muscle-groups {
-        font-size: 0.8rem;
-    }
-
-    .sets-reps,
-    .rest-time {
+    .exercise-cal__num {
         font-size: 0.85rem;
     }
 
-    .exercise-details {
-        gap: 0.75rem;
+    .exercise-cal__type {
+        font-size: 0.55rem;
     }
 
-    .exercise-section__body {
-        font-size: 0.85rem;
+    .exercise-cal__cell {
+        border-radius: 0.375rem;
+        padding: 0.125rem;
     }
 
-    .rest-title {
-        font-size: 1.1rem;
+    .exercise-entry {
+        padding: 0.75rem 0.875rem;
+    }
+
+    .exercise-entry__name {
+        font-size: 0.95rem;
     }
 }

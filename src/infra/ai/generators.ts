@@ -11,11 +11,9 @@ import {
   getFallbackClassicRockPool,
   getFallbackFoodPlan,
   getFallbackPhysics,
-  getFallbackWeeklyExercise,
 } from './fallbacks';
 import {
   AnalyticsContent,
-  ExerciseWeeklyContent,
   FoodPlanText,
   GuitarPoolItem,
   PhysicsContent,
@@ -30,7 +28,6 @@ type GeneratedContentMap = {
   analytics: AnalyticsContent;
   'transportation-physics': PhysicsContent;
   'classic-rock-500': GuitarPoolItem[];
-  'weekly-exercise': ExerciseWeeklyContent;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -66,40 +63,6 @@ function isGuitarPool(value: unknown): value is GuitarPoolItem[] {
         typeof item.artist === 'string'
     )
   );
-}
-
-const ALLOWED_DAY_TYPES = [
-  'push',
-  'pull',
-  'legs',
-  'upper',
-  'rest',
-] as const;
-
-const WEEK_DAYS = [
-  'sunday',
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-] as const;
-
-function isExerciseDay(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  if (typeof value.type !== 'string') return false;
-  const type = value.type.toLowerCase();
-  if (!(ALLOWED_DAY_TYPES as readonly string[]).includes(type)) return false;
-  if (type === 'rest') return Array.isArray(value.activities);
-  return Array.isArray(value.exercises);
-}
-
-function isExerciseWeeklyContent(
-  value: unknown
-): value is ExerciseWeeklyContent {
-  if (!isRecord(value)) return false;
-  return WEEK_DAYS.every(day => isExerciseDay(value[day]));
 }
 
 function getPromptForContentType(
@@ -255,82 +218,6 @@ export async function generateFoodPlanForDate(
     const appError = ErrorHandler.handleApiError(error, 'Food plan generation');
     ErrorHandler.logError(appError);
     return getFallbackFoodPlan(date);
-  }
-}
-
-export async function generateWeeklyExerciseContent(
-  userId: string,
-  startDate: Date
-): Promise<ExerciseWeeklyContent> {
-  const dateKey = startDate.toISOString().split('T')[0];
-
-  const cached = await getCachedContent<ExerciseWeeklyContent>(
-    userId,
-    'weekly-exercise',
-    dateKey
-  );
-  if (cached && isExerciseWeeklyContent(cached)) return cached;
-
-  const generated = await generateWeeklyContent(startDate);
-  try {
-    await saveCachedContent(userId, 'weekly-exercise', dateKey, generated);
-  } catch (error) {
-    console.error('Error saving weekly content to Supabase cache', error);
-  }
-  return generated;
-}
-
-async function generateWeeklyContent(
-  startDate: Date
-): Promise<ExerciseWeeklyContent> {
-  if (!hasApiKey) return getFallbackWeeklyExercise() as ExerciseWeeklyContent;
-
-  const startKey = startDate.toISOString().split('T')[0];
-  const prompt = `Generate a comprehensive 7-day workout plan starting from ${startKey}.
-
-The schedule should be:
-- Sunday: Rest day
-- Monday: Push day (chest, shoulders, triceps)
-- Tuesday: Rest day
-- Wednesday: Pull day (back, biceps, rear delts)
-- Thursday: Rest day
-- Friday: Legs day (quads, hamstrings, glutes, calves)
-- Saturday: Upper body day (combination of push and pull)
-
-For each workout day, provide 3-4 exercises with:
-- Exercise name
-- Target muscle groups
-- Sets and reps
-- Rest periods
-- Brief form instructions
-- Pro tips
-
-For rest days, suggest active recovery activities.
-
-Focus on compound movements, progressive overload, and proper form. Make each day unique and challenging.
-
-Return as JSON with this structure:
-{
-  "sunday": {"type": "rest", "activities": ["..."], "notes": "..."},
-  "monday": {"type": "push", "exercises": [{"name": "...", "muscleGroups": "...", "sets": "...", "reps": "...", "rest": "...", "instructions": "...", "tips": "..."}], "notes": "..."},
-  ...
-}`;
-
-  try {
-    const responseText = await callPerplexityAPI(prompt, {
-      model: 'sonar-pro',
-      responseFormat: 'json_object',
-    });
-    const parsed = parseJsonResponse(responseText);
-    if (isExerciseWeeklyContent(parsed)) return parsed;
-    return getFallbackWeeklyExercise() as ExerciseWeeklyContent;
-  } catch (error) {
-    const appError = ErrorHandler.handleApiError(
-      error,
-      'Weekly exercise content generation'
-    );
-    ErrorHandler.logError(appError);
-    return getFallbackWeeklyExercise() as ExerciseWeeklyContent;
   }
 }
 

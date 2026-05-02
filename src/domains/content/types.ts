@@ -2,7 +2,6 @@ export type ContentType =
   | 'analytics'
   | 'transportation-physics'
   | 'classic-rock-500'
-  | 'weekly-exercise'
   | 'food-plan';
 
 export interface AnalyticsQuestionTopic {
@@ -35,36 +34,6 @@ export interface AnalyticsContent {
 export interface PhysicsContent {
   title: string;
   explanation: string;
-}
-
-export interface ExerciseItem {
-  name: string;
-  sets: string;
-  reps: string;
-  rest: string;
-  muscleGroup?: string;
-  muscleGroups?: string;
-  target?: string;
-  instructions?: string;
-  tips?: string;
-}
-
-export interface ExerciseDay {
-  type: string;
-  exercises?: ExerciseItem[];
-  activities?: string[];
-  notes?: string;
-}
-
-export interface ExerciseWeeklyContent {
-  sunday: ExerciseDay;
-  monday: ExerciseDay;
-  tuesday: ExerciseDay;
-  wednesday: ExerciseDay;
-  thursday: ExerciseDay;
-  friday: ExerciseDay;
-  saturday: ExerciseDay;
-  [key: string]: ExerciseDay;
 }
 
 export type GuitarPoolItem = {
