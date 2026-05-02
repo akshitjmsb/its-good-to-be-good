@@ -1359,6 +1359,134 @@ button.preview-card {
     opacity: 0.55;
 }
 
+/* Breath ring — pure CSS box breathing (4-4-4-4) shown only while
+   running. Ring scales between 1× and 1.6×; four label spans cycle
+   through visibility on the same 16 s loop. */
+
+.meditate-breath {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1.25rem 0 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.meditate-breath.is-active {
+    display: flex;
+}
+
+.meditate-breath__ring {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    border: 1.5px solid #d1d5db;
+    background: transparent;
+    transform-origin: center;
+    transform: scale(1);
+    will-change: transform, border-color;
+}
+
+.meditate-breath.is-active .meditate-breath__ring {
+    animation: meditate-breath-ring 16s linear infinite;
+}
+
+@keyframes meditate-breath-ring {
+    0%   { transform: scale(1);   border-color: #d1d5db; }
+    25%  { transform: scale(1.6); border-color: #374151; }
+    50%  { transform: scale(1.6); border-color: #374151; }
+    75%  { transform: scale(1);   border-color: #d1d5db; }
+    100% { transform: scale(1);   border-color: #d1d5db; }
+}
+
+.meditate-breath__labels {
+    position: relative;
+    height: 1.2em;
+    min-width: 7rem;
+    text-align: center;
+}
+
+.meditate-breath__label {
+    position: absolute;
+    inset: 0;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+    text-transform: lowercase;
+    opacity: 0;
+}
+
+.meditate-breath.is-active .meditate-breath__label--inhale {
+    animation: meditate-label-1 16s steps(1, end) infinite;
+}
+.meditate-breath.is-active .meditate-breath__label--hold-1 {
+    animation: meditate-label-2 16s steps(1, end) infinite;
+}
+.meditate-breath.is-active .meditate-breath__label--exhale {
+    animation: meditate-label-3 16s steps(1, end) infinite;
+}
+.meditate-breath.is-active .meditate-breath__label--hold-2 {
+    animation: meditate-label-4 16s steps(1, end) infinite;
+}
+
+@keyframes meditate-label-1 { 0%   { opacity: 1; } 25%  { opacity: 0; } 100% { opacity: 0; } }
+@keyframes meditate-label-2 { 0%   { opacity: 0; } 25%  { opacity: 1; } 50%  { opacity: 0; } 100% { opacity: 0; } }
+@keyframes meditate-label-3 { 0%   { opacity: 0; } 50%  { opacity: 1; } 75%  { opacity: 0; } 100% { opacity: 0; } }
+@keyframes meditate-label-4 { 0%   { opacity: 0; } 75%  { opacity: 1; } 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .meditate-breath.is-active .meditate-breath__ring,
+    .meditate-breath.is-active .meditate-breath__label--inhale,
+    .meditate-breath.is-active .meditate-breath__label--hold-1,
+    .meditate-breath.is-active .meditate-breath__label--exhale,
+    .meditate-breath.is-active .meditate-breath__label--hold-2 {
+        animation: none;
+    }
+    .meditate-breath.is-active .meditate-breath__label--inhale {
+        opacity: 1; /* show one steady label rather than rotating */
+    }
+}
+
+/* Stats row */
+
+.meditate-stats-section {
+    margin-bottom: 1.25rem;
+}
+
+.meditate-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.meditate-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.625rem 0.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.meditate-stat__value {
+    font-family: 'Special Elite', monospace;
+    font-size: 1.5rem;
+    color: #374151;
+    line-height: 1;
+}
+
+.meditate-stat__label {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.7rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 /* History */
 
 .meditate-history-section {
