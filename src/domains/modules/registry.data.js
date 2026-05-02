@@ -101,7 +101,7 @@ export const MODULE_REGISTRY_DATA = [
     category: 'learn',
     surface: 'modal',
     entrySelector: '#coffee-clickable',
-    handlerName: 'fetchAndShowCoffeeTip',
+    handlerName: 'showCoffeeMenu',
     ownerPath: 'src/components/modals/coffeeModal.ts',
     iconElementId: 'coffee-icon',
     modalId: 'coffee-modal',

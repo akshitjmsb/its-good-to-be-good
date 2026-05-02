@@ -1,1 +1,1 @@
-export { fetchAndShowCoffeeTip } from './coffee/controller';
+export { showCoffeeMenu } from './coffee/controller';

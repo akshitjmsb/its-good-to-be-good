@@ -4,7 +4,7 @@ import { showHoodModal } from './hoodModal';
 import { showExerciseModal } from './exerciseModal';
 import { fetchAndShowWorldOrder } from './worldOrderModal';
 import { fetchAndShowTennisMatches } from './tennisModal';
-import { fetchAndShowCoffeeTip } from './coffeeModal';
+import { showCoffeeMenu } from './coffeeModal';
 import { fetchAndShowGuitarTab } from './guitarModal';
 import { fetchAndShowPoetry } from './poetryModal';
 import {
@@ -30,7 +30,7 @@ function navigateToFrenchPage(): void {
 const LEARN_MODULE_HANDLERS: Record<LearnModuleId, LearnModuleHandler> = {
     'world-order': () => fetchAndShowWorldOrder(),
     tennis: () => fetchAndShowTennisMatches(),
-    coffee: ({ dates }) => fetchAndShowCoffeeTip(dates.active),
+    coffee: ({ dates }) => showCoffeeMenu(dates.active),
     guitar: ({ dates }) => fetchAndShowGuitarTab(dates.active),
     poetry: ({ dates }) => fetchAndShowPoetry(dates.active),
     french: navigateToFrenchPage,

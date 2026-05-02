@@ -74,8 +74,7 @@ export function setModalTitle(elements: ModalElements, title: string): void {
 export const MODAL_CONFIGS: Record<string, ModalConfig> = {
     coffee: {
         modalId: 'coffee-modal',
-        contentId: 'coffee-content',
-        loadingMessage: "Loading today's coffee lesson..."
+        contentId: 'coffee-content'
     },
     tennis: {
         modalId: 'tennis-modal',
