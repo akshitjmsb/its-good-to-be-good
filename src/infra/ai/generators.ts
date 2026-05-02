@@ -9,7 +9,6 @@ import { ErrorHandler } from '../../utils/errorHandling';
 import {
   getFallbackAnalytics,
   getFallbackClassicRockPool,
-  getFallbackExercisePlan,
   getFallbackFoodPlan,
   getFallbackPhysics,
   getFallbackWeeklyExercise,
@@ -25,21 +24,14 @@ import {
 export type ContentType =
   | 'analytics'
   | 'transportation-physics'
-  | 'classic-rock-500'
-  | 'exercise-plan';
+  | 'classic-rock-500';
 
 type GeneratedContentMap = {
   analytics: AnalyticsContent;
   'transportation-physics': PhysicsContent;
   'classic-rock-500': GuitarPoolItem[];
-  'exercise-plan': object;
   'weekly-exercise': ExerciseWeeklyContent;
 };
-
-function getWorkoutType(dayOfWeek: number): string {
-  const schedule = ['rest', 'push', 'rest', 'pull', 'rest', 'legs', 'upper'];
-  return schedule[dayOfWeek];
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -76,20 +68,38 @@ function isGuitarPool(value: unknown): value is GuitarPoolItem[] {
   );
 }
 
+const ALLOWED_DAY_TYPES = [
+  'push',
+  'pull',
+  'legs',
+  'upper',
+  'rest',
+] as const;
+
+const WEEK_DAYS = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+] as const;
+
+function isExerciseDay(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  if (typeof value.type !== 'string') return false;
+  const type = value.type.toLowerCase();
+  if (!(ALLOWED_DAY_TYPES as readonly string[]).includes(type)) return false;
+  if (type === 'rest') return Array.isArray(value.activities);
+  return Array.isArray(value.exercises);
+}
+
 function isExerciseWeeklyContent(
   value: unknown
 ): value is ExerciseWeeklyContent {
   if (!isRecord(value)) return false;
-  const days = [
-    'sunday',
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-  ];
-  return days.every(day => day in value);
+  return WEEK_DAYS.every(day => isExerciseDay(value[day]));
 }
 
 function getPromptForContentType(
@@ -103,8 +113,6 @@ function getPromptForContentType(
       return getPhysicsPrompt(dateKey);
     case 'classic-rock-500':
       return getGuitarPrompt();
-    case 'exercise-plan':
-      return getExercisePrompt(dateKey);
     default:
       return null;
   }
@@ -120,8 +128,6 @@ function getFallbackContent(
       return getFallbackPhysics();
     case 'classic-rock-500':
       return getFallbackClassicRockPool();
-    case 'exercise-plan':
-      return getFallbackExercisePlan();
   }
 }
 
@@ -140,10 +146,6 @@ function validateContent<T extends ContentType>(
         | null;
     case 'classic-rock-500':
       return (isGuitarPool(parsed) ? parsed : null) as
-        | GeneratedContentMap[T]
-        | null;
-    case 'exercise-plan':
-      return (isRecord(parsed) ? parsed : null) as
         | GeneratedContentMap[T]
         | null;
     default:
@@ -371,25 +373,3 @@ Format:
 ]`;
 }
 
-function getExercisePrompt(dateKey: string): string {
-  const dayOfWeek = new Date(dateKey).getDay();
-  const workoutType = getWorkoutType(dayOfWeek);
-
-  return `Generate a comprehensive ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)} workout plan for ${dateKey}. Create a 4-day weekly schedule with Push/Pull/Legs/Upper rotation. For the specific day, provide detailed exercises with proper form instructions, sets, reps, and rest periods. Focus on compound movements and progressive overload. Include muscle groups targeted and practical tips for each exercise.
-
-Return as JSON:
-{
-  "push": {
-    "exercises": [
-      {"name": "...", "muscleGroup": "...", "sets": "...", "reps": "...", "rest": "...", "instructions": "...", "tips": "..."}
-    ],
-    "notes": "..."
-  },
-  "pull": {...},
-  "legs": {...},
-  "rest": {
-    "activities": ["..."],
-    "notes": "..."
-  }
-}`;
-}

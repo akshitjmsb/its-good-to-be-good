@@ -5,6 +5,8 @@ export interface ExerciseItem {
   sets?: string;
   reps?: string;
   rest?: string;
+  instructions?: string;
+  tips?: string;
 }
 
 export interface ExerciseDay {

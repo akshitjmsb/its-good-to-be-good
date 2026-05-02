@@ -2,7 +2,6 @@ export type ContentType =
   | 'analytics'
   | 'transportation-physics'
   | 'classic-rock-500'
-  | 'exercise-plan'
   | 'weekly-exercise'
   | 'food-plan';
 
