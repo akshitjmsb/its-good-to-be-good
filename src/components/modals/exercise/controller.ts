@@ -4,7 +4,6 @@ import { ErrorHandler } from '../../../utils/errorHandling';
 import {
   MODAL_CONFIGS,
   getModalElements,
-  setModalTitle,
   showModalError,
   showModalWithLoading,
 } from '../factory';
@@ -15,8 +14,9 @@ export async function showExerciseModal(date: Date) {
   const elements = getModalElements(MODAL_CONFIGS.exercise);
   if (!elements) return;
 
+  // Title is the canonical "Weekly Exercise Plan" set directly in
+  // index.html, so there's no first-paint flash from a JS overwrite.
   showModalWithLoading(elements, MODAL_CONFIGS.exercise.loadingMessage);
-  setModalTitle(elements, 'Weekly Exercise Plan');
 
   try {
     const startOfWeek = getStartOfWeek(date);
