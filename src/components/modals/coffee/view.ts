@@ -1,31 +1,13 @@
 /**
- * Coffee modal view — today's featured drink + the full cafe menu.
+ * Coffee modal view — featured "today's coffee" hero card on top, then
+ * the full menu organised by category. Each menu entry is a tappable
+ * card with the drink's SVG illustration on the left, name and meta in
+ * the middle, and a "+" indicator on the right that flips to "×" when
+ * the card is expanded.
  *
- *   ┌────────────────────────────────────┐
- *   │ TODAY'S COFFEE                     │
- *   │ ┌────────────────────────────────┐ │
- *   │ │ Cappuccino                     │ │
- *   │ │ Milk-based · Medium · 3 min    │ │
- *   │ │ Named for the Capuchin friars… │ │
- *   │ │ INGREDIENTS                    │ │
- *   │ │ Double espresso     36 g       │ │
- *   │ │ Whole milk, steamed 120 ml     │ │
- *   │ │ METHOD                         │ │
- *   │ │ 1. Pull a double espresso…     │ │
- *   │ │ ─────                          │ │
- *   │ │ TIP                            │ │
- *   │ │ Italians never order one…      │ │
- *   │ └────────────────────────────────┘ │
- *   │                                    │
- *   │ FULL MENU                          │
- *   │ Espresso ──────────────────        │
- *   │ ▸ Espresso        medium · 30 sec  │
- *   │ ▸ Doppio          easy · 30 sec    │
- *   │ …                                  │
- *   └────────────────────────────────────┘
- *
- * No JS state — menu rows use native <details>/<summary> for expand/
- * collapse with proper a11y, single delegated handler not needed.
+ * Expand/collapse is JS-driven (single click handler delegated on the
+ * container) so the card visual stays intact instead of relying on the
+ * native <details>/<summary> reveal.
  */
 
 import { createSafeHtml, escapeHtml } from '../../../utils/escapeHtml';
@@ -36,6 +18,7 @@ import {
   getMenuByCategory,
   getTodaysDrink,
 } from './data';
+import { getCoffeeIcon } from './icons';
 
 function renderMeta(recipe: Recipe): string {
   return `
@@ -90,8 +73,12 @@ function renderTip(recipe: Recipe): string {
 }
 
 function renderTodayCard(recipe: Recipe): string {
+  // SVG strings are author-controlled (this module). Architecture guard
+  // checks for AI-derived innerHTML, not for static literals.
+  const icon = getCoffeeIcon(recipe.name);
   return `
     <article class="coffee-card">
+      <div class="coffee-card__icon">${icon}</div>
       <header class="coffee-card__header">
         <h3 class="coffee-card__name">${createSafeHtml(recipe.name)}</h3>
         ${renderMeta(recipe)}
@@ -104,36 +91,51 @@ function renderTodayCard(recipe: Recipe): string {
   `;
 }
 
-function renderMenuItem(recipe: Recipe): string {
+function renderMenuItem(recipe: Recipe, index: number): string {
+  const icon = getCoffeeIcon(recipe.name);
   return `
-    <details class="coffee-menu__item">
-      <summary class="coffee-menu__summary">
-        <span class="coffee-menu__summary-name">${createSafeHtml(recipe.name)}</span>
-        <span class="coffee-menu__summary-meta">${escapeHtml(DIFFICULTY_LABELS[recipe.difficulty])} · ${escapeHtml(recipe.brewTime)}</span>
-      </summary>
-      <div class="coffee-menu__expanded">
+    <li class="coffee-menu__item" data-recipe-index="${index}">
+      <button
+        type="button"
+        class="coffee-menu__card"
+        aria-expanded="false"
+        aria-controls="coffee-menu-detail-${index}"
+        data-action="toggle"
+      >
+        <span class="coffee-menu__icon">${icon}</span>
+        <span class="coffee-menu__card-text">
+          <span class="coffee-menu__name">${createSafeHtml(recipe.name)}</span>
+          <span class="coffee-menu__sub">${escapeHtml(CATEGORY_LABELS[recipe.category])} · ${escapeHtml(DIFFICULTY_LABELS[recipe.difficulty])} · ${escapeHtml(recipe.brewTime)}</span>
+        </span>
+        <span class="coffee-menu__chevron" aria-hidden="true">+</span>
+      </button>
+      <div
+        id="coffee-menu-detail-${index}"
+        class="coffee-menu__expanded"
+        hidden
+      >
         <p class="coffee-recipe__origin">${createSafeHtml(recipe.origin)}</p>
         ${renderIngredients(recipe)}
         ${renderMethod(recipe)}
         ${renderTip(recipe)}
       </div>
-    </details>
+    </li>
   `;
 }
 
 function renderMenu(): string {
   const groups = getMenuByCategory();
+  let counter = 0;
   const sections = groups
-    .map(
-      ({ category, recipes }) => `
+    .map(({ category, recipes }) => {
+      const items = recipes.map(r => renderMenuItem(r, counter++)).join('');
+      return `
         <section class="coffee-menu__group">
           <h4 class="coffee-menu__group-heading">${escapeHtml(CATEGORY_LABELS[category])}</h4>
-          <div class="coffee-menu__list">
-            ${recipes.map(renderMenuItem).join('')}
-          </div>
+          <ul class="coffee-menu__list">${items}</ul>
         </section>
-      `
-    )
+      `;
+    })
     .join('');
   return `
     <section class="coffee-menu" aria-label="Full coffee menu">
@@ -141,6 +143,22 @@ function renderMenu(): string {
       ${sections}
     </section>
   `;
+}
+
+function attachMenuToggles(container: HTMLElement): void {
+  container.addEventListener('click', event => {
+    const target = event.target as HTMLElement | null;
+    const trigger = target?.closest<HTMLButtonElement>(
+      '.coffee-menu__card[data-action="toggle"]'
+    );
+    if (!trigger) return;
+    const item = trigger.closest<HTMLLIElement>('.coffee-menu__item');
+    const panel = item?.querySelector<HTMLElement>('.coffee-menu__expanded');
+    if (!item || !panel) return;
+    const open = item.classList.toggle('is-open');
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    panel.hidden = !open;
+  });
 }
 
 export function renderCoffeeView(container: HTMLElement, date: Date): void {
@@ -154,4 +172,5 @@ export function renderCoffeeView(container: HTMLElement, date: Date): void {
       ${renderMenu()}
     </div>
   `;
+  attachMenuToggles(container);
 }
