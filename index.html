@@ -126,7 +126,11 @@
                             <h2>To do</h2>
                         </a>
 
-                        <a href="quantum.html"
+                        <!-- Quantum nav card hidden — the timer widget lives in the
+                             header (top-right) so this carousel slot was redundant.
+                             Markup retained so the dedicated quantum.html page is
+                             still reachable; remove `hidden` to re-surface. -->
+                        <a hidden href="quantum.html"
                            class="nav-item"
                            role="listitem"
                            aria-label="Navigate to Quantum page"
