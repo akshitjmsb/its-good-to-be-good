@@ -1233,3 +1233,202 @@ button.preview-card {
         padding: 1.5rem 0.75rem 2rem;
     }
 }
+
+/* ── Meditate page ───────────────────────────────────────────────────────── */
+
+.meditate-page .meditate-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.meditate-back {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0.25rem 0 -0.5rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0.5rem;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.meditate-back:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+}
+
+.meditate-back:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.meditate-page .meditate-title {
+    flex: 1;
+    text-align: center;
+    margin: 0;
+    margin-right: 4.5rem;
+    font-size: 1.5rem;
+}
+
+.meditate-stage {
+    text-align: center;
+    padding: 2rem 1rem 2.25rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+    .meditate-stage {
+        border-radius: 0.5rem;
+    }
+}
+
+.meditate-display {
+    font-family: 'Special Elite', monospace;
+    font-size: 3.5rem;
+    line-height: 1;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+}
+
+.meditate-status {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0 0 1.25rem 0;
+    letter-spacing: 0.025em;
+    min-height: 1.2em;
+}
+
+.meditate-btn {
+    min-width: 120px;
+    min-height: 44px;
+}
+
+/* Preset duration row */
+
+.meditate-presets {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.meditate-preset {
+    flex: 1 1 0;
+    padding: 0.625rem 0.5rem;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    color: #374151;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.025em;
+    cursor: pointer;
+    min-height: 44px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.meditate-preset:hover:not(:disabled) {
+    background-color: #f8f9fa;
+    border-color: #d1d5db;
+}
+
+.meditate-preset:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.meditate-preset[aria-pressed='true'] {
+    background-color: #374151;
+    border-color: #374151;
+    color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.meditate-preset:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+/* History */
+
+.meditate-history-section {
+    margin-top: 1.5rem;
+}
+
+.meditate-history-heading {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.75rem 0;
+    text-align: center;
+}
+
+.meditate-history {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.meditate-history__entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.875rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-family: 'Special Elite', monospace;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.meditate-history__label {
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.meditate-history__time {
+    color: #6b7280;
+    font-size: 0.8rem;
+    letter-spacing: 0.025em;
+}
+
+.meditate-history__empty {
+    color: #6b7280;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    text-align: center;
+    margin: 0;
+    padding: 1rem 0;
+    letter-spacing: 0.025em;
+}
+
+@media (max-width: 640px) {
+    .meditate-page .meditate-title {
+        font-size: 1.25rem;
+        margin-right: 4rem;
+    }
+
+    .meditate-display {
+        font-size: 2.75rem;
+    }
+
+    .meditate-stage {
+        padding: 1.5rem 0.75rem 1.75rem;
+    }
+
+    .meditate-preset {
+        font-size: 0.8rem;
+    }
+}

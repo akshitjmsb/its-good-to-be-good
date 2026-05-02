@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meditate - It's Good To Be King</title>
+    <title>Meditate — It's Good To Be King</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="src/styles/index.css">
+    <link rel="stylesheet" href="src/styles/home-lock.css">
     <link rel="icon" href="vitruvian-logo.svg" type="image/svg+xml">
-    <!-- Apple / PWA home-screen -->
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,120 +17,29 @@
     <meta name="apple-mobile-web-app-title" content="It's Good To Be King">
     <meta name="theme-color" content="#111111">
 </head>
-<body>
-    <div id="app-container" class="app-container">
-        <!-- Header -->
-        <header class="text-center mb-6">
-            <div class="logo-container flex justify-center">
-                <svg class="logo-svg" viewBox="0 0 520 505" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor">
-                    <title>It's Good To Be King Logo</title>
-                    <!-- Geometry -->
-                    <circle cx="260" cy="252" r="208" stroke-width="1.2"/>
-                    <rect x="52" y="84" width="416" height="416" stroke-width="1.2"/>
-                    <!-- Head -->
-                    <circle cx="260" cy="114" r="32" stroke-width="1.8"/>
-                    <!-- Hair -->
-                    <path d="M229,101 C227,91 231,83 237,85 C236,77 240,72 245,79 C246,72 250,68 254,79" stroke-width="0.9" stroke-linecap="round"/>
-                    <path d="M254,79 C256,70 260,68 264,79" stroke-width="0.9" stroke-linecap="round"/>
-                    <path d="M264,79 C268,70 272,70 275,79 C278,72 283,72 284,83 C289,80 290,91 288,101" stroke-width="0.9" stroke-linecap="round"/>
-                    <path d="M230,104 C232,90 244,84 260,84 C276,84 288,90 290,104" stroke-width="0.9"/>
-                    <!-- Ears -->
-                    <path d="M228,114 C222,112 221,121 227,123" stroke-width="0.9" stroke-linecap="round"/>
-                    <path d="M292,114 C298,112 299,121 293,123" stroke-width="0.9" stroke-linecap="round"/>
-                    <!-- Neck -->
-                    <path d="M248,146 L244,166" stroke-width="1.8" stroke-linecap="round"/>
-                    <path d="M272,146 L276,166" stroke-width="1.8" stroke-linecap="round"/>
-                    <!-- Collarbone -->
-                    <path d="M244,166 Q210,162 150,170" stroke-width="0.9"/>
-                    <path d="M276,166 Q310,162 370,170" stroke-width="0.9"/>
-                    <!-- Torso left -->
-                    <path d="M150,170 C133,177 127,194 136,214 C140,226 144,235 216,255 L206,292 C200,305 197,318 214,332 L240,340" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    <!-- Torso right -->
-                    <path d="M370,170 C387,177 393,194 384,214 C380,226 376,235 304,255 L314,292 C320,305 323,318 306,332 L280,340" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    <!-- Crotch -->
-                    <path d="M240,340 Q260,348 280,340" stroke-width="1.8" stroke-linecap="round"/>
-                    <!-- Sternum -->
-                    <line x1="260" y1="166" x2="260" y2="224" stroke-width="0.9"/>
-                    <!-- Pectorals -->
-                    <path d="M244,170 C238,180 228,192 218,202" stroke-width="0.9" stroke-linecap="round"/>
-                    <path d="M276,170 C282,180 292,192 302,202" stroke-width="0.9" stroke-linecap="round"/>
-                    <!-- Abs -->
-                    <path d="M230,216 L252,216 M268,216 L290,216" stroke-width="0.75"/>
-                    <path d="M226,228 L252,228 M268,228 L294,228" stroke-width="0.75"/>
-                    <path d="M222,240 L252,240 M268,240 L298,240" stroke-width="0.75"/>
-                    <!-- Navel -->
-                    <circle cx="260" cy="254" r="2.8" fill="currentColor" stroke="none"/>
-                    <!-- Horizontal arms -->
-                    <path d="M150,170 C124,173 98,175 74,176 C66,177 58,176 52,178" stroke-width="1.8" stroke-linecap="round"/>
-                    <path d="M370,170 C396,173 422,175 446,176 C454,177 462,176 468,178" stroke-width="1.8" stroke-linecap="round"/>
-                    <!-- Raised arms -->
-                    <path d="M150,170 C128,157 106,143 86,131 C78,126 70,120 62,112" stroke-width="1.8" stroke-linecap="round"/>
-                    <path d="M370,170 C392,157 414,143 434,131 C442,126 450,120 458,112" stroke-width="1.8" stroke-linecap="round"/>
-                    <!-- Together legs -->
-                    <path d="M240,340 C236,360 232,383 234,406 C235,424 236,447 236,464 L234,496" stroke-width="1.8" stroke-linecap="round"/>
-                    <path d="M280,340 C284,360 288,383 286,406 C285,424 284,447 284,464 L286,496" stroke-width="1.8" stroke-linecap="round"/>
-                    <!-- Together feet -->
-                    <path d="M234,496 C224,500 208,500 194,496" stroke-width="1.8" stroke-linecap="round"/>
-                    <path d="M286,496 C296,500 312,500 326,496" stroke-width="1.8" stroke-linecap="round"/>
-                    <!-- Spread legs -->
-                    <path d="M240,340 C220,362 196,388 170,413 C152,432 133,452 114,474" stroke-width="1.8" stroke-linecap="round"/>
-                    <path d="M280,340 C300,362 324,388 350,413 C368,432 387,452 406,474" stroke-width="1.8" stroke-linecap="round"/>
-                    <!-- Spread feet -->
-                    <path d="M114,474 C102,478 88,479 76,475" stroke-width="1.8" stroke-linecap="round"/>
-                    <path d="M406,474 C418,478 432,479 444,475" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
-            </div>
-            <div class="flex justify-center items-center">
-                <h1>Meditation</h1>
-                <span class="theme-icon">🧘</span>
-            </div>
-            <p class="text-xs mt-2">Mindfulness and inner peace</p>
+<body class="home-vintage-lock">
+    <div id="app-container" class="app-container meditate-page">
+        <header class="meditate-header">
+            <a href="index.html" class="meditate-back" aria-label="Back to home">← Home</a>
+            <h1 class="meditate-title">Meditate</h1>
         </header>
 
-        <!-- Navigation -->
-        <nav class="text-center mb-6">
-            <a href="index.html" class="todo-toggle-button">
-                <h2>← Back to Dashboard</h2>
-            </a>
-        </nav>
-
-        <!-- Meditation Timer Section -->
-        <section class="mobile-section">
-            <div class="text-center">
-                <div id="meditation-timer-display" class="text-4xl font-mono font-bold text-gray-700 mb-4">10:00</div>
-                <button id="meditation-timer-btn" class="todo-toggle-button mb-4">
-                    <h2>Start Meditation</h2>
-                </button>
-                <div class="text-sm text-gray-600">
-                    <p>Find your center</p>
-                    <p>Breathe deeply and relax</p>
-                </div>
-            </div>
+        <section class="meditate-stage">
+            <div id="meditate-display" class="meditate-display" role="timer" aria-live="polite">10:00</div>
+            <p id="meditate-status" class="meditate-status">10 minute session</p>
+            <button id="meditate-toggle" type="button" class="panel-btn meditate-btn" aria-pressed="false">Start</button>
         </section>
 
-        <!-- Meditation Types -->
-        <section class="mobile-section">
-            <h2 class="text-center mb-4">Meditation Types</h2>
-            <div class="grid grid-cols-1 gap-3">
-                <button class="todo-toggle-button meditation-type" data-duration="5">
-                    <h2>Quick Focus (5 min)</h2>
-                </button>
-                <button class="todo-toggle-button meditation-type" data-duration="10">
-                    <h2>Mindful Breathing (10 min)</h2>
-                </button>
-                <button class="todo-toggle-button meditation-type" data-duration="20">
-                    <h2>Deep Meditation (20 min)</h2>
-                </button>
-            </div>
+        <section class="meditate-presets" aria-label="Session length">
+            <button type="button" class="meditate-preset" data-duration="5" aria-pressed="false">5 min</button>
+            <button type="button" class="meditate-preset" data-duration="10" aria-pressed="true">10 min</button>
+            <button type="button" class="meditate-preset" data-duration="20" aria-pressed="false">20 min</button>
         </section>
 
-        <!-- Session History -->
-        <section class="mobile-section">
-            <h2 class="text-center mb-4">Recent Sessions</h2>
-            <div id="meditation-history" class="space-y-2">
-                <div class="text-center text-gray-500 text-sm">
-                    No meditation sessions yet. Start your journey!
-                </div>
+        <section class="meditate-history-section" aria-labelledby="meditate-history-heading">
+            <h2 id="meditate-history-heading" class="meditate-history-heading">Recent sessions</h2>
+            <div id="meditate-history" class="meditate-history">
+                <p class="meditate-history__empty">No sessions yet.</p>
             </div>
         </section>
     </div>
