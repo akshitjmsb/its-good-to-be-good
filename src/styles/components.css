@@ -1362,81 +1362,146 @@ button.preview-card {
     opacity: 0.55;
 }
 
-/* Breath ring — pure CSS box breathing (4-4-4-4) shown only while
-   running. Ring scales between 1× and 1.6×; four label spans cycle
-   through visibility on the same 16 s loop. */
+/* Breath ring — pure CSS box breathing (4-4-4-4) shown only while a
+   meditation session is running. The phase label sits centered inside
+   a 220 px stage; the ring breathes around it from a 140 px base out
+   to ~217 px on full inhale. Labels cross-fade so phase changes feel
+   seamless rather than snapped. */
 
 .meditate-breath {
     display: none;
-    flex-direction: column;
     align-items: center;
-    gap: 0.875rem;
-    padding: 1.25rem 0 1.5rem;
-    margin-bottom: 1rem;
+    justify-content: center;
+    padding: 1rem 0 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .meditate-breath.is-active {
     display: flex;
 }
 
+.meditate-breath__stage {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .meditate-breath__ring {
-    width: 88px;
-    height: 88px;
+    position: absolute;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
-    border: 1.5px solid #d1d5db;
-    background: transparent;
-    transform-origin: center;
+    border: 2px solid #d1d5db;
+    background-color: transparent;
     transform: scale(1);
-    will-change: transform, border-color;
+    will-change: transform, border-color, background-color;
 }
 
 .meditate-breath.is-active .meditate-breath__ring {
-    animation: meditate-breath-ring 16s linear infinite;
+    animation: meditate-breath-ring 16s infinite;
 }
 
+/* Per-keyframe timing function: smooth cubic ease on the inhale and
+   exhale segments, dead-flat linear on the two holds. */
 @keyframes meditate-breath-ring {
-    0%   { transform: scale(1);   border-color: #d1d5db; }
-    25%  { transform: scale(1.6); border-color: #374151; }
-    50%  { transform: scale(1.6); border-color: #374151; }
-    75%  { transform: scale(1);   border-color: #d1d5db; }
-    100% { transform: scale(1);   border-color: #d1d5db; }
-}
-
-.meditate-breath__labels {
-    position: relative;
-    height: 1.2em;
-    min-width: 7rem;
-    text-align: center;
+    0% {
+        transform: scale(1);
+        border-color: #d1d5db;
+        background-color: transparent;
+        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    }
+    25% {
+        transform: scale(1.55);
+        border-color: #374151;
+        background-color: rgba(248, 249, 250, 0.6);
+        animation-timing-function: linear;
+    }
+    50% {
+        transform: scale(1.55);
+        border-color: #374151;
+        background-color: rgba(248, 249, 250, 0.6);
+        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    }
+    75% {
+        transform: scale(1);
+        border-color: #d1d5db;
+        background-color: transparent;
+        animation-timing-function: linear;
+    }
+    100% {
+        transform: scale(1);
+        border-color: #d1d5db;
+        background-color: transparent;
+    }
 }
 
 .meditate-breath__label {
     position: absolute;
-    inset: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 160px;
+    text-align: center;
     font-family: 'Special Elite', monospace;
-    font-size: 0.85rem;
-    color: #6b7280;
-    letter-spacing: 0.05em;
-    text-transform: lowercase;
+    font-size: 1.35rem;
+    line-height: 1.4;
+    color: #374151;
+    letter-spacing: 0.025em;
     opacity: 0;
+    pointer-events: none;
 }
 
 .meditate-breath.is-active .meditate-breath__label--inhale {
-    animation: meditate-label-1 16s steps(1, end) infinite;
+    animation: meditate-label-inhale 16s linear infinite;
 }
 .meditate-breath.is-active .meditate-breath__label--hold-1 {
-    animation: meditate-label-2 16s steps(1, end) infinite;
+    animation: meditate-label-hold-1 16s linear infinite;
 }
 .meditate-breath.is-active .meditate-breath__label--exhale {
-    animation: meditate-label-3 16s steps(1, end) infinite;
+    animation: meditate-label-exhale 16s linear infinite;
 }
 .meditate-breath.is-active .meditate-breath__label--hold-2 {
-    animation: meditate-label-4 16s steps(1, end) infinite;
+    animation: meditate-label-hold-2 16s linear infinite;
 }
 
-@keyframes meditate-label-1 { 0%   { opacity: 1; } 25%  { opacity: 0; } 100% { opacity: 0; } }
-@keyframes meditate-label-2 { 0%   { opacity: 0; } 25%  { opacity: 1; } 50%  { opacity: 0; } 100% { opacity: 0; } }
-@keyframes meditate-label-3 { 0%   { opacity: 0; } 50%  { opacity: 1; } 75%  { opacity: 0; } 100% { opacity: 0; } }
-@keyframes meditate-label-4 { 0%   { opacity: 0; } 75%  { opacity: 1; } 100% { opacity: 0; } }
+/* Cross-fade keyframes — each phase label is fully visible during its
+   3.5 s window, fades out over the last 0.5 s of its phase, and the
+   next phase's label fades in during that same 0.5 s. The seam between
+   hold-2 and inhale wraps across the 100% / 0% boundary. */
+
+@keyframes meditate-label-inhale {
+    0%      { opacity: 1; }
+    21.875% { opacity: 1; }
+    25%     { opacity: 0; }
+    96.875% { opacity: 0; }
+    100%    { opacity: 1; }
+}
+@keyframes meditate-label-hold-1 {
+    0%      { opacity: 0; }
+    21.875% { opacity: 0; }
+    25%     { opacity: 1; }
+    46.875% { opacity: 1; }
+    50%     { opacity: 0; }
+    100%    { opacity: 0; }
+}
+@keyframes meditate-label-exhale {
+    0%      { opacity: 0; }
+    46.875% { opacity: 0; }
+    50%     { opacity: 1; }
+    71.875% { opacity: 1; }
+    75%     { opacity: 0; }
+    100%    { opacity: 0; }
+}
+@keyframes meditate-label-hold-2 {
+    0%      { opacity: 0; }
+    71.875% { opacity: 0; }
+    75%     { opacity: 1; }
+    96.875% { opacity: 1; }
+    100%    { opacity: 0; }
+}
 
 @media (prefers-reduced-motion: reduce) {
     .meditate-breath.is-active .meditate-breath__ring,
@@ -1448,6 +1513,21 @@ button.preview-card {
     }
     .meditate-breath.is-active .meditate-breath__label--inhale {
         opacity: 1; /* show one steady label rather than rotating */
+    }
+}
+
+@media (max-width: 380px) {
+    .meditate-breath__stage {
+        width: 200px;
+        height: 200px;
+    }
+    .meditate-breath__ring {
+        width: 130px;
+        height: 130px;
+    }
+    .meditate-breath__label {
+        font-size: 1.2rem;
+        width: 150px;
     }
 }
 
