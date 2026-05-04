@@ -16,6 +16,14 @@ const ALL_POOLS: ReadonlyArray<ReadonlyArray<Exercise>> = [
   UPPER_POOL,
 ];
 
+const VALID_EQUIPMENT = new Set([
+  'dumbbells',
+  'bands',
+  'yoga_ball',
+  'mat',
+  'bodyweight',
+]);
+
 describe('getStartOfWeek', () => {
   it('returns the prior Sunday at 00:00 for a mid-week date', () => {
     // 2026-05-13 is a Wednesday.
@@ -72,11 +80,7 @@ describe('getDayPlan — determinism + variety', () => {
   });
 
   it('the same week returns the same picks even from different in-week dates', () => {
-    // Mon 2026-05-11 → push. Re-deriving from any other date in the same
-    // week shouldn't change the Monday plan since selection keys off the
-    // week-start, not the lookup date.
     const mondayPlan = getDayPlan(new Date(2026, 4, 11));
-    // Same Monday, different time of day.
     const mondayLater = getDayPlan(new Date(2026, 4, 11, 22, 0));
     expect(mondayLater.exercises!.map(e => e.name)).toEqual(
       mondayPlan.exercises!.map(e => e.name)
@@ -87,7 +91,6 @@ describe('getDayPlan — determinism + variety', () => {
     const wk1 = getDayPlan(new Date(2026, 4, 11)).exercises!.map(e => e.name);
     const wk2 = getDayPlan(new Date(2026, 4, 18)).exercises!.map(e => e.name);
     const wk3 = getDayPlan(new Date(2026, 4, 25)).exercises!.map(e => e.name);
-    // At least one of the comparisons should differ.
     const allMatch =
       wk1.join(',') === wk2.join(',') && wk2.join(',') === wk3.join(',');
     expect(allMatch).toBe(false);
@@ -119,6 +122,46 @@ describe('exercise pool integrity', () => {
     for (const pool of ALL_POOLS) {
       const names = pool.map(e => e.name);
       expect(new Set(names).size).toBe(names.length);
+    }
+  });
+
+  it('every exercise has a non-empty equipment array with valid tags', () => {
+    for (const pool of ALL_POOLS) {
+      for (const exercise of pool) {
+        expect(exercise.equipment.length).toBeGreaterThan(0);
+        for (const tag of exercise.equipment) {
+          expect(VALID_EQUIPMENT.has(tag)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('no exercise requires gym-only equipment', () => {
+    const gymKeywords = [
+      'barbell',
+      'cable',
+      'machine',
+      'lat pulldown',
+      'leg press',
+      'leg curl machine',
+      'leg extension machine',
+      'smith',
+      'squat rack',
+      'bench press',
+      'dip station',
+      'pull-up bar',
+    ];
+    for (const pool of ALL_POOLS) {
+      for (const exercise of pool) {
+        const lower = (
+          exercise.name +
+          exercise.instructions +
+          exercise.equipment.join(' ')
+        ).toLowerCase();
+        for (const keyword of gymKeywords) {
+          expect(lower).not.toContain(keyword);
+        }
+      }
     }
   });
 });

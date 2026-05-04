@@ -4,6 +4,9 @@
  * Schedule: PPL + Upper rotation, fixed by day-of-week.
  *   Sun rest · Mon push · Tue rest · Wed pull · Thu rest · Fri legs · Sat upper
  *
+ * Equipment available: 10 lb dumbbells, 12.5 lb dumbbells, stretch bands,
+ * yoga ball, yoga mat, bodyweight.
+ *
  * Per-week variation: each (week-start ISO date, workout type) pair is
  * hashed with djb2 to deterministically shuffle the category pool, then
  * the first three exercises become that day's plan. Same week → same
@@ -15,6 +18,7 @@ export type WorkoutType = 'push' | 'pull' | 'legs' | 'upper' | 'rest';
 export interface Exercise {
   name: string;
   muscleGroups: string;
+  equipment: string[];
   sets: string;
   reps: string;
   rest: string;
@@ -49,413 +53,453 @@ const SCHEDULE: ReadonlyArray<WorkoutType> = [
 
 const PUSH_POOL: ReadonlyArray<Exercise> = [
   {
-    name: 'Barbell Bench Press',
+    name: 'Dumbbell Floor Press',
+    muscleGroups: 'Chest, triceps',
+    equipment: ['dumbbells', 'mat'],
+    sets: '4',
+    reps: '15–20',
+    rest: '60s',
+    instructions:
+      'Lie on the mat, knees bent. Hold dumbbells at chest height, press up to lockout, lower until triceps touch the floor.',
+    tips: 'Use a 3-second negative to maximize time under tension with lighter weight. Pause 1 second on the floor.',
+  },
+  {
+    name: 'Banded Push-Ups',
     muscleGroups: 'Chest, shoulders, triceps',
-    sets: '4',
-    reps: '6–8',
-    rest: '2–3 min',
-    instructions:
-      'Lie back, plant feet, retract scapulae. Lower bar with control to mid-chest, press up over shoulders.',
-    tips: 'Keep wrists stacked over elbows; drive through your heels and upper back, not just your arms.',
-  },
-  {
-    name: 'Overhead Press',
-    muscleGroups: 'Shoulders, triceps',
-    sets: '4',
-    reps: '5–8',
-    rest: '2–3 min',
-    instructions:
-      'Stand braced, bar at front-rack. Press straight up, push head through at lockout, lower under control.',
-    tips: 'Squeeze glutes and brace your core to keep the lower back from arching.',
-  },
-  {
-    name: 'Incline Dumbbell Press',
-    muscleGroups: 'Upper chest, shoulders',
+    equipment: ['bands', 'mat'],
     sets: '3',
-    reps: '8–12',
-    rest: '90s',
+    reps: '12–18',
+    rest: '60s',
     instructions:
-      'Set bench to 30°. Press dumbbells from chest to lockout, slight inward squeeze at the top.',
-    tips: 'Lower slowly — the stretch on the upper chest is where most of the growth happens.',
+      'Loop band across upper back and under palms. Perform push-ups with full range — chest to floor, arms locked at top.',
+    tips: 'The band adds progressive resistance at lockout. Focus on explosive push, slow descent.',
   },
   {
     name: 'Dumbbell Shoulder Press',
     muscleGroups: 'Shoulders, triceps',
-    sets: '3',
-    reps: '8–12',
-    rest: '90s',
-    instructions:
-      'Seated or standing, dumbbells at shoulder height. Press up until arms are extended, lower with control.',
-    tips: 'Keep elbows slightly forward of the shoulder plane to spare the joint.',
-  },
-  {
-    name: 'Weighted Dips',
-    muscleGroups: 'Chest, triceps',
-    sets: '3',
-    reps: '6–10',
-    rest: '90s',
-    instructions:
-      'Support body on parallel bars, lean forward slightly for chest emphasis, lower until shoulders dip just below elbows, press up.',
-    tips: 'If shoulders complain, reduce range of motion or switch to push-ups.',
-  },
-  {
-    name: 'Push-Ups',
-    muscleGroups: 'Chest, core, triceps',
-    sets: '3',
-    reps: 'AMRAP',
-    rest: '60s',
-    instructions:
-      'Hands under shoulders, body straight from heels to head. Lower chest to floor, press back up.',
-    tips: 'Pause at the bottom for two seconds to kill momentum and add tension.',
-  },
-  {
-    name: 'Cable Chest Fly',
-    muscleGroups: 'Chest',
-    sets: '3',
-    reps: '12–15',
-    rest: '60s',
-    instructions:
-      'Stand between cables, slight forward lean. Bring handles together in front of chest in a wide arc, control the return.',
-    tips: 'Keep a soft elbow bend throughout — this is a stretch movement, not a press.',
-  },
-  {
-    name: 'Lateral Raise',
-    muscleGroups: 'Side delts',
+    equipment: ['dumbbells'],
     sets: '4',
-    reps: '12–15',
-    rest: '45–60s',
+    reps: '15–20',
+    rest: '60s',
     instructions:
-      'Dumbbells at sides, slight forward lean. Raise to shoulder height, leading with elbows; lower under control.',
-    tips: 'Lighter than your ego wants. Strict form beats heavy momentum here every time.',
+      'Standing or seated on yoga ball. Dumbbells at shoulder height, press overhead to full extension, lower with 3-second tempo.',
+    tips: 'Squeeze glutes and brace core to protect lower back. Lighter weight means you can go strict and slow.',
   },
   {
-    name: 'Tricep Rope Pushdown',
-    muscleGroups: 'Triceps',
+    name: 'Band Chest Fly',
+    muscleGroups: 'Chest',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Anchor band behind you at chest height (door anchor or wrap around a post). Bring handles together in front with a wide arc, squeeze chest, return with control.',
+    tips: 'Keep a slight elbow bend. Pause 2 seconds at full contraction to build the mind-muscle connection.',
+  },
+  {
+    name: 'Pike Push-Ups',
+    muscleGroups: 'Shoulders, triceps',
+    equipment: ['mat', 'bodyweight'],
     sets: '3',
     reps: '10–15',
     rest: '60s',
     instructions:
-      'Cable rope at chest, elbows pinned at sides. Push down and slightly out at the bottom, control back up.',
-    tips: 'Pause for one second at full extension to feel the contraction.',
+      'Hands on floor, hips high in an inverted-V. Lower the crown of your head toward the floor between your hands, press back up.',
+    tips: 'Elevate feet on the yoga ball for extra difficulty once bodyweight gets easy.',
   },
   {
-    name: 'Close-Grip Bench Press',
-    muscleGroups: 'Triceps, chest',
-    sets: '3',
-    reps: '8–12',
-    rest: '90s',
+    name: 'Dumbbell Lateral Raises',
+    muscleGroups: 'Side delts',
+    equipment: ['dumbbells'],
+    sets: '4',
+    reps: '15–20',
+    rest: '45s',
     instructions:
-      'Hands shoulder-width on the bar, elbows tucked. Lower to lower chest, press straight up.',
-    tips: 'Tucked elbows and a slight pause on the chest builds the long-head triceps quickly.',
+      'Slight forward lean, dumbbells at sides. Raise to shoulder height leading with elbows, lower with a 3-second negative.',
+    tips: 'With 10–12.5 lb, tempo is king. No momentum — pause at the top for 1 second.',
+  },
+  {
+    name: 'Yoga-Ball Dumbbell Press',
+    muscleGroups: 'Chest, core, shoulders',
+    equipment: ['dumbbells', 'yoga_ball'],
+    sets: '3',
+    reps: '15–20',
+    rest: '60s',
+    instructions:
+      'Lie back on yoga ball (upper back supported, hips up). Press dumbbells from chest to lockout. The instability forces core engagement.',
+    tips: 'Keep hips level with shoulders — sagging hips means your glutes checked out. Slow eccentric, 3 seconds down.',
+  },
+  {
+    name: 'Diamond Push-Ups',
+    muscleGroups: 'Triceps, inner chest',
+    equipment: ['mat', 'bodyweight'],
+    sets: '3',
+    reps: '12–18',
+    rest: '60s',
+    instructions:
+      'Hands together under chest forming a diamond shape. Lower chest to hands, press up. Keep elbows close to the body.',
+    tips: 'If full diamonds are too hard, widen the hand position slightly and work inward over weeks.',
+  },
+  {
+    name: 'Band Front Raises',
+    muscleGroups: 'Front delts',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Stand on band, handles in each hand. Raise arms straight in front to shoulder height, lower with control.',
+    tips: 'Alternate arms if fatigue hits early. Keep a micro-bend in the elbows to protect the joint.',
+  },
+  {
+    name: 'Dumbbell Arnold Press',
+    muscleGroups: 'Shoulders, triceps',
+    equipment: ['dumbbells'],
+    sets: '3',
+    reps: '12–15',
+    rest: '60s',
+    instructions:
+      'Start with dumbbells at chest, palms facing you. Rotate palms outward as you press overhead, reverse on the way down.',
+    tips: 'The rotation under load hits all three delt heads. Use a 2-second pause at the top for extra burn.',
   },
 ];
 
 const PULL_POOL: ReadonlyArray<Exercise> = [
   {
-    name: 'Pull-Ups',
-    muscleGroups: 'Lats, biceps, mid-back',
+    name: 'Band Rows',
+    muscleGroups: 'Lats, rhomboids, biceps',
+    equipment: ['bands'],
     sets: '4',
-    reps: '6–10',
-    rest: '2 min',
+    reps: '15–20',
+    rest: '60s',
     instructions:
-      'Hang with shoulder-width grip. Pull until chin clears the bar, lower with full control.',
-    tips: 'Initiate the pull by pulling shoulder blades down and back, not by bending elbows first.',
+      'Anchor band at waist height. Pull handles to lower ribs, squeeze shoulder blades together, return with 3-second negative.',
+    tips: 'Use a heavier band or double-wrap for more resistance. The squeeze at contraction is where the work happens.',
   },
   {
-    name: 'Barbell Row',
-    muscleGroups: 'Lats, rhomboids, rear delts',
-    sets: '4',
-    reps: '6–8',
-    rest: '2 min',
-    instructions:
-      'Hinge at hips ~45°, neutral spine. Row bar to lower chest, squeeze, lower under control.',
-    tips: 'Keep the bar path tight to your body — bar drifting forward turns this into a back-saver.',
-  },
-  {
-    name: 'Conventional Deadlift',
-    muscleGroups: 'Back, hamstrings, glutes, traps',
-    sets: '3',
-    reps: '3–5',
-    rest: '3 min',
-    instructions:
-      'Bar over mid-foot, shins close. Set lats, drive floor away with legs first, finish by squeezing glutes.',
-    tips: 'No round-back hero reps. Drop the set when your form starts to break, not when it has.',
-  },
-  {
-    name: 'Lat Pulldown',
-    muscleGroups: 'Lats, biceps',
-    sets: '3',
-    reps: '8–12',
-    rest: '90s',
-    instructions:
-      'Wide grip, slight backward lean. Pull bar to upper chest, squeeze lats, control the return.',
-    tips: 'Lead with elbows down and back, not by yanking the bar with your hands.',
-  },
-  {
-    name: 'Seated Cable Row',
-    muscleGroups: 'Mid-back, biceps',
-    sets: '3',
-    reps: '8–12',
-    rest: '90s',
-    instructions:
-      'Sit tall, neutral spine. Pull handle to lower chest, squeeze shoulder blades, lengthen on the return.',
-    tips: 'Don’t rock for momentum. The cleaner the pull, the more your back actually works.',
-  },
-  {
-    name: 'Face Pull',
+    name: 'Band Pull-Aparts',
     muscleGroups: 'Rear delts, upper back',
+    equipment: ['bands'],
+    sets: '4',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Hold band at shoulder width, arms extended in front. Pull apart until band touches chest, control the return.',
+    tips: 'Keep arms straight — this is a shoulder blade movement, not an arm movement. Pause 1 second at full stretch.',
+  },
+  {
+    name: 'Dumbbell Bent-Over Rows',
+    muscleGroups: 'Lats, rhomboids, biceps',
+    equipment: ['dumbbells'],
+    sets: '4',
+    reps: '15–20',
+    rest: '60s',
+    instructions:
+      'Hinge at hips to 45°, neutral spine. Row dumbbells to lower ribs, squeeze, lower with a 3-second eccentric.',
+    tips: 'With lighter weight, slow the tempo way down and focus on a hard squeeze at the top. Try 1.5 reps (full pull, half lower, re-pull, full lower).',
+  },
+  {
+    name: 'Band Face Pulls',
+    muscleGroups: 'Rear delts, rotator cuff, upper back',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Anchor band at face height. Pull toward forehead with elbows high, externally rotate at the end so fists point to ceiling.',
+    tips: 'The single best exercise for shoulder health. Light resistance, perfect form, every pull day.',
+  },
+  {
+    name: 'Band Bicep Curls',
+    muscleGroups: 'Biceps',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Stand on band, handles in each hand. Curl up with elbows pinned at sides, lower with a slow 3-second descent.',
+    tips: 'Band resistance increases through the range — the top is hardest. Squeeze hard at peak contraction.',
+  },
+  {
+    name: 'Dumbbell Hammer Curls',
+    muscleGroups: 'Biceps, brachialis, forearms',
+    equipment: ['dumbbells'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Neutral grip (palms facing each other). Curl up keeping wrists locked, lower with 3-second negative.',
+    tips: 'Alternate arms for focus or do both together for efficiency. No swing — strict and slow wins.',
+  },
+  {
+    name: 'Dumbbell Reverse Fly',
+    muscleGroups: 'Rear delts, upper back',
+    equipment: ['dumbbells', 'mat'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Hinge forward to nearly parallel with floor. Raise dumbbells out to the sides with a slight elbow bend, lower with control.',
+    tips: 'Lead with elbows, not hands. Lighter weight forces perfect form — that is the point.',
+  },
+  {
+    name: 'Band High Pulls',
+    muscleGroups: 'Upper back, rear delts, traps',
+    equipment: ['bands'],
     sets: '3',
     reps: '12–15',
     rest: '60s',
     instructions:
-      'Cable rope at face height. Pull to forehead with elbows high, externally rotating at the end.',
-    tips: 'The single best exercise for shoulder health — earn your bench presses with these.',
+      'Stand on band, handles in each hand. Pull up and out to the sides, elbows high, until hands reach chin height.',
+    tips: 'Think of pulling your elbows to the ceiling. Pause at the top for 1 second.',
   },
   {
-    name: 'Chin-Ups',
-    muscleGroups: 'Lats, biceps',
+    name: 'Prone Y-Raises',
+    muscleGroups: 'Lower traps, rear delts',
+    equipment: ['mat', 'dumbbells'],
     sets: '3',
-    reps: '6–10',
-    rest: '90s',
+    reps: '12–15',
+    rest: '45s',
     instructions:
-      'Underhand shoulder-width grip. Pull until chin over bar, slow eccentric on the way down.',
-    tips: 'If full reps are too hard, use a band or do slow negatives — both build to the real thing.',
+      'Lie face down on mat. With light dumbbells (or bodyweight), raise arms at a Y-angle overhead, thumbs pointing up. Lower with control.',
+    tips: 'These are humbling — even 10 lb may be heavy. Drop to bodyweight if form breaks and build up.',
   },
   {
-    name: 'T-Bar Row',
-    muscleGroups: 'Mid-back, lats',
-    sets: '3',
-    reps: '8–12',
-    rest: '90s',
+    name: 'Dumbbell Shrugs',
+    muscleGroups: 'Traps',
+    equipment: ['dumbbells'],
+    sets: '4',
+    reps: '20–25',
+    rest: '45s',
     instructions:
-      'Hinge to ~45°, neutral spine. Row handle to lower chest, control the stretch.',
-    tips: 'Pause for one second at the top to hammer the contraction.',
-  },
-  {
-    name: 'Barbell Curl',
-    muscleGroups: 'Biceps',
-    sets: '3',
-    reps: '8–12',
-    rest: '60s',
-    instructions:
-      'Stand tall, elbows at sides. Curl bar with elbows pinned, lower under tension.',
-    tips: 'No swing. If the bar is moving but your elbows are too, you’re cheating yourself.',
-  },
-  {
-    name: 'Hammer Curl',
-    muscleGroups: 'Biceps, forearms',
-    sets: '3',
-    reps: '10–15',
-    rest: '60s',
-    instructions:
-      'Dumbbells with neutral grip (palms facing each other). Curl up, control down.',
-    tips: 'Hammer grip emphasizes brachialis — the muscle that pushes the biceps up and out.',
+      'Hold dumbbells at sides. Shrug shoulders straight up toward ears, hold for 2 seconds at the top, lower slowly.',
+    tips: 'High reps with a hard squeeze compensate for lighter weight. No rolling — straight up and down only.',
   },
 ];
 
 const LEGS_POOL: ReadonlyArray<Exercise> = [
   {
-    name: 'Back Squat',
-    muscleGroups: 'Quads, glutes, hamstrings',
+    name: 'Goblet Squats',
+    muscleGroups: 'Quads, glutes',
+    equipment: ['dumbbells'],
     sets: '4',
-    reps: '5–8',
-    rest: '3 min',
+    reps: '15–20',
+    rest: '60s',
     instructions:
-      'Bar on upper traps, feet shoulder-width. Brace, descend until hip crease passes the knee, drive up.',
-    tips: 'Knees track over toes. Tightening your upper back makes the bar feel half its weight.',
+      'Hold one dumbbell vertically at chest. Squat deep with elbows tracking inside the knees, drive through heels.',
+    tips: 'Use a 3-second descent and 1-second pause at the bottom. Tempo makes light weight brutal.',
   },
   {
-    name: 'Romanian Deadlift',
+    name: 'Banded Squats',
+    muscleGroups: 'Quads, glutes',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15–20',
+    rest: '60s',
+    instructions:
+      'Loop band under feet and over shoulders (or hold at chest). Squat to parallel or below, press up against band resistance.',
+    tips: 'Band resistance peaks at the top — really drive through lockout and squeeze glutes hard.',
+  },
+  {
+    name: 'Yoga-Ball Hamstring Curls',
     muscleGroups: 'Hamstrings, glutes',
+    equipment: ['yoga_ball', 'mat'],
     sets: '3',
-    reps: '8–10',
-    rest: '2 min',
-    instructions:
-      'Soft knees, neutral spine. Push hips back, lower bar along legs until you feel hamstring stretch, return.',
-    tips: 'Stop the descent when your hamstrings tap out — not when the bar reaches the floor.',
-  },
-  {
-    name: 'Leg Press',
-    muscleGroups: 'Quads, glutes',
-    sets: '4',
-    reps: '8–12',
-    rest: '90s',
-    instructions:
-      'Feet shoulder-width on the platform. Lower until knees are about 90°, press through mid-foot.',
-    tips: 'Don’t lock out hard at the top — keep tension on the legs throughout the set.',
-  },
-  {
-    name: 'Bulgarian Split Squat',
-    muscleGroups: 'Quads, glutes',
-    sets: '3',
-    reps: '8–10 each leg',
-    rest: '90s',
-    instructions:
-      'Rear foot on bench, front foot far enough that your front shin stays vertical. Descend straight down, drive up.',
-    tips: 'Stagger your stance. If your front knee caves inward, lighten the load and rebuild from there.',
-  },
-  {
-    name: 'Walking Lunges',
-    muscleGroups: 'Quads, glutes, hamstrings',
-    sets: '3',
-    reps: '10 each leg',
-    rest: '90s',
-    instructions:
-      'Step forward, descend until back knee taps floor, push through front heel to next step.',
-    tips: 'Long stride for glutes, shorter stride for quads. Both work — pick what you’re training.',
-  },
-  {
-    name: 'Lying Leg Curl',
-    muscleGroups: 'Hamstrings',
-    sets: '3',
-    reps: '10–15',
+    reps: '12–15',
     rest: '60s',
     instructions:
-      'Hips pressed into pad. Curl heels toward glutes, squeeze, control the lengthening.',
-    tips: 'Pointed-toe (plantarflexed) hits the hamstring belly hardest.',
+      'Lie on back, heels on yoga ball. Lift hips up, then curl the ball toward your glutes by bending knees. Extend back out without dropping hips.',
+    tips: 'Keep hips elevated the entire time. For extra difficulty, do single-leg curls.',
   },
   {
-    name: 'Leg Extension',
-    muscleGroups: 'Quads',
+    name: 'Bulgarian Split Squats',
+    muscleGroups: 'Quads, glutes',
+    equipment: ['dumbbells', 'bodyweight'],
     sets: '3',
-    reps: '10–15',
+    reps: '12–15 each leg',
     rest: '60s',
     instructions:
-      'Sit back into the pad, extend knees fully, pause, lower under control.',
-    tips: 'A one-second hold at the top changes this from junk volume into a real quad builder.',
+      'Rear foot elevated on a chair or couch. Hold dumbbells at sides. Lower straight down until back knee nearly touches floor, drive up.',
+    tips: 'Keep your front shin as vertical as possible. The deeper you go, the more glute you recruit.',
   },
   {
-    name: 'Hip Thrust',
+    name: 'Banded Hip Thrusts',
     muscleGroups: 'Glutes',
-    sets: '3',
-    reps: '8–12',
-    rest: '90s',
+    equipment: ['bands', 'mat'],
+    sets: '4',
+    reps: '15–20',
+    rest: '60s',
     instructions:
-      'Upper back on bench, bar over hips. Drive hips up to lockout, squeeze glutes, lower with control.',
-    tips: 'Tuck the chin and ribs down at the top — fully extending the spine is not the goal here.',
+      'Sit on floor, upper back against couch/bench, band across hips (anchored under feet). Drive hips to full extension, squeeze glutes 2 seconds at top.',
+    tips: 'Tuck chin and ribs at the top — full hip extension without arching the lower back.',
   },
   {
-    name: 'Standing Calf Raise',
+    name: 'Single-Leg Deadlifts',
+    muscleGroups: 'Hamstrings, glutes, balance',
+    equipment: ['dumbbells'],
+    sets: '3',
+    reps: '12–15 each leg',
+    rest: '60s',
+    instructions:
+      'Hold dumbbell in opposite hand to standing leg. Hinge forward, free leg extending behind you, until torso is nearly parallel. Return to standing.',
+    tips: 'Think about pushing your heel to the wall behind you. The balance challenge is half the benefit.',
+  },
+  {
+    name: 'Calf Raises',
     muscleGroups: 'Calves',
+    equipment: ['dumbbells', 'bodyweight'],
     sets: '4',
-    reps: '12–20',
+    reps: '20–25',
+    rest: '30s',
+    instructions:
+      'Stand on the edge of a step or flat floor holding dumbbells. Rise onto balls of feet, hold 2 seconds, lower slowly for a full stretch.',
+    tips: 'A 2-second pause stretched at the bottom is what actually grows calves. High reps, slow tempo.',
+  },
+  {
+    name: 'Wall Sits',
+    muscleGroups: 'Quads, endurance',
+    equipment: ['bodyweight'],
+    sets: '3',
+    reps: '45–60 seconds',
+    rest: '60s',
+    instructions:
+      'Back flat against wall, slide down until thighs are parallel to floor. Hold. Breathe steadily.',
+    tips: 'If 60 seconds is easy, hold a dumbbell on your lap or try single-leg wall sits.',
+  },
+  {
+    name: 'Banded Lateral Walks',
+    muscleGroups: 'Glute medius, hip abductors',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15 each direction',
     rest: '45s',
     instructions:
-      'Press up onto the balls of your feet through the full range, pause at the top, lower for a stretch.',
-    tips: 'A two-second pause stretched at the bottom is the difference between fluff and growth.',
+      'Loop band around ankles or just above knees. Quarter-squat position. Step laterally, maintaining tension on the band throughout.',
+    tips: 'Keep toes pointed forward, not outward. The burn should be on the outer hip, not the thighs.',
   },
   {
-    name: 'Goblet Squat',
-    muscleGroups: 'Quads, glutes',
+    name: 'Sumo Squats',
+    muscleGroups: 'Inner thighs, glutes, quads',
+    equipment: ['dumbbells'],
     sets: '3',
-    reps: '10–15',
+    reps: '15–20',
     rest: '60s',
     instructions:
-      'Hold a dumbbell at chest. Squat between the heels, elbows tracking inside the knees.',
-    tips: 'A great teaching squat — keep the chest tall and elbows pointed down.',
+      'Wide stance, toes pointed out 45°. Hold dumbbell vertically between legs. Squat deep, keeping chest tall, drive up through heels.',
+    tips: 'Pulse at the bottom for 3 mini-reps before standing up to add extra time under tension.',
   },
 ];
 
 const UPPER_POOL: ReadonlyArray<Exercise> = [
   {
-    name: 'Pull-Ups',
-    muscleGroups: 'Lats, biceps',
-    sets: '3',
-    reps: '6–10',
-    rest: '90s',
-    instructions:
-      'Shoulder-width grip. Pull chin clear of the bar, control the descent.',
-    tips: 'Quality reps only. If the last reps look messy, stop the set and rest.',
-  },
-  {
-    name: 'Bench Press',
-    muscleGroups: 'Chest, shoulders, triceps',
-    sets: '3',
-    reps: '6–8',
-    rest: '2 min',
-    instructions:
-      'Set up with retracted scapulae and a slight arch. Touch mid-chest, press up.',
-    tips: 'Plant your feet hard. The press starts from your foot through your back, then your arms.',
-  },
-  {
-    name: 'Barbell Row',
-    muscleGroups: 'Lats, rhomboids',
-    sets: '3',
-    reps: '8–10',
-    rest: '90s',
-    instructions:
-      'Hinge to ~45°, row to lower chest, squeeze, return under control.',
-    tips: 'If your spine is rounding by rep 6, the weight is too heavy.',
-  },
-  {
-    name: 'Overhead Press',
-    muscleGroups: 'Shoulders, triceps',
-    sets: '3',
-    reps: '6–8',
-    rest: '2 min',
-    instructions:
-      'Bar at front-rack, brace hard, press straight up, push head through at lockout.',
-    tips: 'A press that travels backward is a press that travels far. Keep it close to your face.',
-  },
-  {
-    name: 'Lat Pulldown',
-    muscleGroups: 'Lats',
-    sets: '3',
-    reps: '10–12',
-    rest: '90s',
-    instructions:
-      'Slight backward lean, pull bar to upper chest, squeeze lats, control the return.',
-    tips: 'Think about pulling your elbows into your back pockets.',
-  },
-  {
-    name: 'Incline Dumbbell Press',
-    muscleGroups: 'Upper chest',
-    sets: '3',
-    reps: '8–12',
-    rest: '90s',
-    instructions:
-      'Bench at 30°, dumbbells press from upper chest to lockout.',
-    tips: 'Letting the dumbbells drift outside the shoulder line cooks the rotator cuff. Keep them stacked.',
-  },
-  {
-    name: 'Cable Row',
-    muscleGroups: 'Mid-back',
-    sets: '3',
-    reps: '10–12',
-    rest: '90s',
-    instructions:
-      'Sit tall, pull handle to lower chest, squeeze shoulder blades, lengthen on the return.',
-    tips: 'Pause one second at the contraction; it’s the difference between rowing and just shrugging.',
-  },
-  {
-    name: 'Dumbbell Shoulder Press',
-    muscleGroups: 'Shoulders',
-    sets: '3',
-    reps: '8–10',
-    rest: '90s',
-    instructions:
-      'Seated, dumbbells at shoulders. Press up to lockout, lower with control.',
-    tips: 'Slight inward arc at the top, slight outward arc on the way down.',
-  },
-  {
-    name: 'Face Pull',
-    muscleGroups: 'Rear delts, upper back',
+    name: 'Dumbbell Curl-to-Press',
+    muscleGroups: 'Biceps, shoulders',
+    equipment: ['dumbbells'],
     sets: '3',
     reps: '12–15',
     rest: '60s',
     instructions:
-      'Pull rope to forehead with elbows high, externally rotate at the end.',
-    tips: 'Light weight, strict form. Treat it like a finishing move for shoulder health.',
+      'Curl dumbbells to shoulders, then immediately press overhead. Lower back to shoulders, then uncurl to sides. That is one rep.',
+    tips: 'Smooth transition between curl and press — no rest at the shoulders. Great total-arm compound.',
   },
   {
-    name: 'Dumbbell Curl + Tricep Extension',
-    muscleGroups: 'Biceps, triceps',
+    name: 'Band Lateral Raises',
+    muscleGroups: 'Side delts',
+    equipment: ['bands'],
+    sets: '4',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Stand on band, handles in each hand. Raise arms to shoulder height, pause 1 second, lower with control.',
+    tips: 'Band gives increasing resistance at the top where delts work hardest. No momentum.',
+  },
+  {
+    name: 'Yoga-Ball Plank',
+    muscleGroups: 'Core, shoulders',
+    equipment: ['yoga_ball'],
     sets: '3',
-    reps: '10–12 each',
+    reps: '30–45 seconds',
+    rest: '45s',
+    instructions:
+      'Forearms on yoga ball, body in a straight line. Hold the position, fighting the instability of the ball.',
+    tips: 'If it feels easy, try small circles with your elbows on the ball — the stabilization demand skyrockets.',
+  },
+  {
+    name: 'Push-Up to Dumbbell Row',
+    muscleGroups: 'Chest, lats, core',
+    equipment: ['dumbbells', 'mat'],
+    sets: '3',
+    reps: '10–12 (5–6 each side)',
     rest: '60s',
     instructions:
-      'Superset: curl a dumbbell, then immediately do a one-arm overhead tricep extension. Switch arms each round.',
-    tips: 'Pump finisher. Keep elbows locked in place for both halves.',
+      'Push-up position with hands on dumbbells. Do a push-up, then row one dumbbell to your hip. Push-up again, row the other side.',
+    tips: 'Widen your feet for balance. Keep hips square to the floor during rows — no rotation.',
+  },
+  {
+    name: 'Band Tricep Pushdowns',
+    muscleGroups: 'Triceps',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Anchor band high (top of door frame). Grip handles, elbows pinned at sides. Push down to full arm extension, squeeze, return slowly.',
+    tips: 'Pause 1 second at full extension. The constant tension from bands is actually superior to cables here.',
+  },
+  {
+    name: 'Dumbbell Concentration Curls',
+    muscleGroups: 'Biceps',
+    equipment: ['dumbbells'],
+    sets: '3',
+    reps: '15–20 each arm',
+    rest: '45s',
+    instructions:
+      'Seated, elbow braced against inner thigh. Curl dumbbell with strict form — no body English. Lower with 3-second negative.',
+    tips: 'The brace eliminates cheating. Squeeze hard at the top, supinate (twist pinky up) for peak contraction.',
+  },
+  {
+    name: 'Band Overhead Press',
+    muscleGroups: 'Shoulders, triceps',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15–20',
+    rest: '60s',
+    instructions:
+      'Stand on band, handles at shoulders. Press straight overhead to lockout, lower with control.',
+    tips: 'Band resistance peaks at lockout — great for building shoulder stability at full extension.',
+  },
+  {
+    name: 'Yoga-Ball Rollouts',
+    muscleGroups: 'Core, lats',
+    equipment: ['yoga_ball', 'mat'],
+    sets: '3',
+    reps: '10–15',
+    rest: '60s',
+    instructions:
+      'Kneel behind yoga ball, forearms on top. Roll the ball forward extending your body, then pull back using your core. Maintain flat back throughout.',
+    tips: 'Only go as far as you can maintain a neutral spine. Range will increase as your core strengthens.',
+  },
+  {
+    name: 'Dumbbell Kickbacks',
+    muscleGroups: 'Triceps',
+    equipment: ['dumbbells'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Hinge forward, upper arms parallel to torso. Extend forearms back to lockout, squeeze triceps, lower with 3-second negative.',
+    tips: 'Lock your upper arm in place — the only joint moving is the elbow. Hold lockout for 1 second.',
+  },
+  {
+    name: 'Banded Pull-Aparts (Upper Day)',
+    muscleGroups: 'Rear delts, upper back',
+    equipment: ['bands'],
+    sets: '3',
+    reps: '15–20',
+    rest: '45s',
+    instructions:
+      'Band at shoulder width, arms extended. Pull apart until band contacts chest, hold 1 second, return with control.',
+    tips: 'Great posture corrector and shoulder prehab. Light resistance, high reps, perfect form.',
   },
 ];
 
