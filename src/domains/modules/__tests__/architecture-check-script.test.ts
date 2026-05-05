@@ -46,6 +46,9 @@ function createFixture(root: string) {
   const modalManagerContent = [
     'export function mapHandlers() {',
     ...learnModules.map(module => `  // ${module.handlerName}`),
+    ...learnModules
+      .filter(module => module.surface === 'page' && module.routeHref)
+      .map(module => `  // route: ${module.routeHref}`),
     "  window.location.href = 'french.html';",
     '}',
   ].join('\n');
@@ -63,6 +66,12 @@ function createFixture(root: string) {
   writeFixtureFile(root, 'src/components/modals/factory.ts', factoryContent);
 
   MODULE_REGISTRY.forEach(module => {
+    // Modules whose ownerPath is a shared file (already populated above with
+    // real fixture content) must not be clobbered by the bare 'export {};'
+    // stub below.
+    if (module.ownerPath === 'src/components/modals/modalManager.ts') return;
+    if (module.ownerPath === 'src/components/modals/factory.ts') return;
+
     if (module.ownerPath === 'src/components/modals/analytics/controller.ts') {
       writeFixtureFile(
         root,

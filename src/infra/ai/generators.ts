@@ -8,26 +8,22 @@ import { callPerplexityAPI, hasApiKey, parseJsonResponse } from './client';
 import { ErrorHandler } from '../../utils/errorHandling';
 import {
   getFallbackAnalytics,
-  getFallbackClassicRockPool,
   getFallbackFoodPlan,
   getFallbackPhysics,
 } from './fallbacks';
 import {
   AnalyticsContent,
   FoodPlanText,
-  GuitarPoolItem,
   PhysicsContent,
 } from '../../domains/content/types';
 
 export type ContentType =
   | 'analytics'
-  | 'transportation-physics'
-  | 'classic-rock-500';
+  | 'transportation-physics';
 
 type GeneratedContentMap = {
   analytics: AnalyticsContent;
   'transportation-physics': PhysicsContent;
-  'classic-rock-500': GuitarPoolItem[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -53,18 +49,6 @@ function isPhysicsContent(value: unknown): value is PhysicsContent {
   );
 }
 
-function isGuitarPool(value: unknown): value is GuitarPoolItem[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      item =>
-        isRecord(item) &&
-        typeof item.title === 'string' &&
-        typeof item.artist === 'string'
-    )
-  );
-}
-
 function getPromptForContentType(
   contentType: ContentType,
   dateKey: string
@@ -74,8 +58,6 @@ function getPromptForContentType(
       return getAnalyticsPrompt(dateKey);
     case 'transportation-physics':
       return getPhysicsPrompt(dateKey);
-    case 'classic-rock-500':
-      return getGuitarPrompt();
     default:
       return null;
   }
@@ -89,8 +71,6 @@ function getFallbackContent(
       return getFallbackAnalytics();
     case 'transportation-physics':
       return getFallbackPhysics();
-    case 'classic-rock-500':
-      return getFallbackClassicRockPool();
   }
 }
 
@@ -105,10 +85,6 @@ function validateContent<T extends ContentType>(
         | null;
     case 'transportation-physics':
       return (isPhysicsContent(parsed) ? parsed : null) as
-        | GeneratedContentMap[T]
-        | null;
-    case 'classic-rock-500':
-      return (isGuitarPool(parsed) ? parsed : null) as
         | GeneratedContentMap[T]
         | null;
     default:
@@ -249,14 +225,3 @@ Return as JSON:
   "explanation": "..."
 }`;
 }
-
-function getGuitarPrompt(): string {
-  return `Generate a JSON array of exactly 500 items. Each item must have two string fields: title and artist. The list should be classic rock (and closely related rock) songs that are well-known/popular for guitar learners. Keep it diverse across decades and artists; avoid duplicates. Return JSON only.
-
-Format:
-[
-  {"title": "...", "artist": "..."},
-  ...
-]`;
-}
-

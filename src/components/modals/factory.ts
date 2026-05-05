@@ -91,11 +91,6 @@ export const MODAL_CONFIGS: Record<string, ModalConfig> = {
         contentId: 'poetry-content',
         loadingMessage: 'Generating beautiful poetry for you...'
     },
-    guitar: {
-        modalId: 'guitar-modal',
-        contentId: 'guitar-content',
-        loadingMessage: 'Finding a song for you...'
-    },
     food: {
         modalId: 'food-modal',
         contentId: 'food-plan-content',

@@ -2,7 +2,6 @@ import { supabase } from '../../lib/supabase';
 import { PoetrySelection, Task } from '../../types';
 
 const MAX_POETRY_RECENTS = 6;
-const MAX_GUITAR_RECENT_PICKS = 30;
 
 /**
  * Replace all rows belonging to a user in a table with a fresh set.
@@ -127,63 +126,4 @@ export function recordPoetrySelection(
     if (unique.length >= MAX_POETRY_RECENTS) break;
   }
   return unique;
-}
-
-export async function loadGuitarRecentPicks(userId: string): Promise<string[]> {
-  try {
-    const { data, error } = await supabase
-      .from('guitar_recent_picks')
-      .select('song_title, artist')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(MAX_GUITAR_RECENT_PICKS);
-
-    if (error || !data) {
-      if (error)
-        console.error(
-          'Error loading guitar recent picks from Supabase:',
-          error
-        );
-      return [];
-    }
-
-    return data.map(item => `${item.song_title} — ${item.artist}`);
-  } catch (error) {
-    console.error('Error loading guitar recent picks:', error);
-    return [];
-  }
-}
-
-export async function saveGuitarRecentPick(
-  userId: string,
-  songTitle: string,
-  artist: string
-): Promise<void> {
-  try {
-    const { error: insertError } = await supabase
-      .from('guitar_recent_picks')
-      .insert({
-        user_id: userId,
-        song_title: songTitle,
-        artist,
-      });
-
-    if (insertError) throw insertError;
-
-    const { data: allPicks } = await supabase
-      .from('guitar_recent_picks')
-      .select('id')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (allPicks && allPicks.length > MAX_GUITAR_RECENT_PICKS) {
-      const idsToDelete = allPicks
-        .slice(MAX_GUITAR_RECENT_PICKS)
-        .map(p => p.id);
-      await supabase.from('guitar_recent_picks').delete().in('id', idsToDelete);
-    }
-  } catch (error) {
-    console.error('Error saving guitar recent pick:', error);
-    throw error;
-  }
 }

@@ -1,7 +1,6 @@
 export type ContentType =
   | 'analytics'
   | 'transportation-physics'
-  | 'classic-rock-500'
   | 'food-plan';
 
 export interface AnalyticsQuestionTopic {
@@ -35,10 +34,5 @@ export interface PhysicsContent {
   title: string;
   explanation: string;
 }
-
-export type GuitarPoolItem = {
-  title: string;
-  artist: string;
-};
 
 export type FoodPlanText = string;

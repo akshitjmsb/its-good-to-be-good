@@ -5,7 +5,6 @@ import {
 import {
   AnalyticsContent,
   FoodPlanText,
-  GuitarPoolItem,
   PhysicsContent,
 } from './types';
 
@@ -29,17 +28,6 @@ export async function getPhysicsContent(
     'transportation-physics',
     date
   )) as PhysicsContent | null;
-}
-
-export async function getGuitarPool(
-  userId: string,
-  date: Date
-): Promise<GuitarPoolItem[] | null> {
-  return (await getOrGenerateDynamicContent(
-    userId,
-    'classic-rock-500',
-    date
-  )) as GuitarPoolItem[] | null;
 }
 
 export async function getFoodPlan(

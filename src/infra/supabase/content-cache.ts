@@ -5,7 +5,6 @@ export type CachedContentType =
   | 'food-plan'
   | 'analytics'
   | 'transportation-physics'
-  | 'classic-rock-500'
   | 'quote-deep-dive';
 
 export async function getCachedContent<T>(
