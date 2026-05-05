@@ -109,11 +109,11 @@ export const MODULE_REGISTRY_DATA = [
   },
   {
     id: 'guitar',
-    displayName: 'Guitar',
+    displayName: 'Mr. Mojo',
     category: 'learn',
     surface: 'modal',
     entrySelector: '#guitar-clickable',
-    handlerName: 'fetchAndShowGuitarTab',
+    handlerName: 'openMrMojoRising',
     ownerPath: 'src/components/modals/guitarModal.ts',
     iconElementId: 'guitar-icon',
     modalId: 'guitar-modal',

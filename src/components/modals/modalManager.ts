@@ -5,7 +5,6 @@ import { showExerciseModal } from './exerciseModal';
 import { fetchAndShowWorldOrder } from './worldOrderModal';
 import { fetchAndShowTennisMatches } from './tennisModal';
 import { showCoffeeMenu } from './coffeeModal';
-import { fetchAndShowGuitarTab } from './guitarModal';
 import { fetchAndShowPoetry } from './poetryModal';
 import {
     getModulesByCategory,
@@ -27,11 +26,17 @@ function navigateToFrenchPage(): void {
     window.location.href = 'french.html';
 }
 
+const MR_MOJO_RISING_URL = 'https://blissful-mccarthy-4d58a4.vercel.app';
+
+function openMrMojoRising(): void {
+    window.open(MR_MOJO_RISING_URL, '_blank', 'noopener,noreferrer');
+}
+
 const LEARN_MODULE_HANDLERS: Record<LearnModuleId, LearnModuleHandler> = {
     'world-order': () => fetchAndShowWorldOrder(),
     tennis: () => fetchAndShowTennisMatches(),
     coffee: ({ dates }) => showCoffeeMenu(dates.active),
-    guitar: ({ dates }) => fetchAndShowGuitarTab(dates.active),
+    guitar: openMrMojoRising,
     poetry: ({ dates }) => fetchAndShowPoetry(dates.active),
     french: navigateToFrenchPage,
     food: ({ dates, keys }) => showFoodModal(dates.active, keys.today),
