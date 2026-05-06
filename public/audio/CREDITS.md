@@ -2,14 +2,16 @@
 
 ## om.mp3 — vocal OM chant loop
 
-Source: ["Ohm of Creation"](https://freesound.org/people/BaDoink/sounds/565834/) by **BaDoink** on Freesound.
+Source: ["Om Namah Shivay Chanting by Martina Motwani"](https://pixabay.com/music/meditationspiritual-om-namah-shivay-chanting-by-martina-motwani-373456/) on Pixabay.
 
-License: **Creative Commons 0 (Public Domain)** — no attribution required, but credited here as a courtesy.
+License: **Pixabay Content License** — free for commercial use, no attribution legally required, but credited here as a courtesy. Original recording is Content ID Registered to martinamotwani.
+
+The source is 7:13 of professionally recorded Om Namah Shivay chanting at stereo 48 kHz / 256 kbps with rock-solid level consistency (-15 to -17 dB RMS throughout).
 
 Processing applied (via `ffmpeg`):
-- Trimmed to a 32-second working clip starting at `t = 10s` (skips fade-in, lands on the level-stable middle region around −22 dB RMS)
-- Built a seamless 30-second loop via a 2-second self-crossfade (the last 2s of the source segment is cross-faded with the first 2s, so the clip's end matches its start when looped)
-- Downmixed to mono and re-encoded at 96 kbps to keep the bundle small (~360 KB)
+- Trimmed a 53-second working clip starting at `t = 30 s` of the source (well into the level-stable middle).
+- Built a seamless 50-second loop via a 3-second self-crossfade — the last 3 s of the working clip is cross-faded with the first 3 s, so the clip's end matches its start when looped (verified: seam RMS levels match within 1 dB on both channels).
+- Kept stereo, encoded at 256 kbps to preserve studio quality (~1.6 MB).
 
 ## chime-{high,mid,low}.mp3 — breath-phase bell tones
 
