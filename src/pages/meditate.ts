@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (omTileEl) {
     tileHandles.push(
       setupAmbientTile(omTileEl, {
-        factory: createOmVoice,
+        factory: createOmVoice('/audio/om.mp3'),
         storagePrefix: 'meditate.om',
         defaultVolume: 0.6,
       })

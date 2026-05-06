@@ -25,120 +25,132 @@ export type VoiceFactory = (ctx: AudioContext) => AmbientVoice;
 const TIMER_OPTIONS = [0, 5, 10, 20] as const;
 
 // ─────────────────────────────────────────────────────────────────────
-// OM voice — continuous 432 Hz drone with 2× and 3× partials, gentle
-// low-pass, slow LFO modulating master gain for a chant-like texture.
+// OM voice — looped recording of a real OM chant. The file is a CC0
+// "Ohm of Creation" sample (BaDoink, Freesound 565834) processed into a
+// 30 s seamless loop. Decoded once per page session and cached in the
+// factory closure so subsequent voice instances reuse it.
 
-export const createOmVoice: VoiceFactory = ctx => {
-  const PARTIAL_GAINS = [0.4, 0.18, 0.08] as const;
-  const PEAK = 0.18;
-  const FADE_S = 1.5;
-  const LFO_HZ = 0.15;
-  const LFO_DEPTH = 0.04;
+export function createOmVoice(audioUrl: string): VoiceFactory {
+  let bufferPromise: Promise<AudioBuffer> | null = null;
 
-  let nodes: {
-    master: GainNode;
-    oscillators: OscillatorNode[];
-    lfo: OscillatorNode;
-  } | null = null;
-  let userGain = 0.6;
+  return ctx => {
+    const FADE_S = 1.5;
 
-  const intrinsicPeak = (): number => Math.max(0.0001, PEAK * userGain);
+    let nodes: {
+      master: GainNode;
+      source: AudioBufferSourceNode;
+    } | null = null;
+    let pendingStart = false;
+    let userGain = 0.6;
 
-  function start(): void {
-    if (nodes) return;
-    if (ctx.state === 'suspended') void ctx.resume();
-    try {
-      const now = ctx.currentTime;
-
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = 2_400;
-      lp.Q.value = 0.707;
-
-      const oscillators: OscillatorNode[] = [];
-      PARTIAL_GAINS.forEach((g, i) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = 432 * (i + 1);
-        const partial = ctx.createGain();
-        partial.gain.value = g;
-        osc.connect(partial);
-        partial.connect(lp);
-        osc.start(now);
-        oscillators.push(osc);
-      });
-
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0.0001, now);
-      master.gain.exponentialRampToValueAtTime(intrinsicPeak(), now + FADE_S);
-      lp.connect(master);
-      master.connect(ctx.destination);
-
-      const lfo = ctx.createOscillator();
-      lfo.type = 'sine';
-      lfo.frequency.value = LFO_HZ;
-      const depth = ctx.createGain();
-      depth.gain.value = LFO_DEPTH;
-      lfo.connect(depth);
-      depth.connect(master.gain);
-      lfo.start(now);
-
-      nodes = { master, oscillators, lfo };
-    } catch (error) {
-      console.warn('Could not start OM voice:', error);
+    function fetchBuffer(): Promise<AudioBuffer> {
+      if (!bufferPromise) {
+        bufferPromise = fetch(audioUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(
+                `OM audio fetch failed: HTTP ${response.status}`
+              );
+            }
+            return response.arrayBuffer();
+          })
+          .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
+          .catch(error => {
+            // Reset so a later play attempt can retry the fetch.
+            bufferPromise = null;
+            throw error;
+          });
+      }
+      return bufferPromise;
     }
-  }
 
-  function stop(): void {
-    if (!nodes) return;
-    const refs = nodes;
-    nodes = null;
-    try {
-      const now = ctx.currentTime;
-      refs.master.gain.cancelScheduledValues(now);
-      refs.master.gain.setValueAtTime(refs.master.gain.value, now);
-      refs.master.gain.exponentialRampToValueAtTime(0.0001, now + FADE_S);
-      const stopAt = now + FADE_S + 0.05;
-      refs.oscillators.forEach(o => {
+    function actuallyStart(buffer: AudioBuffer): void {
+      if (!pendingStart || nodes) return;
+      try {
+        const now = ctx.currentTime;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.exponentialRampToValueAtTime(
+          Math.max(0.0001, userGain),
+          now + FADE_S
+        );
+
+        source.connect(master);
+        master.connect(ctx.destination);
+        source.start(now);
+
+        nodes = { master, source };
+      } catch (error) {
+        console.warn('Could not start OM voice:', error);
+        pendingStart = false;
+      }
+    }
+
+    function start(): void {
+      if (nodes || pendingStart) return;
+      if (ctx.state === 'suspended') void ctx.resume();
+      pendingStart = true;
+      fetchBuffer()
+        .then(buffer => {
+          if (pendingStart) actuallyStart(buffer);
+        })
+        .catch(error => {
+          pendingStart = false;
+          console.warn('Could not load OM audio:', error);
+        });
+    }
+
+    function stop(): void {
+      pendingStart = false;
+      if (!nodes) return;
+      const refs = nodes;
+      nodes = null;
+      try {
+        const now = ctx.currentTime;
+        refs.master.gain.cancelScheduledValues(now);
+        refs.master.gain.setValueAtTime(refs.master.gain.value, now);
+        refs.master.gain.exponentialRampToValueAtTime(0.0001, now + FADE_S);
         try {
-          o.stop(stopAt);
+          refs.source.stop(now + FADE_S + 0.05);
         } catch {
           /* already stopped */
         }
-      });
-      try {
-        refs.lfo.stop(stopAt);
-      } catch {
-        /* already stopped */
+      } catch (error) {
+        console.warn('Could not stop OM voice:', error);
       }
-    } catch (error) {
-      console.warn('Could not stop OM voice:', error);
     }
-  }
 
-  function setVolume(value: number): void {
-    userGain = Math.max(0, Math.min(1, value));
-    if (!nodes) return;
-    try {
-      const now = ctx.currentTime;
-      nodes.master.gain.cancelScheduledValues(now);
-      nodes.master.gain.setValueAtTime(nodes.master.gain.value, now);
-      nodes.master.gain.linearRampToValueAtTime(intrinsicPeak(), now + 0.1);
-    } catch (error) {
-      console.warn('Could not set OM volume:', error);
+    function setVolume(value: number): void {
+      userGain = Math.max(0, Math.min(1, value));
+      if (!nodes) return;
+      try {
+        const now = ctx.currentTime;
+        nodes.master.gain.cancelScheduledValues(now);
+        nodes.master.gain.setValueAtTime(nodes.master.gain.value, now);
+        nodes.master.gain.linearRampToValueAtTime(
+          Math.max(0.0001, userGain),
+          now + 0.1
+        );
+      } catch (error) {
+        console.warn('Could not set OM volume:', error);
+      }
     }
-  }
 
-  function isPlaying(): boolean {
-    return nodes !== null;
-  }
+    function isPlaying(): boolean {
+      return nodes !== null || pendingStart;
+    }
 
-  function dispose(): void {
-    stop();
-  }
+    function dispose(): void {
+      stop();
+    }
 
-  return { start, stop, setVolume, isPlaying, dispose };
-};
+    return { start, stop, setVolume, isPlaying, dispose };
+  };
+}
 
 // ─────────────────────────────────────────────────────────────────────
 // Noise voice — looped 2 s white-noise buffer through a 6 kHz low-pass
