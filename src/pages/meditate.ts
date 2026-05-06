@@ -5,7 +5,7 @@
  * `src/core/countdownTimer.ts` (consumed via `getMeditateTimer()`).
  * This file owns the meditation-specific UI: chime on completion,
  * breath-ring guidance during running sessions, preset duration row,
- * and stats panel.
+ * stats panel, and the standalone OM + white-noise ambient tiles.
  */
 
 import {
@@ -16,6 +16,16 @@ import {
   totalMinutes,
 } from '../core/countdownTimer';
 import { getMeditateTimer } from '../core/meditateTimer';
+import {
+  getSharedAudioContext,
+  peekSharedAudioContext,
+} from '../core/sharedAudioContext';
+import {
+  type AmbientTileHandle,
+  createNoiseVoice,
+  createOmVoice,
+  setupAmbientTile,
+} from '../components/ambientTile';
 
 const PRESET_MINUTES = [5, 10, 20] as const;
 const STATUS_RUNNING = 'Stay with the breath.';
@@ -30,43 +40,8 @@ const PHASE_MS = 4_000;
 
 const SOUND_MODE_KEY = 'meditate.soundMode';
 const LEGACY_SOUND_KEY = 'meditate.soundEnabled';
-type SoundMode = 'bell' | 'om' | 'noise' | 'off';
-const SOUND_MODES: readonly SoundMode[] = ['bell', 'om', 'noise', 'off'];
-
-const OM_FUNDAMENTAL_HZ = 432;
-const OM_PARTIAL_GAINS = [0.4, 0.18, 0.08] as const; // 1×, 2×, 3×
-const OM_MASTER_PEAK = 0.18;
-const OM_LFO_HZ = 0.15;
-const OM_LFO_DEPTH = 0.04;
-const OM_FADE_S = 1.5;
-
-const NOISE_PEAK_GAIN = 0.08;
-const NOISE_LP_HZ = 6_000;
-const NOISE_FADE_S = 0.4;
-
-interface OmVoice {
-  oscillators: OscillatorNode[];
-  lfo: OscillatorNode;
-  master: GainNode;
-}
-
-interface NoiseVoice {
-  source: AudioBufferSourceNode;
-  master: GainNode;
-}
-
-interface AudioCtxCtor {
-  new (): AudioContext;
-  prototype: AudioContext;
-}
-
-function getAudioCtxCtor(): AudioCtxCtor | null {
-  const w = window as unknown as {
-    AudioContext?: AudioCtxCtor;
-    webkitAudioContext?: AudioCtxCtor;
-  };
-  return w.AudioContext ?? w.webkitAudioContext ?? null;
-}
+type SoundMode = 'bell' | 'off';
+const SOUND_MODES: readonly SoundMode[] = ['bell', 'off'];
 
 document.addEventListener('DOMContentLoaded', () => {
   const display = document.getElementById('meditate-display');
@@ -85,18 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const presets = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.meditate-preset')
   );
+  const omTileEl = document.getElementById('meditate-om-tile');
+  const noiseTileEl = document.getElementById('meditate-noise-tile');
   if (!display || !button) return;
 
   const timer = getMeditateTimer();
 
   let lastChimedFor: string | null = null; // history[0]?.completedAt
-  let audioCtx: AudioContext | null = null;
   let breathChimeInterval: number | null = null;
   let breathPhase = 0;
   let breathChimesActive = false;
-  let omVoice: OmVoice | null = null;
-  let noiseVoice: NoiseVoice | null = null;
-  let noiseBuffer: AudioBuffer | null = null;
 
   let soundMode: SoundMode = 'bell';
   try {
@@ -104,13 +77,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (stored && (SOUND_MODES as readonly string[]).includes(stored)) {
       soundMode = stored as SoundMode;
     } else {
-      // Migrate from the previous boolean toggle if present.
-      const legacy = localStorage.getItem(LEGACY_SOUND_KEY);
-      if (legacy === 'false') soundMode = 'off';
-      if (legacy !== null) {
-        localStorage.setItem(SOUND_MODE_KEY, soundMode);
-        localStorage.removeItem(LEGACY_SOUND_KEY);
-      }
+      // Migrate from earlier toggle / 4-mode selector. Anything that
+      // was 'off' or the boolean false collapses to off; everything
+      // else (bell, om, noise, true) lands on bell — those users had
+      // chime-style audio enabled and that's what stays in this UI.
+      const legacyMode = stored;
+      const legacyBool = localStorage.getItem(LEGACY_SOUND_KEY);
+      if (legacyMode === 'off' || legacyBool === 'false') soundMode = 'off';
+      localStorage.setItem(SOUND_MODE_KEY, soundMode);
+      if (legacyBool !== null) localStorage.removeItem(LEGACY_SOUND_KEY);
     }
   } catch {
     // localStorage may be unavailable (private mode); default stays bell.
@@ -124,27 +99,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (status) status.textContent = text;
   }
 
-  function ensureAudioCtx(): AudioContext | null {
-    if (audioCtx) return audioCtx;
-    const Ctor = getAudioCtxCtor();
-    if (!Ctor) return null;
-    try {
-      audioCtx = new Ctor();
-    } catch (error) {
-      console.warn('AudioContext unavailable:', error);
-      audioCtx = null;
-    }
-    return audioCtx;
-  }
-
   // Layered fundamental + 2× harmonic gives a softer, more bell-like
   // tone than a bare sine. Quick attack, exponential decay. Caller
   // decides whether to invoke (gated by soundMode upstream).
   function playBell(freq: number, peakGain = 0.18, decaySeconds = 0.5): void {
-    const ctx = ensureAudioCtx();
+    const ctx = getSharedAudioContext();
     if (!ctx) return;
     try {
-      if (ctx.state === 'suspended') void ctx.resume();
       const now = ctx.currentTime;
       const fund = ctx.createOscillator();
       const harm = ctx.createOscillator();
@@ -182,15 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function playChime(): void {
-    // Session-end chime — slightly louder + longer than a phase anchor.
-    // Only fires in bell mode; OM/Noise modes provide their own continuous
-    // cue and a chime would clash. Off mode stays silent.
     if (soundMode !== 'bell') return;
     playBell(880, 0.25, 0.6);
   }
 
   function startBreathChimes(): void {
     if (breathChimesActive) return;
+    if (soundMode !== 'bell') return;
     breathChimesActive = true;
     breathPhase = 0;
     playBell(PHASE_FREQS[0]);
@@ -207,208 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
       window.clearInterval(breathChimeInterval);
       breathChimeInterval = null;
     }
-  }
-
-  // Continuous 432 Hz drone: fundamental + 2× + 3× partials through a
-  // gentle low-pass, slow LFO modulating master gain for a chant-like
-  // breathing texture. 1.5 s attack/release fades avoid clicks.
-  function startOm(): void {
-    if (omVoice) return;
-    const ctx = ensureAudioCtx();
-    if (!ctx) return;
-    try {
-      if (ctx.state === 'suspended') void ctx.resume();
-      const now = ctx.currentTime;
-
-      const oscillators: OscillatorNode[] = [];
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = 2_400;
-      lp.Q.value = 0.707;
-
-      OM_PARTIAL_GAINS.forEach((gainValue, i) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = OM_FUNDAMENTAL_HZ * (i + 1);
-        const partialGain = ctx.createGain();
-        partialGain.gain.value = gainValue;
-        osc.connect(partialGain);
-        partialGain.connect(lp);
-        osc.start(now);
-        oscillators.push(osc);
-      });
-
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0.0001, now);
-      master.gain.exponentialRampToValueAtTime(OM_MASTER_PEAK, now + OM_FADE_S);
-      lp.connect(master);
-      master.connect(ctx.destination);
-
-      // LFO adds onto master.gain.value for ±OM_LFO_DEPTH modulation.
-      const lfo = ctx.createOscillator();
-      lfo.type = 'sine';
-      lfo.frequency.value = OM_LFO_HZ;
-      const lfoDepth = ctx.createGain();
-      lfoDepth.gain.value = OM_LFO_DEPTH;
-      lfo.connect(lfoDepth);
-      lfoDepth.connect(master.gain);
-      lfo.start(now);
-
-      omVoice = { oscillators, lfo, master };
-    } catch (error) {
-      console.warn('Could not start OM drone:', error);
-    }
-  }
-
-  function stopOm(): void {
-    if (!omVoice) return;
-    const voice = omVoice;
-    omVoice = null;
-    const ctx = audioCtx;
-    if (!ctx) {
-      voice.oscillators.forEach(o => {
-        try {
-          o.stop();
-        } catch {
-          /* already stopped */
-        }
-      });
-      try {
-        voice.lfo.stop();
-      } catch {
-        /* already stopped */
-      }
-      return;
-    }
-    const now = ctx.currentTime;
-    try {
-      voice.master.gain.cancelScheduledValues(now);
-      voice.master.gain.setValueAtTime(voice.master.gain.value, now);
-      voice.master.gain.exponentialRampToValueAtTime(0.0001, now + OM_FADE_S);
-      const stopAt = now + OM_FADE_S + 0.05;
-      voice.oscillators.forEach(o => o.stop(stopAt));
-      voice.lfo.stop(stopAt);
-    } catch (error) {
-      console.warn('Could not stop OM drone:', error);
-    }
-  }
-
-  function buildNoiseBuffer(ctx: AudioContext): AudioBuffer {
-    if (noiseBuffer && noiseBuffer.sampleRate === ctx.sampleRate) {
-      return noiseBuffer;
-    }
-    const seconds = 2;
-    const buffer = ctx.createBuffer(1, ctx.sampleRate * seconds, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    noiseBuffer = buffer;
-    return buffer;
-  }
-
-  function startNoise(): void {
-    if (noiseVoice) return;
-    const ctx = ensureAudioCtx();
-    if (!ctx) return;
-    try {
-      if (ctx.state === 'suspended') void ctx.resume();
-      const now = ctx.currentTime;
-
-      const source = ctx.createBufferSource();
-      source.buffer = buildNoiseBuffer(ctx);
-      source.loop = true;
-
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = NOISE_LP_HZ;
-      lp.Q.value = 0.707;
-
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0.0001, now);
-      master.gain.exponentialRampToValueAtTime(
-        NOISE_PEAK_GAIN,
-        now + NOISE_FADE_S
-      );
-
-      source.connect(lp);
-      lp.connect(master);
-      master.connect(ctx.destination);
-      source.start(now);
-
-      noiseVoice = { source, master };
-    } catch (error) {
-      console.warn('Could not start noise:', error);
-    }
-  }
-
-  function stopNoise(): void {
-    if (!noiseVoice) return;
-    const voice = noiseVoice;
-    noiseVoice = null;
-    const ctx = audioCtx;
-    if (!ctx) {
-      try {
-        voice.source.stop();
-      } catch {
-        /* already stopped */
-      }
-      return;
-    }
-    const now = ctx.currentTime;
-    try {
-      voice.master.gain.cancelScheduledValues(now);
-      voice.master.gain.setValueAtTime(voice.master.gain.value, now);
-      voice.master.gain.exponentialRampToValueAtTime(0.0001, now + NOISE_FADE_S);
-      voice.source.stop(now + NOISE_FADE_S + 0.05);
-    } catch (error) {
-      console.warn('Could not stop noise:', error);
-    }
-  }
-
-  // Idempotent: each start helper early-returns if already running, each
-  // stop helper is a no-op when nothing is active. Safe to call from a
-  // per-second paint or from a mid-session mode switch.
-  function applySessionAudio(running: boolean): void {
-    if (!running) {
-      stopBreathChimes();
-      stopOm();
-      stopNoise();
-      return;
-    }
-    ensureAudioCtx();
-    switch (soundMode) {
-      case 'bell':
-        stopOm();
-        stopNoise();
-        startBreathChimes();
-        break;
-      case 'om':
-        stopBreathChimes();
-        stopNoise();
-        startOm();
-        break;
-      case 'noise':
-        stopBreathChimes();
-        stopOm();
-        startNoise();
-        break;
-      case 'off':
-        stopBreathChimes();
-        stopOm();
-        stopNoise();
-        break;
-    }
-  }
-
-  function updateSoundButtons(): void {
-    soundModeButtons.forEach(btn => {
-      const mode = btn.dataset.mode as SoundMode | undefined;
-      btn.setAttribute(
-        'aria-pressed',
-        mode === soundMode ? 'true' : 'false'
-      );
-    });
   }
 
   function renderHistory(history$: CountdownSession[]): void {
@@ -459,7 +216,21 @@ document.addEventListener('DOMContentLoaded', () => {
       breath.classList.toggle('is-active', active);
       breath.setAttribute('aria-hidden', active ? 'false' : 'true');
     }
-    applySessionAudio(active);
+    if (active) {
+      startBreathChimes();
+    } else {
+      stopBreathChimes();
+    }
+  }
+
+  function updateSoundButtons(): void {
+    soundModeButtons.forEach(btn => {
+      const mode = btn.dataset.mode as SoundMode | undefined;
+      btn.setAttribute(
+        'aria-pressed',
+        mode === soundMode ? 'true' : 'false'
+      );
+    });
   }
 
   function paint(state: CountdownState): void {
@@ -503,7 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStats(state.history);
   }
 
-  // Wake the AudioContext on the user's start click (autoplay gesture).
+  // Wake the AudioContext on the user's start click — Safari needs the
+  // resume to land inside the same task as the gesture.
   button.addEventListener('click', () => {
     const status = timer.store.getState().status;
     if (status === 'running') {
@@ -511,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (status === 'break') {
       timer.skipBreak();
     } else {
-      ensureAudioCtx();
+      getSharedAudioContext();
       timer.start();
     }
   });
@@ -530,10 +302,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       updateSoundButtons();
       // Wake audio on this gesture so future starts don't need a warm-up.
-      ensureAudioCtx();
-      // If a session is running, swap the ambient track immediately.
+      getSharedAudioContext();
+      // If a session is currently running, apply the new mode immediately.
       if (timer.store.getState().status === 'running') {
-        applySessionAudio(true);
+        if (soundMode === 'bell') startBreathChimes();
+        else stopBreathChimes();
       }
     });
   });
@@ -545,6 +318,29 @@ document.addEventListener('DOMContentLoaded', () => {
       timer.setDuration(min * 60 * 1000);
     });
   });
+
+  // Standalone ambient tiles — independent of the meditation timer, so
+  // the user can start an OM drone or white noise without first kicking
+  // off a session. Each tile owns its own AudioContext-resume on click.
+  const tileHandles: AmbientTileHandle[] = [];
+  if (omTileEl) {
+    tileHandles.push(
+      setupAmbientTile(omTileEl, {
+        factory: createOmVoice,
+        storagePrefix: 'meditate.om',
+        defaultVolume: 0.6,
+      })
+    );
+  }
+  if (noiseTileEl) {
+    tileHandles.push(
+      setupAmbientTile(noiseTileEl, {
+        factory: createNoiseVoice,
+        storagePrefix: 'meditate.noise',
+        defaultVolume: 0.5,
+      })
+    );
+  }
 
   // Tick. core.refresh() is a no-op when not running, so the store
   // doesn't fire and the DOM stays stable.
@@ -568,7 +364,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('beforeunload', () => {
     window.clearInterval(intervalId);
-    applySessionAudio(false);
+    stopBreathChimes();
+    tileHandles.forEach(h => h.dispose());
+    // If the page is unloading and we have an audio context, close it
+    // so the OS doesn't keep the audio engine alive on iOS.
+    const ctx = peekSharedAudioContext();
+    if (ctx && ctx.state !== 'closed') {
+      void ctx.close();
+    }
   });
 });
 

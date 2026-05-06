@@ -28,10 +28,8 @@
             <div id="meditate-display" class="meditate-display" role="timer" aria-live="polite">10:00</div>
             <p id="meditate-status" class="meditate-status">10 minute session</p>
             <button id="meditate-toggle" type="button" class="panel-btn meditate-btn" aria-pressed="false">Start</button>
-            <div id="meditate-sound-modes" class="meditate-sound-modes" aria-label="Sound mode">
-                <button type="button" class="meditate-sound-mode" data-mode="bell" aria-pressed="true">Bell</button>
-                <button type="button" class="meditate-sound-mode" data-mode="om" aria-pressed="false">OM</button>
-                <button type="button" class="meditate-sound-mode" data-mode="noise" aria-pressed="false">Noise</button>
+            <div id="meditate-sound-modes" class="meditate-sound-modes" aria-label="Breath chime">
+                <button type="button" class="meditate-sound-mode" data-mode="bell" aria-pressed="true">Chime</button>
                 <button type="button" class="meditate-sound-mode" data-mode="off" aria-pressed="false">Off</button>
             </div>
         </section>
@@ -50,6 +48,54 @@
             <button type="button" class="meditate-preset" data-duration="5" aria-pressed="false">5 min</button>
             <button type="button" class="meditate-preset" data-duration="10" aria-pressed="true">10 min</button>
             <button type="button" class="meditate-preset" data-duration="20" aria-pressed="false">20 min</button>
+        </section>
+
+        <section class="meditate-ambient" id="meditate-om-tile" aria-label="OM chanting">
+            <div class="meditate-ambient__header">
+                <div class="meditate-ambient__title">
+                    <span class="meditate-ambient__icon" aria-hidden="true">ॐ</span>
+                    <div class="meditate-ambient__copy">
+                        <h2 class="meditate-ambient__name">OM</h2>
+                        <p class="meditate-ambient__sub">432 Hz drone</p>
+                    </div>
+                </div>
+                <button type="button" class="meditate-ambient__play" data-action="toggle" aria-pressed="false">Play</button>
+            </div>
+            <label class="meditate-ambient__volume">
+                <span class="meditate-ambient__volume-label">Volume</span>
+                <input type="range" min="0" max="100" step="1" value="60" data-control="volume" aria-label="OM volume">
+            </label>
+            <div class="meditate-ambient__timer" aria-label="Auto-stop timer">
+                <button type="button" class="meditate-ambient__timer-btn" data-timer="0" aria-pressed="true">No timer</button>
+                <button type="button" class="meditate-ambient__timer-btn" data-timer="5" aria-pressed="false">5m</button>
+                <button type="button" class="meditate-ambient__timer-btn" data-timer="10" aria-pressed="false">10m</button>
+                <button type="button" class="meditate-ambient__timer-btn" data-timer="20" aria-pressed="false">20m</button>
+            </div>
+            <p class="meditate-ambient__remaining" data-display="remaining" aria-live="polite"></p>
+        </section>
+
+        <section class="meditate-ambient" id="meditate-noise-tile" aria-label="White noise">
+            <div class="meditate-ambient__header">
+                <div class="meditate-ambient__title">
+                    <span class="meditate-ambient__icon meditate-ambient__icon--noise" aria-hidden="true">≋</span>
+                    <div class="meditate-ambient__copy">
+                        <h2 class="meditate-ambient__name">White noise</h2>
+                        <p class="meditate-ambient__sub">Soft hush</p>
+                    </div>
+                </div>
+                <button type="button" class="meditate-ambient__play" data-action="toggle" aria-pressed="false">Play</button>
+            </div>
+            <label class="meditate-ambient__volume">
+                <span class="meditate-ambient__volume-label">Volume</span>
+                <input type="range" min="0" max="100" step="1" value="50" data-control="volume" aria-label="White noise volume">
+            </label>
+            <div class="meditate-ambient__timer" aria-label="Auto-stop timer">
+                <button type="button" class="meditate-ambient__timer-btn" data-timer="0" aria-pressed="true">No timer</button>
+                <button type="button" class="meditate-ambient__timer-btn" data-timer="5" aria-pressed="false">5m</button>
+                <button type="button" class="meditate-ambient__timer-btn" data-timer="10" aria-pressed="false">10m</button>
+                <button type="button" class="meditate-ambient__timer-btn" data-timer="20" aria-pressed="false">20m</button>
+            </div>
+            <p class="meditate-ambient__remaining" data-display="remaining" aria-live="polite"></p>
         </section>
 
         <section class="meditate-stats-section" aria-label="Session stats">

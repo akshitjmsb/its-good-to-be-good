@@ -1399,6 +1399,218 @@ button.preview-card {
     margin-bottom: 1.5rem;
 }
 
+/* Standalone ambient tiles — OM drone, white noise. Each tile is a
+   self-contained card with play/stop, volume, and an optional auto-stop
+   timer. Independent of the breath timer. */
+
+.meditate-ambient {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 1rem 0.875rem;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.meditate-ambient.is-playing {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.07);
+}
+
+.meditate-ambient__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.meditate-ambient__title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.meditate-ambient__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: #374151;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+}
+
+.meditate-ambient__icon--noise {
+    font-size: 1.4rem;
+}
+
+.meditate-ambient__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.meditate-ambient__name {
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    color: #374151;
+    margin: 0;
+    letter-spacing: 0.025em;
+}
+
+.meditate-ambient__sub {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+    letter-spacing: 0.025em;
+}
+
+.meditate-ambient__play {
+    flex-shrink: 0;
+    padding: 0.5rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    color: #374151;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.025em;
+    cursor: pointer;
+    min-height: 36px;
+    min-width: 5rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.meditate-ambient__play:hover {
+    background-color: #f8f9fa;
+    border-color: #9ca3af;
+}
+
+.meditate-ambient__play:focus-visible {
+    outline: 2px solid #374151;
+    outline-offset: 2px;
+}
+
+.meditate-ambient__play[aria-pressed='true'] {
+    background-color: #374151;
+    border-color: #374151;
+    color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.meditate-ambient__volume {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.meditate-ambient__volume-label {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.7rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+.meditate-ambient__volume input[type='range'] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 0.25rem;
+    background: linear-gradient(to right, #6b7280 0%, #6b7280 var(--progress, 60%), #e5e7eb var(--progress, 60%), #e5e7eb 100%);
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+    margin: 0;
+}
+
+.meditate-ambient__volume input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: #374151;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+}
+
+.meditate-ambient__volume input[type='range']::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: #374151;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+}
+
+.meditate-ambient__volume input[type='range']:focus-visible {
+    outline: 2px solid #374151;
+    outline-offset: 4px;
+}
+
+.meditate-ambient__timer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.meditate-ambient__timer-btn {
+    flex: 1 1 auto;
+    padding: 0.375rem 0.625rem;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    color: #6b7280;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.025em;
+    cursor: pointer;
+    min-height: 30px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.meditate-ambient__timer-btn:hover {
+    background-color: #f8f9fa;
+    color: #374151;
+}
+
+.meditate-ambient__timer-btn:focus-visible {
+    outline: 2px solid #374151;
+    outline-offset: 2px;
+}
+
+.meditate-ambient__timer-btn[aria-pressed='true'] {
+    background-color: #374151;
+    border-color: #374151;
+    color: #ffffff;
+}
+
+.meditate-ambient__remaining {
+    margin: 0;
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+    min-height: 1.1em;
+}
+
 .meditate-preset {
     flex: 1 1 0;
     padding: 0.625rem 0.5rem;
