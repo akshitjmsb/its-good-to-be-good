@@ -1351,6 +1351,39 @@ button.preview-card {
 
 /* Preset duration row */
 
+.meditate-sound-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.75rem;
+    padding: 0.375rem 0.875rem;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    color: #6b7280;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    min-height: 32px;
+    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.meditate-sound-toggle:hover {
+    color: #374151;
+    border-color: #e5e7eb;
+    background-color: #f8f9fa;
+}
+
+.meditate-sound-toggle:focus-visible {
+    outline: 2px solid #374151;
+    outline-offset: 2px;
+}
+
+.meditate-sound-toggle[aria-pressed='true'] {
+    color: #374151;
+}
+
 .meditate-presets {
     display: flex;
     gap: 0.5rem;

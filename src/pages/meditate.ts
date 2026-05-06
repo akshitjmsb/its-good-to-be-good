@@ -23,6 +23,13 @@ const STATUS_RUNNING = 'Stay with the breath.';
 const STATUS_COMPLETE = 'Session complete.';
 const idleStatus = (mins: number) => `${mins} minute session`;
 
+// 4-4-4-4 box breathing — anchor chime per phase. Inhale rides high,
+// exhale drops a full octave to signal release; the two holds share a
+// neutral mid pitch.
+const PHASE_FREQS = [880, 660, 440, 660] as const; // inhale, hold, exhale, hold
+const PHASE_MS = 4_000;
+const SOUND_PREF_KEY = 'meditate.soundEnabled';
+
 interface AudioCtxCtor {
   new (): AudioContext;
   prototype: AudioContext;
@@ -41,6 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const button = document.getElementById(
     'meditate-toggle'
   ) as HTMLButtonElement | null;
+  const soundButton = document.getElementById(
+    'meditate-sound'
+  ) as HTMLButtonElement | null;
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
   const history = document.getElementById('meditate-history');
@@ -56,6 +66,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let lastChimedFor: string | null = null; // history[0]?.completedAt
   let audioCtx: AudioContext | null = null;
+  let breathChimeInterval: number | null = null;
+  let breathPhase = 0;
+  let breathChimesActive = false;
+
+  let soundEnabled = true;
+  try {
+    const stored = localStorage.getItem(SOUND_PREF_KEY);
+    if (stored !== null) soundEnabled = stored === 'true';
+  } catch {
+    // localStorage may be unavailable (private mode); default stays true.
+  }
 
   function durationMin(state: CountdownState): number {
     return Math.round(state.durationMs / 60_000);
@@ -78,26 +99,79 @@ document.addEventListener('DOMContentLoaded', () => {
     return audioCtx;
   }
 
-  function playChime(): void {
+  // Layered fundamental + 2× harmonic gives a softer, more bell-like
+  // tone than a bare sine. Quick attack, exponential decay.
+  function playBell(freq: number, peakGain = 0.18, decaySeconds = 0.5): void {
+    if (!soundEnabled) return;
     const ctx = ensureAudioCtx();
     if (!ctx) return;
     try {
       if (ctx.state === 'suspended') void ctx.resume();
       const now = ctx.currentTime;
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-      oscillator.type = 'sine';
-      oscillator.frequency.value = 880;
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-      oscillator.start(now);
-      oscillator.stop(now + 0.65);
+      const fund = ctx.createOscillator();
+      const harm = ctx.createOscillator();
+      const fundGain = ctx.createGain();
+      const harmGain = ctx.createGain();
+
+      fund.type = 'sine';
+      harm.type = 'sine';
+      fund.frequency.value = freq;
+      harm.frequency.value = freq * 2;
+
+      fundGain.gain.setValueAtTime(0.0001, now);
+      fundGain.gain.exponentialRampToValueAtTime(peakGain, now + 0.008);
+      fundGain.gain.exponentialRampToValueAtTime(0.0001, now + decaySeconds);
+
+      harmGain.gain.setValueAtTime(0.0001, now);
+      harmGain.gain.exponentialRampToValueAtTime(peakGain * 0.3, now + 0.008);
+      harmGain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        now + decaySeconds * 0.8
+      );
+
+      fund.connect(fundGain);
+      harm.connect(harmGain);
+      fundGain.connect(ctx.destination);
+      harmGain.connect(ctx.destination);
+
+      fund.start(now);
+      harm.start(now);
+      fund.stop(now + decaySeconds + 0.05);
+      harm.stop(now + decaySeconds + 0.05);
     } catch (error) {
-      console.warn('Could not play chime:', error);
+      console.warn('Could not play bell:', error);
     }
+  }
+
+  function playChime(): void {
+    // Session-end chime — slightly louder + longer than a phase anchor.
+    playBell(880, 0.25, 0.6);
+  }
+
+  function startBreathChimes(): void {
+    if (breathChimesActive) return;
+    breathChimesActive = true;
+    breathPhase = 0;
+    playBell(PHASE_FREQS[0]);
+    breathChimeInterval = window.setInterval(() => {
+      breathPhase = (breathPhase + 1) % PHASE_FREQS.length;
+      playBell(PHASE_FREQS[breathPhase]);
+    }, PHASE_MS);
+  }
+
+  function stopBreathChimes(): void {
+    breathChimesActive = false;
+    breathPhase = 0;
+    if (breathChimeInterval !== null) {
+      window.clearInterval(breathChimeInterval);
+      breathChimeInterval = null;
+    }
+  }
+
+  function updateSoundButton(): void {
+    if (!soundButton) return;
+    soundButton.textContent = soundEnabled ? 'Sound on' : 'Sound off';
+    soundButton.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
   }
 
   function renderHistory(history$: CountdownSession[]): void {
@@ -144,9 +218,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setBreathActive(active: boolean): void {
-    if (!breath) return;
-    breath.classList.toggle('is-active', active);
-    breath.setAttribute('aria-hidden', active ? 'false' : 'true');
+    if (breath) {
+      breath.classList.toggle('is-active', active);
+      breath.setAttribute('aria-hidden', active ? 'false' : 'true');
+    }
+    if (active) {
+      startBreathChimes();
+    } else {
+      stopBreathChimes();
+    }
   }
 
   function paint(state: CountdownState): void {
@@ -203,6 +283,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  updateSoundButton();
+  soundButton?.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    try {
+      localStorage.setItem(SOUND_PREF_KEY, String(soundEnabled));
+    } catch {
+      // localStorage may be unavailable; the toggle still works for
+      // the current session.
+    }
+    updateSoundButton();
+    if (soundEnabled) {
+      // Wake audio on the toggle gesture so the next phase chime plays
+      // without an extra start-click warm-up.
+      ensureAudioCtx();
+    }
+  });
+
   presets.forEach(preset => {
     preset.addEventListener('click', () => {
       const min = Number(preset.dataset.duration);
@@ -231,7 +328,10 @@ document.addEventListener('DOMContentLoaded', () => {
   timer.store.subscribe(paint);
   paint(timer.store.getState());
 
-  window.addEventListener('beforeunload', () => window.clearInterval(intervalId));
+  window.addEventListener('beforeunload', () => {
+    window.clearInterval(intervalId);
+    stopBreathChimes();
+  });
 });
 
 void PRESET_MINUTES;
