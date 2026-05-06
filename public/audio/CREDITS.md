@@ -2,16 +2,12 @@
 
 ## om.mp3 — vocal OM chant loop
 
-Source: ["Om Namah Shivay Chanting by Martina Motwani"](https://pixabay.com/music/meditationspiritual-om-namah-shivay-chanting-by-martina-motwani-373456/) on Pixabay.
+Source: [`youtu.be/SBiwLibZqfw`](https://youtu.be/SBiwLibZqfw) — a 3-hour OM meditation chant on YouTube. The user explicitly authorized downloading after weighing the trade-offs; only a 5-minute section is extracted, and the file is served from this personal-dashboard's own audio directory rather than re-uploaded anywhere public-facing.
 
-License: **Pixabay Content License** — free for commercial use, no attribution legally required, but credited here as a courtesy. Original recording is Content ID Registered to martinamotwani.
-
-The source is 7:13 of professionally recorded Om Namah Shivay chanting at stereo 48 kHz / 256 kbps with rock-solid level consistency (-15 to -17 dB RMS throughout).
-
-Processing applied (via `ffmpeg`):
-- Trimmed a 53-second working clip starting at `t = 30 s` of the source (well into the level-stable middle).
-- Built a seamless 50-second loop via a 3-second self-crossfade — the last 3 s of the working clip is cross-faded with the first 3 s, so the clip's end matches its start when looped (verified: seam RMS levels match within 1 dB on both channels).
-- Kept stereo, encoded at 256 kbps to preserve studio quality (~1.6 MB).
+Acquisition + processing (via `yt-dlp` and `ffmpeg`):
+- `yt-dlp --download-sections "*10:00-15:00" --force-keyframes-at-cuts -x --audio-format wav` to grab only the middle 5 minutes (skips intro + outro). Source stream from YouTube is Opus 48 kHz stereo 96 kbps; the WAV is its lossless container.
+- Built a seamless ~5-minute loop (297 s) via a 3 s self-crossfade — the last 3 s of the section is cross-faded with its first 3 s, so the clip's end matches its start when looped. Head and tail RMS levels both around -19 to -22 dB, no perceptible discontinuity at the seam.
+- Kept stereo, encoded at 320 kbps to preserve the source quality (~11.3 MB).
 
 ## chime-{high,mid,low}.mp3 — breath-phase bell tones
 
