@@ -1399,7 +1399,7 @@ button.preview-card {
     margin-bottom: 1.5rem;
 }
 
-/* Standalone ambient tiles — OM drone, white noise. Each tile is a
+/* Standalone ambient tiles — OM drone, sleep music. Each tile is a
    self-contained card with play/stop, volume, and an optional auto-stop
    timer. Independent of the breath timer. */
 
@@ -1450,8 +1450,9 @@ button.preview-card {
     border-radius: 0.5rem;
 }
 
-.meditate-ambient__icon--noise {
-    font-size: 1.4rem;
+.meditate-ambient__icon--moon {
+    font-size: 1.5rem;
+    line-height: 1;
 }
 
 .meditate-ambient__copy {

@@ -1,6 +1,6 @@
 /**
- * Standalone ambient sound tiles for the meditation page (OM, white
- * noise). Each tile owns a play/stop button, volume slider, and an
+ * Standalone ambient sound tiles for the meditation page (OM, sleep
+ * music). Each tile owns a play/stop button, volume slider, and an
  * optional auto-stop timer.
  *
  * Both voices use HTMLAudioElement rather than Web Audio. iOS Safari's
@@ -94,7 +94,7 @@ export function createAudioFileVoice(audioUrl: string): VoiceFactory {
 // Aliases — both voices are file-backed, but the call sites read more
 // clearly with named factory builders.
 export const createOmVoice = createAudioFileVoice;
-export const createNoiseVoice = createAudioFileVoice;
+export const createSleepMusicVoice = createAudioFileVoice;
 
 // ─────────────────────────────────────────────────────────────────────
 // Tile widget — wires play/stop, volume slider, optional auto-stop

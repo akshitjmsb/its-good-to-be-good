@@ -5,7 +5,7 @@
  * `src/core/countdownTimer.ts` (consumed via `getMeditateTimer()`).
  * This file owns the meditation-specific UI: chime on completion,
  * breath-ring guidance during running sessions, preset duration row,
- * stats panel, and the standalone OM + white-noise ambient tiles.
+ * stats panel, and the standalone OM + sleep-music ambient tiles.
  *
  * All audio uses HTMLAudioElement, not Web Audio. iOS Safari's
  * autoplay policy is too strict for the Web Audio path to be reliable
@@ -22,8 +22,8 @@ import {
 import { getMeditateTimer } from '../core/meditateTimer';
 import {
   type AmbientTileHandle,
-  createNoiseVoice,
   createOmVoice,
+  createSleepMusicVoice,
   setupAmbientTile,
 } from '../components/ambientTile';
 
@@ -67,7 +67,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll<HTMLButtonElement>('.meditate-preset')
   );
   const omTileEl = document.getElementById('meditate-om-tile');
-  const noiseTileEl = document.getElementById('meditate-noise-tile');
+  const sleepMusicTileEl = document.getElementById('meditate-sleep-music-tile');
+
+  // One-time migration of the prior `meditate.noise.*` localStorage keys
+  // to the new `meditate.sleepMusic.*` namespace.
+  try {
+    (['volume', 'timer'] as const).forEach(suffix => {
+      const oldKey = `meditate.noise.${suffix}`;
+      const newKey = `meditate.sleepMusic.${suffix}`;
+      const oldVal = localStorage.getItem(oldKey);
+      if (oldVal !== null) {
+        if (localStorage.getItem(newKey) === null) {
+          localStorage.setItem(newKey, oldVal);
+        }
+        localStorage.removeItem(oldKey);
+      }
+    });
+  } catch {
+    // localStorage unavailable — fresh defaults will apply.
+  }
   if (!display || !button) return;
 
   const timer = getMeditateTimer();
@@ -344,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Standalone ambient tiles — independent of the meditation timer, so
-  // the user can start an OM drone or white noise without first kicking
+  // the user can start an OM drone or sleep music without first kicking
   // off a session. Each tile owns its own HTMLAudioElement-on-tap-play
   // so iOS unlocks it during the play-button gesture itself.
   const tileHandles: AmbientTileHandle[] = [];
@@ -357,11 +375,11 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     );
   }
-  if (noiseTileEl) {
+  if (sleepMusicTileEl) {
     tileHandles.push(
-      setupAmbientTile(noiseTileEl, {
-        factory: createNoiseVoice('/audio/whitenoise.mp3'),
-        storagePrefix: 'meditate.noise',
+      setupAmbientTile(sleepMusicTileEl, {
+        factory: createSleepMusicVoice('/audio/sleep-music.mp3'),
+        storagePrefix: 'meditate.sleepMusic',
         defaultVolume: 0.5,
       })
     );
