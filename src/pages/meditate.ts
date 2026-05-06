@@ -274,6 +274,27 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStats(state.history);
   }
 
+  // iOS silent-unlock: pre-warm the Web Audio engine on the first tap
+  // *anywhere* on the page, before the user reaches a specific audio
+  // button. getSharedAudioContext() creates the context, resumes it,
+  // and plays a 1-sample silent unlock buffer — all idempotent, so
+  // firing twice (click + touchend on the same tap) is harmless.
+  const unlockOpts = { once: true, capture: true } as const;
+  document.addEventListener(
+    'click',
+    () => {
+      getSharedAudioContext();
+    },
+    unlockOpts
+  );
+  document.addEventListener(
+    'touchend',
+    () => {
+      getSharedAudioContext();
+    },
+    unlockOpts
+  );
+
   // Wake the AudioContext on the user's start click — Safari needs the
   // resume to land inside the same task as the gesture.
   button.addEventListener('click', () => {

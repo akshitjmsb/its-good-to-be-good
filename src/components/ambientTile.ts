@@ -25,127 +25,79 @@ export type VoiceFactory = (ctx: AudioContext) => AmbientVoice;
 const TIMER_OPTIONS = [0, 5, 10, 20] as const;
 
 // ─────────────────────────────────────────────────────────────────────
-// OM voice — looped recording of a real OM chant. The file is a CC0
-// "Ohm of Creation" sample (BaDoink, Freesound 565834) processed into a
-// 30 s seamless loop. Decoded once per page session and cached in the
-// factory closure so subsequent voice instances reuse it.
+// OM voice — looped recording of a real OM chant via HTMLAudioElement.
+//
+// Why HTMLAudioElement and not Web Audio? On iOS Safari, the user-
+// gesture rule is strict: audio playback must be initiated *inside*
+// the same synchronous call stack as the tap. The Web Audio path
+// (fetch → decodeAudioData → bufferSource.start) hops through async
+// boundaries, so by the time start() runs the gesture is gone and
+// iOS keeps the engine silent — exactly the symptom we hit. Calling
+// audio.play() synchronously on tap is the reliable iOS path.
+//
+// The element is constructed once per voice and reused across
+// start/stop. Loop is built-in via element.loop = true, so the seamless
+// 30 s loop in the source file does the work.
 
 export function createOmVoice(audioUrl: string): VoiceFactory {
-  let bufferPromise: Promise<AudioBuffer> | null = null;
-
-  return ctx => {
-    const FADE_S = 1.5;
-
-    let nodes: {
-      master: GainNode;
-      source: AudioBufferSourceNode;
-    } | null = null;
-    let pendingStart = false;
+  return () => {
+    let audio: HTMLAudioElement | null = null;
     let userGain = 0.6;
 
-    function fetchBuffer(): Promise<AudioBuffer> {
-      if (!bufferPromise) {
-        bufferPromise = fetch(audioUrl)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(
-                `OM audio fetch failed: HTTP ${response.status}`
-              );
-            }
-            return response.arrayBuffer();
-          })
-          .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
-          .catch(error => {
-            // Reset so a later play attempt can retry the fetch.
-            bufferPromise = null;
-            throw error;
-          });
-      }
-      return bufferPromise;
-    }
-
-    function actuallyStart(buffer: AudioBuffer): void {
-      if (!pendingStart || nodes) return;
-      try {
-        const now = ctx.currentTime;
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.loop = true;
-
-        const master = ctx.createGain();
-        master.gain.setValueAtTime(0.0001, now);
-        master.gain.exponentialRampToValueAtTime(
-          Math.max(0.0001, userGain),
-          now + FADE_S
+    function ensureAudio(): HTMLAudioElement {
+      if (audio) return audio;
+      const el = new Audio(audioUrl);
+      el.loop = true;
+      el.preload = 'auto';
+      el.volume = userGain;
+      el.addEventListener('error', () => {
+        console.warn(
+          '[om-audio] error code',
+          el.error?.code,
+          el.error?.message
         );
-
-        source.connect(master);
-        master.connect(ctx.destination);
-        source.start(now);
-
-        nodes = { master, source };
-      } catch (error) {
-        console.warn('Could not start OM voice:', error);
-        pendingStart = false;
-      }
+      });
+      audio = el;
+      return el;
     }
 
     function start(): void {
-      if (nodes || pendingStart) return;
-      if (ctx.state === 'suspended') void ctx.resume();
-      pendingStart = true;
-      fetchBuffer()
-        .then(buffer => {
-          if (pendingStart) actuallyStart(buffer);
-        })
-        .catch(error => {
-          pendingStart = false;
-          console.warn('Could not load OM audio:', error);
+      const el = ensureAudio();
+      el.volume = userGain;
+      // Critical for iOS Safari: play() must be invoked synchronously
+      // inside the click handler that called us. The rest of this
+      // function is sync up to here, so we're still on the gesture
+      // stack.
+      const playPromise = el.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(error => {
+          console.warn('[om-audio] play rejected:', error);
         });
+      }
     }
 
     function stop(): void {
-      pendingStart = false;
-      if (!nodes) return;
-      const refs = nodes;
-      nodes = null;
-      try {
-        const now = ctx.currentTime;
-        refs.master.gain.cancelScheduledValues(now);
-        refs.master.gain.setValueAtTime(refs.master.gain.value, now);
-        refs.master.gain.exponentialRampToValueAtTime(0.0001, now + FADE_S);
-        try {
-          refs.source.stop(now + FADE_S + 0.05);
-        } catch {
-          /* already stopped */
-        }
-      } catch (error) {
-        console.warn('Could not stop OM voice:', error);
-      }
+      if (!audio) return;
+      audio.pause();
+      audio.currentTime = 0;
     }
 
     function setVolume(value: number): void {
       userGain = Math.max(0, Math.min(1, value));
-      if (!nodes) return;
-      try {
-        const now = ctx.currentTime;
-        nodes.master.gain.cancelScheduledValues(now);
-        nodes.master.gain.setValueAtTime(nodes.master.gain.value, now);
-        nodes.master.gain.linearRampToValueAtTime(
-          Math.max(0.0001, userGain),
-          now + 0.1
-        );
-      } catch (error) {
-        console.warn('Could not set OM volume:', error);
-      }
+      if (audio) audio.volume = userGain;
     }
 
     function isPlaying(): boolean {
-      return nodes !== null || pendingStart;
+      return audio !== null && !audio.paused;
     }
 
     function dispose(): void {
       stop();
+      if (audio) {
+        audio.removeAttribute('src');
+        audio.load();
+        audio = null;
+      }
     }
 
     return { start, stop, setVolume, isPlaying, dispose };
