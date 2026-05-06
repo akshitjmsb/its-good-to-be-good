@@ -43,7 +43,13 @@ function renderRow(task: DisplayTask): string {
         data-index="${task.originalIndex}"
         aria-label="Mark task complete"${checked}
       >
-      <label class="todo-row__label" data-index="${task.originalIndex}">${safeText}</label>
+      <label
+        class="todo-row__label"
+        data-index="${task.originalIndex}"
+        role="button"
+        tabindex="0"
+        title="Click to edit"
+      >${safeText}</label>
       <button
         type="button"
         class="todo-row__delete"
@@ -83,9 +89,12 @@ function renderCounter(tasks: Task[]): void {
 document.addEventListener('DOMContentLoaded', async () => {
   const userId = DEFAULT_USER_ID;
   let tasks: Task[] = await loadTasksFromSupabase(userId);
+  let editingIndex: number | null = null;
 
   const refresh = () => {
-    renderList(tasks);
+    if (editingIndex === null) {
+      renderList(tasks);
+    }
     renderCounter(tasks);
   };
 
@@ -131,14 +140,91 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   const listEl = document.getElementById(LIST_ID);
+
+  const beginEdit = (index: number) => {
+    if (editingIndex !== null) return;
+    if (Number.isNaN(index) || index < 0 || index >= tasks.length) return;
+    const row = listEl?.querySelector(
+      `.todo-row[data-index="${index}"]`
+    ) as HTMLElement | null;
+    const label = row?.querySelector('.todo-row__label') as HTMLElement | null;
+    if (!row || !label) return;
+
+    editingIndex = index;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'todo-row__edit';
+    input.value = tasks[index].text;
+    input.maxLength = 200;
+    input.setAttribute('aria-label', 'Edit task');
+    input.setAttribute('enterkeyhint', 'done');
+    input.autocapitalize = 'sentences';
+    input.spellcheck = true;
+    label.replaceWith(input);
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    let settled = false;
+
+    const finish = async (commit: boolean) => {
+      if (settled) return;
+      settled = true;
+      const original = tasks[index]?.text ?? '';
+      const sanitized = commit ? sanitizeTaskInput(input.value.trim()) : '';
+      editingIndex = null;
+      if (commit && sanitized && sanitized !== original) {
+        tasks = tasks.map((task, i) =>
+          i === index ? { ...task, text: sanitized } : task
+        );
+        await persist();
+      } else {
+        refresh();
+      }
+    };
+
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.isComposing) {
+        event.preventDefault();
+        void finish(true);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        void finish(false);
+      }
+    });
+
+    input.addEventListener('blur', () => {
+      void finish(true);
+    });
+  };
+
   listEl?.addEventListener('click', async event => {
     const target = event.target as HTMLElement | null;
+
     const deleteBtn = target?.closest('.todo-row__delete') as HTMLElement | null;
-    if (!deleteBtn) return;
-    const index = Number(deleteBtn.dataset.index ?? -1);
-    if (Number.isNaN(index) || index < 0 || index >= tasks.length) return;
-    tasks = tasks.filter((_, i) => i !== index);
-    await persist();
+    if (deleteBtn) {
+      const index = Number(deleteBtn.dataset.index ?? -1);
+      if (Number.isNaN(index) || index < 0 || index >= tasks.length) return;
+      tasks = tasks.filter((_, i) => i !== index);
+      await persist();
+      return;
+    }
+
+    const label = target?.closest('.todo-row__label') as HTMLElement | null;
+    if (label) {
+      const index = Number(label.dataset.index ?? -1);
+      beginEdit(index);
+    }
+  });
+
+  listEl?.addEventListener('keydown', event => {
+    const target = event.target as HTMLElement | null;
+    const label = target?.closest('.todo-row__label') as HTMLElement | null;
+    if (!label) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    const index = Number(label.dataset.index ?? -1);
+    beginEdit(index);
   });
 
   listEl?.addEventListener('change', async event => {
@@ -153,6 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   setInterval(async () => {
+    if (editingIndex !== null) return;
     try {
       tasks = await loadTasksFromSupabase(userId);
       refresh();
