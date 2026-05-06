@@ -1,16 +1,19 @@
 /**
  * Standalone ambient sound tiles for the meditation page (OM, white
  * noise). Each tile owns a play/stop button, volume slider, and an
- * optional auto-stop timer. Voices share the process-wide AudioContext
- * so multiple tiles can play simultaneously without spinning up
- * extra audio engines.
+ * optional auto-stop timer.
  *
- * The voice lifecycle is simple: factories build a voice on first
- * play, the voice exposes start/stop/setVolume, and stop() schedules
- * an exponential fade so transitions never click.
+ * Both voices use HTMLAudioElement rather than Web Audio. iOS Safari's
+ * autoplay policy is strict in two ways that combine to make Web Audio
+ * unreliable here: (1) AudioContext.resume() must land synchronously
+ * inside the user-gesture call stack, and (2) any async hop (fetch,
+ * decodeAudioData) before the first AudioBufferSource.start() drops the
+ * gesture context and the engine stays silent. HTMLAudioElement.play()
+ * called synchronously inside the click handler is the reliable iOS
+ * path — the browser handles streaming + buffering for us.
  */
 
-import { getSharedAudioContext } from '../core/sharedAudioContext';
+const TIMER_OPTIONS = [0, 5, 10, 20] as const;
 
 export interface AmbientVoice {
   start(): void;
@@ -20,26 +23,14 @@ export interface AmbientVoice {
   dispose(): void;
 }
 
-export type VoiceFactory = (ctx: AudioContext) => AmbientVoice;
+export type VoiceFactory = () => AmbientVoice;
 
-const TIMER_OPTIONS = [0, 5, 10, 20] as const;
-
-// ─────────────────────────────────────────────────────────────────────
-// OM voice — looped recording of a real OM chant via HTMLAudioElement.
-//
-// Why HTMLAudioElement and not Web Audio? On iOS Safari, the user-
-// gesture rule is strict: audio playback must be initiated *inside*
-// the same synchronous call stack as the tap. The Web Audio path
-// (fetch → decodeAudioData → bufferSource.start) hops through async
-// boundaries, so by the time start() runs the gesture is gone and
-// iOS keeps the engine silent — exactly the symptom we hit. Calling
-// audio.play() synchronously on tap is the reliable iOS path.
-//
-// The element is constructed once per voice and reused across
-// start/stop. Loop is built-in via element.loop = true, so the seamless
-// 30 s loop in the source file does the work.
-
-export function createOmVoice(audioUrl: string): VoiceFactory {
+/**
+ * Build a voice that plays a single audio file on loop. The element
+ * is constructed lazily on first start() and reused — no fetch/decode
+ * round trip, no AudioContext, no gesture-loss across async hops.
+ */
+export function createAudioFileVoice(audioUrl: string): VoiceFactory {
   return () => {
     let audio: HTMLAudioElement | null = null;
     let userGain = 0.6;
@@ -52,9 +43,7 @@ export function createOmVoice(audioUrl: string): VoiceFactory {
       el.volume = userGain;
       el.addEventListener('error', () => {
         console.warn(
-          '[om-audio] error code',
-          el.error?.code,
-          el.error?.message
+          `[ambient] ${audioUrl} error code=${el.error?.code} msg=${el.error?.message ?? ''}`
         );
       });
       audio = el;
@@ -65,13 +54,11 @@ export function createOmVoice(audioUrl: string): VoiceFactory {
       const el = ensureAudio();
       el.volume = userGain;
       // Critical for iOS Safari: play() must be invoked synchronously
-      // inside the click handler that called us. The rest of this
-      // function is sync up to here, so we're still on the gesture
-      // stack.
+      // inside the click handler that called us.
       const playPromise = el.play();
       if (playPromise && typeof playPromise.catch === 'function') {
         playPromise.catch(error => {
-          console.warn('[om-audio] play rejected:', error);
+          console.warn(`[ambient] play rejected (${audioUrl}):`, error);
         });
       }
     }
@@ -104,115 +91,10 @@ export function createOmVoice(audioUrl: string): VoiceFactory {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Noise voice — looped 2 s white-noise buffer through a 6 kHz low-pass
-// for a gentler "shhh" character vs. raw bright hiss.
-
-let cachedNoiseBuffer: AudioBuffer | null = null;
-
-export const createNoiseVoice: VoiceFactory = ctx => {
-  const PEAK = 0.1;
-  const FADE_S = 0.4;
-  const LP_HZ = 6_000;
-
-  let nodes: {
-    master: GainNode;
-    source: AudioBufferSourceNode;
-  } | null = null;
-  let userGain = 0.5;
-
-  const intrinsicPeak = (): number => Math.max(0.0001, PEAK * userGain);
-
-  function getBuffer(): AudioBuffer {
-    if (cachedNoiseBuffer && cachedNoiseBuffer.sampleRate === ctx.sampleRate) {
-      return cachedNoiseBuffer;
-    }
-    const seconds = 2;
-    const buffer = ctx.createBuffer(
-      1,
-      ctx.sampleRate * seconds,
-      ctx.sampleRate
-    );
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    cachedNoiseBuffer = buffer;
-    return buffer;
-  }
-
-  function start(): void {
-    if (nodes) return;
-    if (ctx.state === 'suspended') void ctx.resume();
-    try {
-      const now = ctx.currentTime;
-
-      const source = ctx.createBufferSource();
-      source.buffer = getBuffer();
-      source.loop = true;
-
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = LP_HZ;
-      lp.Q.value = 0.707;
-
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0.0001, now);
-      master.gain.exponentialRampToValueAtTime(intrinsicPeak(), now + FADE_S);
-
-      source.connect(lp);
-      lp.connect(master);
-      master.connect(ctx.destination);
-      source.start(now);
-
-      nodes = { master, source };
-    } catch (error) {
-      console.warn('Could not start noise voice:', error);
-    }
-  }
-
-  function stop(): void {
-    if (!nodes) return;
-    const refs = nodes;
-    nodes = null;
-    try {
-      const now = ctx.currentTime;
-      refs.master.gain.cancelScheduledValues(now);
-      refs.master.gain.setValueAtTime(refs.master.gain.value, now);
-      refs.master.gain.exponentialRampToValueAtTime(0.0001, now + FADE_S);
-      try {
-        refs.source.stop(now + FADE_S + 0.05);
-      } catch {
-        /* already stopped */
-      }
-    } catch (error) {
-      console.warn('Could not stop noise voice:', error);
-    }
-  }
-
-  function setVolume(value: number): void {
-    userGain = Math.max(0, Math.min(1, value));
-    if (!nodes) return;
-    try {
-      const now = ctx.currentTime;
-      nodes.master.gain.cancelScheduledValues(now);
-      nodes.master.gain.setValueAtTime(nodes.master.gain.value, now);
-      nodes.master.gain.linearRampToValueAtTime(intrinsicPeak(), now + 0.1);
-    } catch (error) {
-      console.warn('Could not set noise volume:', error);
-    }
-  }
-
-  function isPlaying(): boolean {
-    return nodes !== null;
-  }
-
-  function dispose(): void {
-    stop();
-  }
-
-  return { start, stop, setVolume, isPlaying, dispose };
-};
+// Aliases — both voices are file-backed, but the call sites read more
+// clearly with named factory builders.
+export const createOmVoice = createAudioFileVoice;
+export const createNoiseVoice = createAudioFileVoice;
 
 // ─────────────────────────────────────────────────────────────────────
 // Tile widget — wires play/stop, volume slider, optional auto-stop
@@ -276,7 +158,10 @@ export function setupAmbientTile(
   let endsAt: number | null = null;
   let countdownId: number | null = null;
 
-  let volume = Math.max(0, Math.min(1, readPersistedNumber(VOLUME_KEY, defaultVolume)));
+  let volume = Math.max(
+    0,
+    Math.min(1, readPersistedNumber(VOLUME_KEY, defaultVolume))
+  );
   const persistedTimer = readPersistedNumber(TIMER_KEY, 0);
   if ((TIMER_OPTIONS as readonly number[]).includes(persistedTimer)) {
     timerMin = persistedTimer;
@@ -341,10 +226,8 @@ export function setupAmbientTile(
   }
 
   function start(): void {
-    const ctx = getSharedAudioContext();
-    if (!ctx) return;
     if (voice?.isPlaying()) return;
-    if (!voice) voice = options.factory(ctx);
+    if (!voice) voice = options.factory();
     voice.setVolume(volume);
     voice.start();
     scheduleAutoStop();

@@ -6,6 +6,10 @@
  * This file owns the meditation-specific UI: chime on completion,
  * breath-ring guidance during running sessions, preset duration row,
  * stats panel, and the standalone OM + white-noise ambient tiles.
+ *
+ * All audio uses HTMLAudioElement, not Web Audio. iOS Safari's
+ * autoplay policy is too strict for the Web Audio path to be reliable
+ * — see the note in src/components/ambientTile.ts.
  */
 
 import {
@@ -16,10 +20,6 @@ import {
   totalMinutes,
 } from '../core/countdownTimer';
 import { getMeditateTimer } from '../core/meditateTimer';
-import {
-  getSharedAudioContext,
-  peekSharedAudioContext,
-} from '../core/sharedAudioContext';
 import {
   type AmbientTileHandle,
   createNoiseVoice,
@@ -32,10 +32,16 @@ const STATUS_RUNNING = 'Stay with the breath.';
 const STATUS_COMPLETE = 'Session complete.';
 const idleStatus = (mins: number) => `${mins} minute session`;
 
-// 4-4-4-4 box breathing — anchor chime per phase. Inhale rides high,
-// exhale drops a full octave to signal release; the two holds share a
-// neutral mid pitch.
-const PHASE_FREQS = [880, 660, 440, 660] as const; // inhale, hold, exhale, hold
+// 4-4-4-4 box breathing — anchor chime per phase. Inhale rides high
+// (A5), exhale drops a full octave (A4) to signal release; the two
+// holds share a neutral mid pitch (E5).
+type ChimePitch = 'high' | 'mid' | 'low';
+const PHASE_CHIMES: readonly ChimePitch[] = ['high', 'mid', 'low', 'mid'];
+const CHIME_URLS: Record<ChimePitch, string> = {
+  high: '/audio/chime-high.mp3',
+  mid: '/audio/chime-mid.mp3',
+  low: '/audio/chime-low.mp3',
+};
 const PHASE_MS = 4_000;
 
 const SOUND_MODE_KEY = 'meditate.soundMode';
@@ -71,16 +77,80 @@ document.addEventListener('DOMContentLoaded', () => {
   let breathPhase = 0;
   let breathChimesActive = false;
 
+  // ─────────────────────────────────────────────────────────────────
+  // Chime pool — three HTMLAudioElement instances, one per pitch.
+  // iOS requires each element to be "unlocked" by being .play()ed
+  // inside a user gesture before subsequent programmatic plays work.
+  // We unlock them silently on the Start tap.
+
+  const chimeAudios: Record<ChimePitch, HTMLAudioElement> = {
+    high: makeChime(CHIME_URLS.high),
+    mid: makeChime(CHIME_URLS.mid),
+    low: makeChime(CHIME_URLS.low),
+  };
+  let chimesUnlocked = false;
+
+  function makeChime(url: string): HTMLAudioElement {
+    const a = new Audio(url);
+    a.preload = 'auto';
+    a.addEventListener('error', () => {
+      console.warn(
+        `[chime] ${url} error code=${a.error?.code} msg=${a.error?.message ?? ''}`
+      );
+    });
+    return a;
+  }
+
+  /**
+   * Play each chime element silently to satisfy iOS Safari's
+   * "must-be-played-during-a-gesture" rule. Everything happens
+   * synchronously inside the click handler so we don't race the
+   * breath-cycle's first chime that fires immediately after start.
+   *
+   * play() schedules playback and returns a promise; we pause()
+   * before that promise resolves, so the promise rejects with
+   * AbortError (which we ignore). iOS still counts the play() call
+   * as a user-gesture-initiated play and "primes" the element for
+   * later off-gesture plays.
+   */
+  function unlockChimes(): void {
+    if (chimesUnlocked) return;
+    chimesUnlocked = true;
+    (Object.values(chimeAudios) as HTMLAudioElement[]).forEach(a => {
+      a.muted = true;
+      const p = a.play();
+      a.pause();
+      a.currentTime = 0;
+      a.muted = false;
+      if (p && typeof p.catch === 'function') {
+        // Expected: AbortError from pause() arriving before play resolves.
+        p.catch(() => {});
+      }
+    });
+  }
+
+  function playChime(pitch: ChimePitch): void {
+    if (soundMode !== 'bell') return;
+    const a = chimeAudios[pitch];
+    try {
+      a.currentTime = 0;
+      const p = a.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(error => {
+          console.warn(`[chime] ${pitch} play rejected:`, error);
+        });
+      }
+    } catch (error) {
+      console.warn('[chime] play threw:', error);
+    }
+  }
+
   let soundMode: SoundMode = 'bell';
   try {
     const stored = localStorage.getItem(SOUND_MODE_KEY);
     if (stored && (SOUND_MODES as readonly string[]).includes(stored)) {
       soundMode = stored as SoundMode;
     } else {
-      // Migrate from earlier toggle / 4-mode selector. Anything that
-      // was 'off' or the boolean false collapses to off; everything
-      // else (bell, om, noise, true) lands on bell — those users had
-      // chime-style audio enabled and that's what stays in this UI.
       const legacyMode = stored;
       const legacyBool = localStorage.getItem(LEGACY_SOUND_KEY);
       if (legacyMode === 'off' || legacyBool === 'false') soundMode = 'off';
@@ -99,63 +169,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (status) status.textContent = text;
   }
 
-  // Layered fundamental + 2× harmonic gives a softer, more bell-like
-  // tone than a bare sine. Quick attack, exponential decay. Caller
-  // decides whether to invoke (gated by soundMode upstream).
-  function playBell(freq: number, peakGain = 0.18, decaySeconds = 0.5): void {
-    const ctx = getSharedAudioContext();
-    if (!ctx) return;
-    try {
-      const now = ctx.currentTime;
-      const fund = ctx.createOscillator();
-      const harm = ctx.createOscillator();
-      const fundGain = ctx.createGain();
-      const harmGain = ctx.createGain();
-
-      fund.type = 'sine';
-      harm.type = 'sine';
-      fund.frequency.value = freq;
-      harm.frequency.value = freq * 2;
-
-      fundGain.gain.setValueAtTime(0.0001, now);
-      fundGain.gain.exponentialRampToValueAtTime(peakGain, now + 0.008);
-      fundGain.gain.exponentialRampToValueAtTime(0.0001, now + decaySeconds);
-
-      harmGain.gain.setValueAtTime(0.0001, now);
-      harmGain.gain.exponentialRampToValueAtTime(peakGain * 0.3, now + 0.008);
-      harmGain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        now + decaySeconds * 0.8
-      );
-
-      fund.connect(fundGain);
-      harm.connect(harmGain);
-      fundGain.connect(ctx.destination);
-      harmGain.connect(ctx.destination);
-
-      fund.start(now);
-      harm.start(now);
-      fund.stop(now + decaySeconds + 0.05);
-      harm.stop(now + decaySeconds + 0.05);
-    } catch (error) {
-      console.warn('Could not play bell:', error);
-    }
-  }
-
-  function playChime(): void {
-    if (soundMode !== 'bell') return;
-    playBell(880, 0.25, 0.6);
-  }
-
   function startBreathChimes(): void {
     if (breathChimesActive) return;
     if (soundMode !== 'bell') return;
     breathChimesActive = true;
     breathPhase = 0;
-    playBell(PHASE_FREQS[0]);
+    playChime(PHASE_CHIMES[0]);
     breathChimeInterval = window.setInterval(() => {
-      breathPhase = (breathPhase + 1) % PHASE_FREQS.length;
-      playBell(PHASE_FREQS[breathPhase]);
+      breathPhase = (breathPhase + 1) % PHASE_CHIMES.length;
+      playChime(PHASE_CHIMES[breathPhase]);
     }, PHASE_MS);
   }
 
@@ -248,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const marker = state.history[0]?.completedAt ?? null;
       if (marker && marker !== lastChimedFor) {
         lastChimedFor = marker;
-        playChime();
+        playChime('high');
       }
     } else {
       display.classList.remove('timer-break');
@@ -274,29 +296,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStats(state.history);
   }
 
-  // iOS silent-unlock: pre-warm the Web Audio engine on the first tap
-  // *anywhere* on the page, before the user reaches a specific audio
-  // button. getSharedAudioContext() creates the context, resumes it,
-  // and plays a 1-sample silent unlock buffer — all idempotent, so
-  // firing twice (click + touchend on the same tap) is harmless.
-  const unlockOpts = { once: true, capture: true } as const;
-  document.addEventListener(
-    'click',
-    () => {
-      getSharedAudioContext();
-    },
-    unlockOpts
-  );
-  document.addEventListener(
-    'touchend',
-    () => {
-      getSharedAudioContext();
-    },
-    unlockOpts
-  );
-
-  // Wake the AudioContext on the user's start click — Safari needs the
-  // resume to land inside the same task as the gesture.
+  // Start click — also the iOS unlock moment for the chime pool.
+  // Each chime element gets a silent .play() inside this gesture so
+  // later off-gesture .play() calls (every 4 s during a session) work.
   button.addEventListener('click', () => {
     const status = timer.store.getState().status;
     if (status === 'running') {
@@ -304,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (status === 'break') {
       timer.skipBreak();
     } else {
-      getSharedAudioContext();
+      unlockChimes();
       timer.start();
     }
   });
@@ -322,8 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // localStorage unavailable — selection still applies for this session.
       }
       updateSoundButtons();
-      // Wake audio on this gesture so future starts don't need a warm-up.
-      getSharedAudioContext();
+      // Tapping Chime is also a fine moment to unlock — covers the
+      // case where the user toggles audio on after Start.
+      unlockChimes();
       // If a session is currently running, apply the new mode immediately.
       if (timer.store.getState().status === 'running') {
         if (soundMode === 'bell') startBreathChimes();
@@ -342,7 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Standalone ambient tiles — independent of the meditation timer, so
   // the user can start an OM drone or white noise without first kicking
-  // off a session. Each tile owns its own AudioContext-resume on click.
+  // off a session. Each tile owns its own HTMLAudioElement-on-tap-play
+  // so iOS unlocks it during the play-button gesture itself.
   const tileHandles: AmbientTileHandle[] = [];
   if (omTileEl) {
     tileHandles.push(
@@ -356,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (noiseTileEl) {
     tileHandles.push(
       setupAmbientTile(noiseTileEl, {
-        factory: createNoiseVoice,
+        factory: createNoiseVoice('/audio/whitenoise.mp3'),
         storagePrefix: 'meditate.noise',
         defaultVolume: 0.5,
       })
@@ -387,12 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.clearInterval(intervalId);
     stopBreathChimes();
     tileHandles.forEach(h => h.dispose());
-    // If the page is unloading and we have an audio context, close it
-    // so the OS doesn't keep the audio engine alive on iOS.
-    const ctx = peekSharedAudioContext();
-    if (ctx && ctx.state !== 'closed') {
-      void ctx.close();
-    }
   });
 });
 
