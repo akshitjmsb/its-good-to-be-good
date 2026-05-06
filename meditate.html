@@ -28,7 +28,12 @@
             <div id="meditate-display" class="meditate-display" role="timer" aria-live="polite">10:00</div>
             <p id="meditate-status" class="meditate-status">10 minute session</p>
             <button id="meditate-toggle" type="button" class="panel-btn meditate-btn" aria-pressed="false">Start</button>
-            <button id="meditate-sound" type="button" class="meditate-sound-toggle" aria-pressed="true" aria-label="Toggle breath chimes">Sound on</button>
+            <div id="meditate-sound-modes" class="meditate-sound-modes" aria-label="Sound mode">
+                <button type="button" class="meditate-sound-mode" data-mode="bell" aria-pressed="true">Bell</button>
+                <button type="button" class="meditate-sound-mode" data-mode="om" aria-pressed="false">OM</button>
+                <button type="button" class="meditate-sound-mode" data-mode="noise" aria-pressed="false">Noise</button>
+                <button type="button" class="meditate-sound-mode" data-mode="off" aria-pressed="false">Off</button>
+            </div>
         </section>
 
         <section id="meditate-breath" class="meditate-breath" aria-hidden="true">
@@ -51,7 +56,7 @@
             <div class="meditate-stats">
                 <div class="meditate-stat">
                     <span class="meditate-stat__value" id="meditate-stat-week">0</span>
-                    <span class="meditate-stat__label">this week</span>
+                    <span class="meditate-stat__label">sessions</span>
                 </div>
                 <div class="meditate-stat">
                     <span class="meditate-stat__value" id="meditate-stat-streak">0</span>
