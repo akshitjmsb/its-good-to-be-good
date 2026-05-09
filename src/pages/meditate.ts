@@ -44,8 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
     'meditate-toggle'
   ) as HTMLButtonElement | null;
   const soundModeButtons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>('.meditate-sound-mode')
+    document.querySelectorAll<HTMLButtonElement>(
+      '#meditate-sound-modes .meditate-sound-mode'
+    )
   );
+  const omToggle = document.getElementById(
+    'meditate-om-toggle'
+  ) as HTMLButtonElement | null;
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
   const presets = Array.from(
@@ -111,6 +116,36 @@ document.addEventListener('DOMContentLoaded', () => {
         p.catch(() => {});
       }
     });
+  }
+
+  // OM chant — independent looping audio toggle.
+  const omAudio = new Audio('/audio/om.mp3');
+  omAudio.loop = true;
+  omAudio.preload = 'auto';
+  omAudio.addEventListener('error', () => {
+    console.warn(
+      `[om] error code=${omAudio.error?.code} msg=${omAudio.error?.message ?? ''}`
+    );
+  });
+  let omPlaying = false;
+
+  function setOmPlaying(next: boolean): void {
+    omPlaying = next;
+    if (omToggle) {
+      omToggle.setAttribute('aria-pressed', next ? 'true' : 'false');
+    }
+    if (next) {
+      const p = omAudio.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(error => {
+          console.warn('[om] play rejected:', error);
+          omPlaying = false;
+          if (omToggle) omToggle.setAttribute('aria-pressed', 'false');
+        });
+      }
+    } else {
+      omAudio.pause();
+    }
   }
 
   function playChime(pitch: ChimePitch): void {
@@ -286,6 +321,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  if (omToggle) {
+    omToggle.addEventListener('click', () => {
+      setOmPlaying(!omPlaying);
+    });
+  }
+
   presets.forEach(preset => {
     preset.addEventListener('click', () => {
       const min = Number(preset.dataset.duration);
@@ -317,5 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('beforeunload', () => {
     window.clearInterval(intervalId);
     stopBreathChimes();
+    omAudio.pause();
   });
 });
