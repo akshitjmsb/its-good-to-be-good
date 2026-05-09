@@ -4,30 +4,19 @@
  * The timer + persistence + cross-tab sync live in
  * `src/core/countdownTimer.ts` (consumed via `getMeditateTimer()`).
  * This file owns the meditation-specific UI: chime on completion,
- * breath-ring guidance during running sessions, preset duration row,
- * stats panel, and the standalone OM + sleep-music ambient tiles.
+ * breath-ring guidance during running sessions, and the preset
+ * duration row.
  *
  * All audio uses HTMLAudioElement, not Web Audio. iOS Safari's
- * autoplay policy is too strict for the Web Audio path to be reliable
- * — see the note in src/components/ambientTile.ts.
+ * autoplay policy is too strict for the Web Audio path to be reliable.
  */
 
 import {
-  type CountdownSession,
   type CountdownState,
-  currentStreak,
   formatCountdownTime,
-  totalMinutes,
 } from '../core/countdownTimer';
 import { getMeditateTimer } from '../core/meditateTimer';
-import {
-  type AmbientTileHandle,
-  createOmVoice,
-  createSleepMusicVoice,
-  setupAmbientTile,
-} from '../components/ambientTile';
 
-const PRESET_MINUTES = [5, 10, 20] as const;
 const STATUS_RUNNING = 'Stay with the breath.';
 const STATUS_COMPLETE = 'Session complete.';
 const idleStatus = (mins: number) => `${mins} minute session`;
@@ -59,33 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
-  const history = document.getElementById('meditate-history');
-  const statWeek = document.getElementById('meditate-stat-week');
-  const statStreak = document.getElementById('meditate-stat-streak');
-  const statTotal = document.getElementById('meditate-stat-total');
   const presets = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.meditate-preset')
   );
-  const omTileEl = document.getElementById('meditate-om-tile');
-  const sleepMusicTileEl = document.getElementById('meditate-sleep-music-tile');
 
-  // One-time migration of the prior `meditate.noise.*` localStorage keys
-  // to the new `meditate.sleepMusic.*` namespace.
-  try {
-    (['volume', 'timer'] as const).forEach(suffix => {
-      const oldKey = `meditate.noise.${suffix}`;
-      const newKey = `meditate.sleepMusic.${suffix}`;
-      const oldVal = localStorage.getItem(oldKey);
-      if (oldVal !== null) {
-        if (localStorage.getItem(newKey) === null) {
-          localStorage.setItem(newKey, oldVal);
-        }
-        localStorage.removeItem(oldKey);
-      }
-    });
-  } catch {
-    // localStorage unavailable — fresh defaults will apply.
-  }
   if (!display || !button) return;
 
   const timer = getMeditateTimer();
@@ -208,37 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function renderHistory(history$: CountdownSession[]): void {
-    if (!history) return;
-    if (history$.length === 0) {
-      history.innerHTML = `<p class="meditate-history__empty">No sessions yet.</p>`;
-      return;
-    }
-    history.innerHTML = history$
-      .map(s => {
-        const minutes = Math.round(s.durationMs / 60_000);
-        const when = new Date(s.completedAt).toLocaleString('en-CA', {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        });
-        return `
-          <div class="meditate-history__entry">
-            <span class="meditate-history__label">${minutes} min</span>
-            <time class="meditate-history__time">${when}</time>
-          </div>
-        `;
-      })
-      .join('');
-  }
-
-  function renderStats(history$: CountdownSession[]): void {
-    if (statWeek) statWeek.textContent = String(history$.length);
-    if (statStreak) statStreak.textContent = String(currentStreak(history$));
-    if (statTotal) statTotal.textContent = String(totalMinutes(history$));
-  }
-
   function renderPresets(state: CountdownState): void {
     const isActive = state.status === 'running' || state.status === 'break';
     presets.forEach(preset => {
@@ -310,8 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderPresets(state);
-    renderHistory(state.history);
-    renderStats(state.history);
   }
 
   // Start click — also the iOS unlock moment for the chime pool.
@@ -361,30 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Standalone ambient tiles — independent of the meditation timer, so
-  // the user can start an OM drone or sleep music without first kicking
-  // off a session. Each tile owns its own HTMLAudioElement-on-tap-play
-  // so iOS unlocks it during the play-button gesture itself.
-  const tileHandles: AmbientTileHandle[] = [];
-  if (omTileEl) {
-    tileHandles.push(
-      setupAmbientTile(omTileEl, {
-        factory: createOmVoice('/audio/om.mp3'),
-        storagePrefix: 'meditate.om',
-        defaultVolume: 0.6,
-      })
-    );
-  }
-  if (sleepMusicTileEl) {
-    tileHandles.push(
-      setupAmbientTile(sleepMusicTileEl, {
-        factory: createSleepMusicVoice('/audio/sleep-music.mp3'),
-        storagePrefix: 'meditate.sleepMusic',
-        defaultVolume: 0.5,
-      })
-    );
-  }
-
   // Tick. core.refresh() is a no-op when not running, so the store
   // doesn't fire and the DOM stays stable.
   const intervalId = window.setInterval(() => {
@@ -408,8 +317,5 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('beforeunload', () => {
     window.clearInterval(intervalId);
     stopBreathChimes();
-    tileHandles.forEach(h => h.dispose());
   });
 });
-
-void PRESET_MINUTES;
