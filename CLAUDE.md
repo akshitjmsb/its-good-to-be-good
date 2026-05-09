@@ -86,7 +86,7 @@ To add a module:
    `iconElementId`, `dataModule`, plus `routeHref` (page) or `modalId`
    (modal).
 2. Add the corresponding tile in `index.html` with the matching `data-module`
-   attribute (the home-page drag-to-reorder keys off this).
+   attribute.
 3. Add the icon SVG in `src/utils/iconRenderer.ts` under the right map.
 4. For a journey page, add the HTML file + `src/pages/<id>.ts` runtime
    marker, and register the entry in `vite.config.ts`.
@@ -95,11 +95,9 @@ To add a module:
 
 ## Home page layout invariants
 
-- Carousel order in `index.html` is the canonical fresh-state order. The
-  drag-to-reorder feature only overrides it when the saved set in
-  `localStorage` matches the current module set exactly — adding a new
-  module resets any stale saved order so the new tile shows up where
-  authored, not appended past the mobile scroll fold.
+- Carousel order in `index.html` is the source of truth. To reorder the
+  Journey carousel or the Learn grid, edit the markup directly — there's
+  no runtime reorder UI.
 - The Quantum carousel slot is `hidden` in markup because the timer widget
   lives in the top-right of the header. Keep the slot — removing `hidden`
   re-surfaces it.
