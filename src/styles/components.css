@@ -564,6 +564,13 @@ button.preview-card {
     cursor: pointer;
 }
 
+/* `display: flex` above otherwise wins over the UA `[hidden]` rule, so a
+   nav-item marked `hidden` (e.g. the Quantum slot) would still render and
+   steal a carousel position. Restore the intended behaviour. */
+.nav-item[hidden] {
+    display: none;
+}
+
 .nav-item:hover {
     background-color: #f3f4f6;
     color: #1f2937;

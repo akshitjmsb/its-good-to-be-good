@@ -84,9 +84,11 @@ function readCurrentOrder(
 }
 
 /**
- * Reorder DOM children of `container` to match `saved`. Items missing
- * from `saved` (e.g. a new module shipped after the user saved their
- * order) are appended at the end in their original document order.
+ * Reorder DOM children of `container` to match `saved`. If the saved
+ * order is missing any current module key (i.e. the canonical module set
+ * has grown since the user last reordered), discard it — otherwise new
+ * modules permanently land at the end of the carousel, past the mobile
+ * scroll fold, and look like they were never shipped.
  */
 function applySavedOrder(
   container: HTMLElement,
@@ -95,6 +97,14 @@ function applySavedOrder(
   saved: string[]
 ): void {
   const items = Array.from(container.querySelectorAll<HTMLElement>(itemSelector));
+  const currentKeys = items
+    .map(el => readKey(el, keyAttr))
+    .filter((k): k is string => !!k);
+
+  const savedSet = new Set(saved);
+  const missing = currentKeys.some(k => !savedSet.has(k));
+  if (missing) return;
+
   const byKey = new Map<string, HTMLElement>();
   items.forEach(el => {
     const k = readKey(el, keyAttr);
@@ -104,11 +114,6 @@ function applySavedOrder(
   saved.forEach(k => {
     const el = byKey.get(k);
     if (el) container.appendChild(el);
-  });
-
-  items.forEach(el => {
-    const k = readKey(el, keyAttr);
-    if (k && !saved.includes(k)) container.appendChild(el);
   });
 }
 
