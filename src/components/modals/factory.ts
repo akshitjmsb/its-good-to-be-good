@@ -76,11 +76,6 @@ export const MODAL_CONFIGS: Record<string, ModalConfig> = {
         modalId: 'coffee-modal',
         contentId: 'coffee-content'
     },
-    tennis: {
-        modalId: 'tennis-modal',
-        contentId: 'tennis-content',
-        loadingMessage: 'Searching the web for latest match information...'
-    },
     worldOrder: {
         modalId: 'geopolitics-modal',
         contentId: 'geopolitics-headlines-content',

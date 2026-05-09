@@ -20,6 +20,7 @@ export default defineConfig(() => {
             money: path.resolve(__dirname, 'money.html'),
             quantum: path.resolve(__dirname, 'quantum.html'),
             travel: path.resolve(__dirname, 'travel.html'),
+            tennis: path.resolve(__dirname, 'tennis.html'),
             french: path.resolve(__dirname, 'french.html'),
           }
         }

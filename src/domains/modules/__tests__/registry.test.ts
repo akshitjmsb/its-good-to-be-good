@@ -12,11 +12,11 @@ const EXPECTED_JOURNEY_IDS = [
   'money',
   'health',
   'travel',
+  'tennis',
 ];
 
 const EXPECTED_LEARN_IDS = [
   'world-order',
-  'tennis',
   'coffee',
   'guitar',
   'poetry',

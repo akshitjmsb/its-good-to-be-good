@@ -174,6 +174,15 @@
                             <div class="nav-icon" id="travel-icon"></div>
                             <h2>Travel</h2>
                         </a>
+
+                        <a href="tennis.html"
+                           class="nav-item"
+                           role="listitem"
+                           aria-label="Navigate to Tennis page"
+                           title="A roadmap from cradle to centre court">
+                            <div class="nav-icon" id="tennis-icon"></div>
+                            <h2>Tennis</h2>
+                        </a>
                     </div>
                 </div>
             </section>
@@ -188,10 +197,6 @@
                     <button hidden id="geopolitics-clickable" type="button" class="preview-card module-card" data-module="world-order" aria-label="Open World Order module" title="Open World Order module">
                         <div class="module-icon" id="world-order-icon"></div>
                         <h3 class="font-bold text-sm sm:text-xs">World Order</h3>
-                    </button>
-                    <button id="tennis-clickable" type="button" class="preview-card module-card" data-module="tennis" aria-label="Open Tennis module" title="Open Tennis module">
-                        <div class="module-icon" id="tennis-icon"></div>
-                        <h3 class="font-bold text-sm sm:text-xs">Tennis</h3>
                     </button>
                     <button id="coffee-clickable" type="button" class="preview-card module-card" data-module="coffee" aria-label="Open Coffee module" title="Open Coffee module">
                         <div class="module-icon" id="coffee-icon"></div>
@@ -262,18 +267,6 @@
                 </div>
                 <div class="overflow-y-auto">
                     <div id="geopolitics-headlines-content" class="text-sm"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tennis-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">Tennis Matches</h3>
-                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="tennis-content" class="overflow-y-auto">
-                    <!-- JS will populate this -->
                 </div>
             </div>
         </div>

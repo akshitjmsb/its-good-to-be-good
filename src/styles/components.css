@@ -2027,3 +2027,332 @@ button.preview-card {
         font-size: 0.8rem;
     }
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   Tennis page — vertical phase roadmap
+   ───────────────────────────────────────────────────────────────── */
+
+.tennis-page .theme-icon {
+    margin-left: 0.5rem;
+    font-size: 1.4rem;
+}
+
+.tennis-status {
+    text-align: center;
+    padding: 1rem 1.25rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tennis-status__headline {
+    font-family: 'Special Elite', monospace;
+    font-size: 1.05rem;
+    color: #111111;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+.tennis-status__detail {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0.4rem 0 0;
+    letter-spacing: 0.025em;
+}
+
+.tennis-timeline {
+    list-style: none;
+    margin: 1.5rem 0 0;
+    padding: 0;
+}
+
+.tennis-phase {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: 0.875rem;
+    align-items: stretch;
+    position: relative;
+}
+
+.tennis-phase__rail {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.tennis-phase__rail::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: #e5e7eb;
+    transform: translateX(-50%);
+}
+
+.tennis-phase:first-child .tennis-phase__rail::before {
+    top: 1.25rem;
+}
+
+.tennis-phase:last-child .tennis-phase__rail::before {
+    bottom: calc(100% - 1.25rem);
+}
+
+.tennis-phase__dot {
+    position: relative;
+    z-index: 1;
+    margin-top: 0.875rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #6b7280;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tennis-phase__card {
+    margin-bottom: 1rem;
+    padding: 1rem 1.1rem 1.05rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tennis-phase__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+}
+
+.tennis-phase__icon {
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.tennis-phase__icon--ball {
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.tennis-phase__icon--ball::before,
+.tennis-phase__icon--ball::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.7) transparent;
+    pointer-events: none;
+}
+
+.tennis-phase__icon--ball::before {
+    transform: rotate(35deg) translateX(45%);
+}
+
+.tennis-phase__icon--ball::after {
+    transform: rotate(35deg) translateX(-45%);
+}
+
+.tennis-phase__icon--ball-red {
+    background: radial-gradient(circle at 30% 30%, #ef6a6a, #c93a3a 70%);
+}
+
+.tennis-phase__icon--ball-orange {
+    background: radial-gradient(circle at 30% 30%, #fbb778, #e08a3a 70%);
+}
+
+.tennis-phase__icon--ball-yellow {
+    background: radial-gradient(circle at 30% 30%, #f3ee7e, #c8c34a 70%);
+}
+
+.tennis-phase__heading {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tennis-phase__name {
+    font-family: 'Special Elite', monospace;
+    font-size: 1.1rem;
+    color: #111111;
+    margin: 0;
+    letter-spacing: 0.025em;
+    line-height: 1.2;
+}
+
+.tennis-phase__tag {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin: 0.15rem 0 0;
+    letter-spacing: 0.04em;
+}
+
+.tennis-phase__age {
+    flex: 0 0 auto;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    color: #374151;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.tennis-phase__body {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    column-gap: 0.85rem;
+    row-gap: 0.5rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    color: #374151;
+    letter-spacing: 0.02em;
+}
+
+.tennis-phase__body dt {
+    color: #6b7280;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding-top: 0.2rem;
+}
+
+.tennis-phase__body dd {
+    margin: 0;
+    line-height: 1.45;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.tennis-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    color: #374151;
+    letter-spacing: 0.02em;
+}
+
+/* Phase states — past / active / future */
+
+.tennis-phase--past .tennis-phase__card {
+    opacity: 0.78;
+}
+
+.tennis-phase--past .tennis-phase__dot {
+    background: #d1d5db;
+    border-color: #9ca3af;
+    color: #ffffff;
+}
+
+.tennis-phase--active .tennis-phase__card {
+    background: #ffffff;
+    border-color: #111111;
+    box-shadow: 0 4px 16px rgba(17, 17, 17, 0.08);
+}
+
+.tennis-phase--active .tennis-phase__dot {
+    background: #111111;
+    border-color: #111111;
+    color: #ffffff;
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(17, 17, 17, 0.18);
+}
+
+.tennis-phase--active .tennis-phase__name {
+    color: #111111;
+}
+
+.tennis-phase--future .tennis-phase__card {
+    opacity: 0.92;
+}
+
+.tennis-footer {
+    margin: 1.5rem 0 0.5rem;
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    color: #6b7280;
+    letter-spacing: 0.04em;
+}
+
+.tennis-footer p {
+    margin: 0;
+}
+
+@media (max-width: 480px) {
+    .tennis-phase {
+        grid-template-columns: 2rem 1fr;
+        gap: 0.625rem;
+    }
+
+    .tennis-phase__dot {
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 0.78rem;
+    }
+
+    .tennis-phase__card {
+        padding: 0.875rem 0.875rem 0.95rem;
+    }
+
+    .tennis-phase__header {
+        gap: 0.6rem;
+    }
+
+    .tennis-phase__icon {
+        width: 2rem;
+        height: 2rem;
+        font-size: 1.3rem;
+    }
+
+    .tennis-phase__name {
+        font-size: 1rem;
+    }
+
+    .tennis-phase__age {
+        font-size: 0.72rem;
+        padding: 0.15rem 0.45rem;
+    }
+
+    .tennis-phase__body {
+        grid-template-columns: 4.5rem 1fr;
+        column-gap: 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .tennis-phase__body dt {
+        font-size: 0.66rem;
+    }
+}
+

@@ -151,7 +151,7 @@ describe('architecture check script', () => {
       writeFixtureFile(
         fixtureRoot,
         'index.html',
-        '<html><body><button id="tennis-clickable" data-module="tennis">Tennis</button></body></html>'
+        '<html><body><button id="coffee-clickable" data-module="coffee">Coffee</button></body></html>'
       );
 
       const result = runArchitectureCheck(fixtureRoot);

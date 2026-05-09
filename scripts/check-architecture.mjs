@@ -18,11 +18,11 @@ const EXPECTED_JOURNEY_MODULES = [
   'money',
   'health',
   'travel',
+  'tennis',
 ];
 
 const EXPECTED_LEARN_MODULES = [
   'world-order',
-  'tennis',
   'coffee',
   'guitar',
   'poetry',

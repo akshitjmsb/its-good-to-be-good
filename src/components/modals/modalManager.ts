@@ -3,7 +3,6 @@ import { showAnalyticsModal, cleanupAnalyticsEventListeners } from './analyticsM
 import { showHoodModal } from './hoodModal';
 import { showExerciseModal } from './exerciseModal';
 import { fetchAndShowWorldOrder } from './worldOrderModal';
-import { fetchAndShowTennisMatches } from './tennisModal';
 import { showCoffeeMenu } from './coffeeModal';
 import { fetchAndShowPoetry } from './poetryModal';
 import {
@@ -34,7 +33,6 @@ function openMrMojoRising(): void {
 
 const LEARN_MODULE_HANDLERS: Record<LearnModuleId, LearnModuleHandler> = {
     'world-order': () => fetchAndShowWorldOrder(),
-    tennis: () => fetchAndShowTennisMatches(),
     coffee: ({ dates }) => showCoffeeMenu(dates.active),
     guitar: openMrMojoRising,
     poetry: ({ dates }) => fetchAndShowPoetry(dates.active),

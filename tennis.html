@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennis — It's Good To Be King</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/index.css">
+    <link rel="icon" href="/vitruvian-logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="It's Good To Be King">
+    <meta name="theme-color" content="#111111">
+</head>
+<body>
+    <div id="app-container" class="app-container tennis-page">
+        <header class="text-center mb-6">
+            <div class="flex justify-center items-center">
+                <h1>Tennis</h1>
+                <span class="theme-icon" aria-hidden="true">🎾</span>
+            </div>
+            <p class="text-xs mt-2">A roadmap from cradle to centre court</p>
+        </header>
+
+        <nav class="text-center mb-6">
+            <a href="index.html" class="todo-toggle-button">
+                <h2>← Back to Dashboard</h2>
+            </a>
+        </nav>
+
+        <section class="mobile-section tennis-status" aria-live="polite">
+            <p id="tennis-status-headline" class="tennis-status__headline">Loading…</p>
+            <p id="tennis-status-detail" class="tennis-status__detail"></p>
+        </section>
+
+        <ol class="tennis-timeline" aria-label="Tennis development phases">
+            <li class="tennis-phase" data-phase="0">
+                <div class="tennis-phase__rail">
+                    <span class="tennis-phase__dot" aria-hidden="true">0</span>
+                </div>
+                <article class="tennis-phase__card">
+                    <header class="tennis-phase__header">
+                        <span class="tennis-phase__icon" aria-hidden="true">👶</span>
+                        <div class="tennis-phase__heading">
+                            <h2 class="tennis-phase__name">Foundation</h2>
+                            <p class="tennis-phase__tag">"Little Champion"</p>
+                        </div>
+                        <span class="tennis-phase__age">0–2y</span>
+                    </header>
+                    <dl class="tennis-phase__body">
+                        <dt>Focus</dt>
+                        <dd>Gross motor milestones · balance · hand-eye coordination</dd>
+                        <dt>Activities</dt>
+                        <dd>Tummy time, crawling, walking, grasping, watching balls roll</dd>
+                        <dt>Equipment</dt>
+                        <dd>
+                            <span class="tennis-chip">Soft toys</span>
+                            <span class="tennis-chip">Textured balls</span>
+                            <span class="tennis-chip">Open floor</span>
+                        </dd>
+                    </dl>
+                </article>
+            </li>
+
+            <li class="tennis-phase" data-phase="1">
+                <div class="tennis-phase__rail">
+                    <span class="tennis-phase__dot" aria-hidden="true">1</span>
+                </div>
+                <article class="tennis-phase__card">
+                    <header class="tennis-phase__header">
+                        <span class="tennis-phase__icon" aria-hidden="true">🎈</span>
+                        <div class="tennis-phase__heading">
+                            <h2 class="tennis-phase__name">Play &amp; Explore</h2>
+                            <p class="tennis-phase__tag">"Baby Tennis"</p>
+                        </div>
+                        <span class="tennis-phase__age">2–5y</span>
+                    </header>
+                    <dl class="tennis-phase__body">
+                        <dt>Focus</dt>
+                        <dd>Multi-sport movement · fundamental motor skills · play first</dd>
+                        <dt>Activities</dt>
+                        <dd>Running games, obstacle courses, throwing &amp; catching, mini swings</dd>
+                        <dt>Equipment</dt>
+                        <dd>
+                            <span class="tennis-chip">Foam balls</span>
+                            <span class="tennis-chip">Mini racquet 17–19"</span>
+                            <span class="tennis-chip">Backyard / park</span>
+                        </dd>
+                    </dl>
+                </article>
+            </li>
+
+            <li class="tennis-phase" data-phase="2">
+                <div class="tennis-phase__rail">
+                    <span class="tennis-phase__dot" aria-hidden="true">2</span>
+                </div>
+                <article class="tennis-phase__card">
+                    <header class="tennis-phase__header">
+                        <span class="tennis-phase__icon tennis-phase__icon--ball tennis-phase__icon--ball-red" aria-hidden="true"></span>
+                        <div class="tennis-phase__heading">
+                            <h2 class="tennis-phase__name">Mini Tennis</h2>
+                            <p class="tennis-phase__tag">"Red Ball"</p>
+                        </div>
+                        <span class="tennis-phase__age">5–7y</span>
+                    </header>
+                    <dl class="tennis-phase__body">
+                        <dt>Focus</dt>
+                        <dd>Basic strokes · court awareness · keeping it fun</dd>
+                        <dt>Activities</dt>
+                        <dd>Cooperative rallies, target games, first match play</dd>
+                        <dt>Equipment</dt>
+                        <dd>
+                            <span class="tennis-chip">Red ball · 75% slower</span>
+                            <span class="tennis-chip">Racquet 19–21"</span>
+                            <span class="tennis-chip">36ft mini court</span>
+                        </dd>
+                    </dl>
+                </article>
+            </li>
+
+            <li class="tennis-phase" data-phase="3">
+                <div class="tennis-phase__rail">
+                    <span class="tennis-phase__dot" aria-hidden="true">3</span>
+                </div>
+                <article class="tennis-phase__card">
+                    <header class="tennis-phase__header">
+                        <span class="tennis-phase__icon tennis-phase__icon--ball tennis-phase__icon--ball-orange" aria-hidden="true"></span>
+                        <div class="tennis-phase__heading">
+                            <h2 class="tennis-phase__name">Development</h2>
+                            <p class="tennis-phase__tag">"Orange &amp; Green Ball"</p>
+                        </div>
+                        <span class="tennis-phase__age">7–10y</span>
+                    </header>
+                    <dl class="tennis-phase__body">
+                        <dt>Focus</dt>
+                        <dd>Technical fundamentals · footwork · early tactics</dd>
+                        <dt>Activities</dt>
+                        <dd>Structured group lessons, technique blocks, local tournaments</dd>
+                        <dt>Equipment</dt>
+                        <dd>
+                            <span class="tennis-chip">Orange → Green ball</span>
+                            <span class="tennis-chip">Racquet 23–25"</span>
+                            <span class="tennis-chip">60ft court</span>
+                        </dd>
+                    </dl>
+                </article>
+            </li>
+
+            <li class="tennis-phase" data-phase="4">
+                <div class="tennis-phase__rail">
+                    <span class="tennis-phase__dot" aria-hidden="true">4</span>
+                </div>
+                <article class="tennis-phase__card">
+                    <header class="tennis-phase__header">
+                        <span class="tennis-phase__icon tennis-phase__icon--ball tennis-phase__icon--ball-yellow" aria-hidden="true"></span>
+                        <div class="tennis-phase__heading">
+                            <h2 class="tennis-phase__name">Training to Train</h2>
+                            <p class="tennis-phase__tag">"Yellow Ball"</p>
+                        </div>
+                        <span class="tennis-phase__age">10–14y</span>
+                    </header>
+                    <dl class="tennis-phase__body">
+                        <dt>Focus</dt>
+                        <dd>Full-court technique · physical conditioning · mental training</dd>
+                        <dt>Activities</dt>
+                        <dd>Systematic 4–6 sessions/week, fitness, regional &amp; national play</dd>
+                        <dt>Equipment</dt>
+                        <dd>
+                            <span class="tennis-chip">Standard yellow ball</span>
+                            <span class="tennis-chip">Racquet 26–27"</span>
+                            <span class="tennis-chip">Full 78ft court</span>
+                        </dd>
+                    </dl>
+                </article>
+            </li>
+
+            <li class="tennis-phase" data-phase="5">
+                <div class="tennis-phase__rail">
+                    <span class="tennis-phase__dot" aria-hidden="true">5</span>
+                </div>
+                <article class="tennis-phase__card">
+                    <header class="tennis-phase__header">
+                        <span class="tennis-phase__icon" aria-hidden="true">🏆</span>
+                        <div class="tennis-phase__heading">
+                            <h2 class="tennis-phase__name">Training to Compete</h2>
+                            <p class="tennis-phase__tag">"Tournament Player"</p>
+                        </div>
+                        <span class="tennis-phase__age">14–18y</span>
+                    </header>
+                    <dl class="tennis-phase__body">
+                        <dt>Focus</dt>
+                        <dd>High-intensity periodised training · competitive mindset</dd>
+                        <dt>Activities</dt>
+                        <dd>50:50 training to competition, ITF junior circuit, college pathway</dd>
+                        <dt>Equipment</dt>
+                        <dd>
+                            <span class="tennis-chip">Full kit &amp; restringing</span>
+                            <span class="tennis-chip">National / international</span>
+                            <span class="tennis-chip">Coach-led periodisation</span>
+                        </dd>
+                    </dl>
+                </article>
+            </li>
+        </ol>
+
+        <footer class="tennis-footer">
+            <p>Built with love by your father — June 2026.</p>
+        </footer>
+    </div>
+
+    <script type="module" src="src/pages/tennis.ts"></script>
+</body>
+</html>

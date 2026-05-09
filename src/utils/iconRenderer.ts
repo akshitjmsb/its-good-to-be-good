@@ -11,17 +11,6 @@ const learnIconSvgs: Record<LearnModuleId, string> = {
             <path d="M4.5 17c2.5-2.5 7.5-2.5 10 0" />
         </svg>
     `,
-    tennis: `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M8 6c2 2 4 2 6 0" />
-            <path d="M8 18c2-2 4-2 6 0" />
-            <path d="M6 8c2 2 2 4 0 6" />
-            <path d="M18 8c-2 2-2 4 0 6" />
-            <path d="M12 2v20" />
-            <path d="M2 12h20" />
-        </svg>
-    `,
     coffee: `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 8h12v8c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V8z" />
@@ -140,6 +129,13 @@ const journeyIconSvgs: Record<JourneyModuleId, string> = {
     travel: `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+    `,
+    tennis: `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M3.5 6.5c4 2.5 13 2.5 17 0" />
+            <path d="M3.5 17.5c4-2.5 13-2.5 17 0" />
         </svg>
     `
 };

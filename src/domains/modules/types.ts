@@ -4,11 +4,11 @@ export type JourneyModuleId =
   | 'meditate'
   | 'money'
   | 'health'
-  | 'travel';
+  | 'travel'
+  | 'tennis';
 
 export type LearnModuleId =
   | 'world-order'
-  | 'tennis'
   | 'coffee'
   | 'guitar'
   | 'poetry'
