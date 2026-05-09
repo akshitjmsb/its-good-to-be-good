@@ -2310,10 +2310,21 @@ button.preview-card {
 
 .nav-item,
 .module-card {
-    touch-action: pan-y;
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
+}
+
+/* Carousel tiles must allow horizontal pan so the row can scroll on
+   touch; long-press drag still works because the gesture fires only
+   after the 400 ms timer with <6px movement, and pointermove then
+   calls preventDefault to take over. */
+.nav-item {
+    touch-action: pan-x pan-y;
+}
+
+.module-card {
+    touch-action: pan-y;
 }
 
 /* Container in reorder mode dims the non-dragged siblings slightly so
