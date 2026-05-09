@@ -566,9 +566,11 @@ button.preview-card {
 
 /* `display: flex` above otherwise wins over the UA `[hidden]` rule, so a
    nav-item marked `hidden` (e.g. the Quantum slot) would still render and
-   steal a carousel position. Restore the intended behaviour. */
+   steal a carousel position. !important is required because the mobile
+   media query in src/styles/index.css sets `.nav-item { display: flex
+   !important }` for touch target sizing. */
 .nav-item[hidden] {
-    display: none;
+    display: none !important;
 }
 
 .nav-item:hover {
@@ -2033,6 +2035,32 @@ button.preview-card {
     .meditate-preset {
         font-size: 0.8rem;
     }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Subpage chrome — quiet "← Home" link used by journey pages.
+   Sized to the home page's muted .text-xs ramp; no border, no fill.
+   ───────────────────────────────────────────────────────────────── */
+
+.page-back-nav {
+    margin-bottom: 0.75rem;
+}
+
+.home-link {
+    display: inline-block;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    color: #6b7280;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0;
+    transition: color 0.15s ease;
+}
+
+.home-link:hover,
+.home-link:focus {
+    color: #111111;
+    outline: none;
 }
 
 /* ─────────────────────────────────────────────────────────────────
