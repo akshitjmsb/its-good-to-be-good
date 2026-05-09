@@ -2417,3 +2417,45 @@ button.preview-card {
     }
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   Module reorder — long-press drag visual.
+   ───────────────────────────────────────────────────────────────── */
+
+.nav-item,
+.module-card {
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Container in reorder mode dims the non-dragged siblings slightly so
+   the lifted tile reads as the active one. */
+.module-reordering > .nav-item:not(.module-dragging),
+.module-reordering > .module-card:not(.module-dragging) {
+    opacity: 0.55;
+    transition: opacity 0.18s ease;
+}
+
+.module-reordering > .module-dragging {
+    opacity: 1;
+}
+
+.module-dragging {
+    cursor: grabbing !important;
+    transform: scale(1.06);
+    box-shadow: 0 10px 24px rgba(17, 17, 17, 0.18);
+    z-index: 5;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nav-item.module-dragging {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+}
+
+.module-card.module-dragging {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+}
+

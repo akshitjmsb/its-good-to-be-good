@@ -13,6 +13,7 @@ import {
 import { createAppRuntimeStore } from './state';
 import { renderDayModule } from './render';
 import { initializeSchedulers } from './scheduler';
+import { initializeModuleReorder } from './moduleReorder';
 
 function showSyncStatus(message: string, isFinal = false): void {
   const statusEl = document.getElementById('sync-status');
@@ -79,6 +80,7 @@ export async function bootstrapApp(): Promise<void> {
   async function initializeApp() {
     try {
       renderModuleIcons();
+      initializeModuleReorder();
       updateDateDerivedData();
       initializeQuantumTimer();
 
