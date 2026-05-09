@@ -2332,3 +2332,127 @@ button.preview-card {
     }
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   Module reorder — Apple-style edit mode with jiggle + drag.
+   Long-press a tile to enter edit mode; tap "Done" (or outside any
+   tile, or press Escape) to exit. While editing both home containers
+   gain .module-edit-mode on the body and tiles wiggle.
+   ───────────────────────────────────────────────────────────────── */
+
+/* Quiet -webkit selection / callout while a tile is being pressed
+   so the long-press doesn't surface the iOS magnifying loupe. */
+body.module-edit-mode .nav-item,
+body.module-edit-mode .module-card {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* While dragging, suppress the native page scroll on touch so the
+   drag ghost tracks the pointer cleanly. */
+body.module-dragging {
+    touch-action: none;
+    overflow: hidden;
+}
+
+/* Jiggle. Two slightly-offset keyframes per axis pair so adjacent
+   tiles look out-of-phase rather than synchronised — closer to the
+   iOS feel. */
+@keyframes module-jiggle-a {
+    0%   { transform: rotate(-1.4deg) translateY(0); }
+    50%  { transform: rotate(1.4deg) translateY(-0.5px); }
+    100% { transform: rotate(-1.4deg) translateY(0); }
+}
+@keyframes module-jiggle-b {
+    0%   { transform: rotate(1.4deg) translateY(-0.5px); }
+    50%  { transform: rotate(-1.4deg) translateY(0); }
+    100% { transform: rotate(1.4deg) translateY(-0.5px); }
+}
+
+body.module-edit-mode .nav-carousel > .nav-item:not([hidden]),
+body.module-edit-mode .category-grid > .module-card:not([hidden]) {
+    animation: module-jiggle-a 0.18s ease-in-out infinite;
+    transform-origin: 50% 50%;
+    will-change: transform;
+}
+
+/* Alternate phase on every other tile so the row reads as
+   independently-living things, not a single pulsing strip. */
+body.module-edit-mode .nav-carousel > .nav-item:nth-child(2n):not([hidden]),
+body.module-edit-mode .category-grid > .module-card:nth-child(2n):not([hidden]) {
+    animation-name: module-jiggle-b;
+    animation-duration: 0.20s;
+}
+
+/* Smooth reflow when DOM order changes mid-drag. The carousel
+   horizontal scroll behaviour is unchanged outside of a drag. */
+body.module-edit-mode .nav-carousel > .nav-item,
+body.module-edit-mode .category-grid > .module-card {
+    transition: transform 0.15s ease;
+}
+
+/* The original tile fades to a placeholder while the floating ghost
+   does the actual visual work. */
+body.module-edit-mode .nav-item.module-dragging-source,
+body.module-edit-mode .module-card.module-dragging-source {
+    opacity: 0.25;
+    animation: none;
+}
+
+/* Honour reduced-motion: drop the jiggle, leave the rest. */
+@media (prefers-reduced-motion: reduce) {
+    body.module-edit-mode .nav-carousel > .nav-item,
+    body.module-edit-mode .category-grid > .module-card {
+        animation: none !important;
+    }
+}
+
+/* Floating drag ghost — a 1.05x clone that follows the pointer with a
+   soft hairline shadow consistent with the home design ramp. */
+.module-drag-ghost {
+    pointer-events: none;
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    border-radius: 0.75rem;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    opacity: 0.96;
+}
+
+/* Done button — small vintage pill anchored above the navigation. */
+.reorder-done-btn {
+    position: fixed;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(-150%);
+    z-index: 1100;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: #374151;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    padding: 0.4rem 1rem;
+    min-height: 32px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    opacity: 0;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+    text-transform: uppercase;
+}
+
+.reorder-done-btn.is-visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.reorder-done-btn:hover {
+    background-color: #f8f9fa;
+    border-color: #9ca3af;
+}
+
+.reorder-done-btn:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
