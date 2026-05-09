@@ -43,13 +43,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const button = document.getElementById(
     'meditate-toggle'
   ) as HTMLButtonElement | null;
-  const soundModeButtons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>(
-      '#meditate-sound-modes .meditate-sound-mode'
-    )
-  );
+  const breatheToggle = document.getElementById(
+    'meditate-breathe-toggle'
+  ) as HTMLButtonElement | null;
   const omToggle = document.getElementById(
     'meditate-om-toggle'
+  ) as HTMLButtonElement | null;
+  const sleepToggle = document.getElementById(
+    'meditate-sleep-toggle'
   ) as HTMLButtonElement | null;
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
@@ -118,34 +119,60 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // OM chant — independent looping audio toggle.
-  const omAudio = new Audio('/audio/om.mp3');
-  omAudio.loop = true;
-  omAudio.preload = 'auto';
-  omAudio.addEventListener('error', () => {
-    console.warn(
-      `[om] error code=${omAudio.error?.code} msg=${omAudio.error?.message ?? ''}`
-    );
-  });
-  let omPlaying = false;
+  // OM chant + sleep music — independent looping audio toggles.
+  function makeLoopAudio(url: string, tag: string): HTMLAudioElement {
+    const a = new Audio(url);
+    a.loop = true;
+    a.preload = 'auto';
+    a.addEventListener('error', () => {
+      console.warn(
+        `[${tag}] error code=${a.error?.code} msg=${a.error?.message ?? ''}`
+      );
+    });
+    return a;
+  }
 
-  function setOmPlaying(next: boolean): void {
-    omPlaying = next;
-    if (omToggle) {
-      omToggle.setAttribute('aria-pressed', next ? 'true' : 'false');
+  const omAudio = makeLoopAudio('/audio/om.mp3', 'om');
+  const sleepAudio = makeLoopAudio('/audio/sleep-music.mp3', 'sleep');
+  let omPlaying = false;
+  let sleepPlaying = false;
+
+  function setLoopPlaying(
+    tag: 'om' | 'sleep',
+    audio: HTMLAudioElement,
+    button: HTMLButtonElement | null,
+    next: boolean,
+    onReject: () => void
+  ): void {
+    if (button) {
+      button.setAttribute('aria-pressed', next ? 'true' : 'false');
     }
     if (next) {
-      const p = omAudio.play();
+      const p = audio.play();
       if (p && typeof p.catch === 'function') {
         p.catch(error => {
-          console.warn('[om] play rejected:', error);
-          omPlaying = false;
-          if (omToggle) omToggle.setAttribute('aria-pressed', 'false');
+          console.warn(`[${tag}] play rejected:`, error);
+          onReject();
+          if (button) button.setAttribute('aria-pressed', 'false');
         });
       }
     } else {
-      omAudio.pause();
+      audio.pause();
     }
+  }
+
+  function setOmPlaying(next: boolean): void {
+    omPlaying = next;
+    setLoopPlaying('om', omAudio, omToggle, next, () => {
+      omPlaying = false;
+    });
+  }
+
+  function setSleepPlaying(next: boolean): void {
+    sleepPlaying = next;
+    setLoopPlaying('sleep', sleepAudio, sleepToggle, next, () => {
+      sleepPlaying = false;
+    });
   }
 
   function playChime(pitch: ChimePitch): void {
@@ -234,13 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateSoundButtons(): void {
-    soundModeButtons.forEach(btn => {
-      const mode = btn.dataset.mode as SoundMode | undefined;
-      btn.setAttribute(
+    if (breatheToggle) {
+      breatheToggle.setAttribute(
         'aria-pressed',
-        mode === soundMode ? 'true' : 'false'
+        soundMode === 'bell' ? 'true' : 'false'
       );
-    });
+    }
   }
 
   function paint(state: CountdownState): void {
@@ -298,19 +324,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   updateSoundButtons();
-  soundModeButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const next = btn.dataset.mode as SoundMode | undefined;
-      if (!next || !(SOUND_MODES as readonly string[]).includes(next)) return;
-      if (next === soundMode) return;
-      soundMode = next;
+  if (breatheToggle) {
+    breatheToggle.addEventListener('click', () => {
+      soundMode = soundMode === 'bell' ? 'off' : 'bell';
       try {
         localStorage.setItem(SOUND_MODE_KEY, soundMode);
       } catch {
         // localStorage unavailable — selection still applies for this session.
       }
       updateSoundButtons();
-      // Tapping Chime is also a fine moment to unlock — covers the
+      // Tapping Breathe is also a fine moment to unlock — covers the
       // case where the user toggles audio on after Start.
       unlockChimes();
       // If a session is currently running, apply the new mode immediately.
@@ -319,11 +342,17 @@ document.addEventListener('DOMContentLoaded', () => {
         else stopBreathChimes();
       }
     });
-  });
+  }
 
   if (omToggle) {
     omToggle.addEventListener('click', () => {
       setOmPlaying(!omPlaying);
+    });
+  }
+
+  if (sleepToggle) {
+    sleepToggle.addEventListener('click', () => {
+      setSleepPlaying(!sleepPlaying);
     });
   }
 
@@ -359,5 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.clearInterval(intervalId);
     stopBreathChimes();
     omAudio.pause();
+    sleepAudio.pause();
   });
 });
