@@ -13,7 +13,8 @@ import {
 import { createAppRuntimeStore } from './state';
 import { renderDayModule } from './render';
 import { initializeSchedulers } from './scheduler';
-import { initializeModuleReorder } from './moduleReorder';
+// Disabled: Apple-style drag-to-reorder. Keep the module on disk; just don't wire it up.
+// import { initializeModuleReorder } from './moduleReorder';
 
 function showSyncStatus(message: string, isFinal = false): void {
   const statusEl = document.getElementById('sync-status');
@@ -80,7 +81,10 @@ export async function bootstrapApp(): Promise<void> {
   async function initializeApp() {
     try {
       renderModuleIcons();
-      initializeModuleReorder();
+      // Apple-style drag-to-reorder is disabled — buggy in current form.
+      // Carousel/grid order is driven by index.html markup. Re-enable by
+      // uncommenting once the long-press/jiggle interaction is fixed.
+      // initializeModuleReorder();
       updateDateDerivedData();
       initializeQuantumTimer();
 
