@@ -22,6 +22,7 @@ export default defineConfig(() => {
             travel: path.resolve(__dirname, 'travel.html'),
             tennis: path.resolve(__dirname, 'tennis.html'),
             french: path.resolve(__dirname, 'french.html'),
+            custom: path.resolve(__dirname, 'custom.html'),
           }
         }
       }

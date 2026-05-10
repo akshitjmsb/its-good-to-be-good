@@ -15,6 +15,8 @@ import { renderDayModule } from './render';
 import { initializeSchedulers } from './scheduler';
 // Disabled: Apple-style drag-to-reorder. Keep the module on disk; just don't wire it up.
 // import { initializeModuleReorder } from './moduleReorder';
+import { initializeCustomModules } from './customModules';
+import { initializeModuleEditor } from './moduleEditor';
 
 function showSyncStatus(message: string, isFinal = false): void {
   const statusEl = document.getElementById('sync-status');
@@ -70,6 +72,11 @@ export async function bootstrapApp(): Promise<void> {
     dayModule?.classList.add('active');
 
     renderNavigationIcons();
+    // Re-apply user overrides after the SVG icons paint, so emoji choices
+    // for built-in journey tiles aren't wiped by the periodic re-render.
+    // initializeCustomModules() guards against duplicate tile injection,
+    // so calling it on every render is safe.
+    initializeCustomModules();
     const { todaysQuote, currentUserId } = store.getState();
     renderDayModule(todaysQuote);
     if (todaysQuote) {
@@ -81,6 +88,11 @@ export async function bootstrapApp(): Promise<void> {
   async function initializeApp() {
     try {
       renderModuleIcons();
+      // Inject user-created tiles + apply name/emoji overrides on top of
+      // the static icon paint. The editor wiring then attaches the
+      // "+ Add module" pill, "Edit" toggle, and per-tile pencils.
+      initializeCustomModules();
+      initializeModuleEditor();
       // Apple-style drag-to-reorder is disabled — buggy in current form.
       // Carousel/grid order is driven by index.html markup. Re-enable by
       // uncommenting once the long-press/jiggle interaction is fixed.

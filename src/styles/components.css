@@ -2456,3 +2456,312 @@ body.module-edit-mode .module-card.module-dragging-source {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   Module emoji glyphs — used by user-created tiles and by built-in
+   tiles whose icon has been overridden with an emoji. The emoji span
+   sits inside the existing .nav-icon / .module-icon container, so
+   sizing is inherited from the icon container's responsive rules.
+   ───────────────────────────────────────────────────────────────── */
+.module-emoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    /* Slightly larger than the SVG since emoji glyphs leave more
+       internal padding. clamp keeps it readable at all viewports. */
+    font-size: clamp(1.1rem, 4.5vw, 1.4rem);
+    /* Neutralise system emoji bias by letting the glyph render in its
+       native font; falling back to a serif keeps non-emoji symbols
+       (e.g. ✦) coherent with the typewriter mood. */
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji',
+        'Special Elite', serif;
+}
+
+.nav-icon .module-emoji {
+    font-size: clamp(1rem, 3.6vw, 1.25rem);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Edit pencil — appears in the corner of every reorderable tile
+   while edit mode is active. Hidden by default; CSS handles the
+   show/hide so JS can decorate tiles eagerly.
+   ───────────────────────────────────────────────────────────────── */
+.module-edit-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 9999px;
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    font-family: 'Special Elite', monospace;
+    font-size: 0.7rem;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+    /* Counter the parent tile's jiggle so the pencil stays still and
+       readable. Each axis pair mirrors the matching keyframe set. */
+    animation: none;
+}
+
+.nav-item,
+.module-card,
+.preview-card {
+    position: relative;
+}
+
+body.module-edit-mode .module-edit-badge {
+    display: inline-flex;
+}
+
+body.module-edit-mode .module-edit-badge:hover {
+    background-color: #f8f9fa;
+    border-color: #9ca3af;
+}
+
+body.module-edit-mode .module-edit-badge:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .module-edit-badge { animation: none !important; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Edit + Add module — pill buttons below the Learn grid.
+   ───────────────────────────────────────────────────────────────── */
+.module-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.875rem;
+}
+
+.module-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: #6b7280;
+    background-color: #ffffff;
+    border: 1px dashed #d1d5db;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.18s ease, border-color 0.18s ease,
+        background-color 0.18s ease;
+    text-transform: uppercase;
+}
+
+.module-add-btn--ghost {
+    border-style: solid;
+}
+
+body.module-edit-mode #module-edit-toggle {
+    color: #111111;
+    border-color: #111111;
+    background-color: #f8f9fa;
+}
+
+.module-add-btn span {
+    font-size: 1rem;
+    line-height: 1;
+    margin-top: -1px;
+}
+
+.module-add-btn:hover {
+    color: #111111;
+    border-color: #9ca3af;
+    background-color: #f8f9fa;
+}
+
+.module-add-btn:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   Edit / Add dialog — vintage typewriter sheet of paper.
+   ───────────────────────────────────────────────────────────────── */
+.module-edit-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: rgba(17, 17, 17, 0.35);
+    font-family: 'Special Elite', monospace;
+}
+
+.module-edit-dialog__panel {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.25rem 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    width: 100%;
+    max-width: 22rem;
+}
+
+.module-edit-dialog__title {
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    margin: 0 0 0.875rem;
+    letter-spacing: 0.04em;
+    color: #111111;
+}
+
+.module-edit-dialog__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.module-edit-dialog__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.module-edit-dialog__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #6b7280;
+}
+
+.module-edit-dialog__input,
+.module-edit-dialog__select {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.95rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.4rem;
+    background-color: #f8f9fa;
+    color: #111111;
+}
+
+.module-edit-dialog__input:focus,
+.module-edit-dialog__select:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 1px;
+}
+
+.module-edit-dialog__input--emoji {
+    font-size: 1.4rem;
+    text-align: center;
+    letter-spacing: 0;
+    width: 4.5rem;
+    align-self: flex-start;
+}
+
+.module-edit-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.module-edit-dialog__actions > .module-edit-dialog__btn--danger {
+    margin-right: auto;
+}
+
+.module-edit-dialog__btn {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background-color: #ffffff;
+    color: #374151;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.module-edit-dialog__btn:hover {
+    background-color: #f8f9fa;
+    border-color: #9ca3af;
+    color: #111111;
+}
+
+.module-edit-dialog__btn--primary {
+    background-color: #111111;
+    border-color: #111111;
+    color: #ffffff;
+}
+
+.module-edit-dialog__btn--primary:hover {
+    background-color: #374151;
+    border-color: #374151;
+    color: #ffffff;
+}
+
+.module-edit-dialog__btn--ghost {
+    background-color: transparent;
+    border-color: transparent;
+    color: #6b7280;
+}
+
+.module-edit-dialog__btn--danger {
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
+
+.module-edit-dialog__btn--danger:hover {
+    color: #ffffff;
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.module-edit-dialog__btn:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Custom page placeholder — minimal centred line on the generic
+   page that every user-created module shares.
+   ───────────────────────────────────────────────────────────────── */
+.custom-page__placeholder {
+    margin-top: 2rem;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--home-muted, #6b7280);
+    border: 1px dashed var(--home-border, #e5e7eb);
+    border-radius: 0.75rem;
+    background-color: var(--home-card-bg, #f8f9fa);
+}
+
+.custom-page__placeholder p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+.custom-page__placeholder p + p {
+    margin-top: 0.5rem;
+}
+
+/* Page header emoji on the custom shell mirrors the tennis-page
+   .theme-icon spacing so user-created pages read as siblings. */
+.custom-page .theme-icon {
+    margin-left: 0.5rem;
+    font-size: 1.4rem;
+}
