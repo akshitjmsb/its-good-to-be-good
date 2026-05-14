@@ -169,10 +169,15 @@ function renderPanel(state: ViewState): string {
 
 function renderStretchSection(): string {
   if (!STRETCH_ROUTINES.length) return '';
-  const buttons = STRETCH_ROUTINES.map(
-    s =>
-      `<button type="button" class="stretch-btn" data-stretch-url="${escapeHtml(s.url)}" aria-label="Stretch: ${escapeHtml(s.bodyPart)}">${escapeHtml(s.bodyPart)}</button>`
-  ).join('');
+  const buttons = STRETCH_ROUTINES.flatMap(s => {
+    if (s.urls.length === 1) {
+      return `<button type="button" class="stretch-btn" data-stretch-url="${escapeHtml(s.urls[0])}" aria-label="Stretch: ${escapeHtml(s.bodyPart)}">${escapeHtml(s.bodyPart)}</button>`;
+    }
+    // Multiple videos — render numbered buttons
+    return s.urls.map((url, i) =>
+      `<button type="button" class="stretch-btn" data-stretch-url="${escapeHtml(url)}" aria-label="Stretch: ${escapeHtml(s.bodyPart)} ${i + 1}">${escapeHtml(s.bodyPart)} ${i + 1}</button>`
+    );
+  }).join('');
   return `
     <section class="stretch-section">
       <h3 class="stretch-section__heading">Stretch</h3>

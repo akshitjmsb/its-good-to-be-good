@@ -579,15 +579,22 @@ export function getDayPlan(date: Date): DayPlan {
 
 export interface StretchEntry {
   bodyPart: string;
-  url: string;
+  urls: string[];
 }
 
 /**
  * Curated stretch videos — each body part links directly to a YouTube
- * routine. Add new entries here; the UI picks them up automatically.
+ * routine. Multiple URLs per body part render as numbered buttons
+ * (e.g. Back 1, Back 2, Back 3). Add new entries here; the UI picks
+ * them up automatically.
  */
 export const STRETCH_ROUTINES: ReadonlyArray<StretchEntry> = [
-  { bodyPart: 'Face', url: 'https://youtu.be/4SBoTzwSQB8?si=eVdeleAjxE5AkDU7' },
+  { bodyPart: 'Face', urls: ['https://youtu.be/4SBoTzwSQB8?si=eVdeleAjxE5AkDU7'] },
+  { bodyPart: 'Back', urls: [
+    'https://youtu.be/2eA2Koq6pTI?si=HEJIOmfT4CDQOkEF',
+    'https://youtu.be/ni-3HCfAUnk?si=WuWmFIj2X_3YHtCD',
+    'https://youtu.be/HzXkMnvqojE?si=mtKPBZGTlHYHyf6Z',
+  ]},
 ];
 
 /** Exposed for tests. */
