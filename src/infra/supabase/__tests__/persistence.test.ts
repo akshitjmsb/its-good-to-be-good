@@ -25,6 +25,11 @@ function buildSupabaseMock() {
           recorder.inserted = rows;
           return { error: recorder.insertError ?? null };
         }),
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            order: vi.fn(async () => ({ data: [], error: null })),
+          })),
+        })),
       };
     }),
   };
@@ -79,12 +84,12 @@ describe('replaceAllForUser', () => {
 describe('saveTasks', () => {
   it('shapes tasks into rows with user_id and persists them', async () => {
     await saveTasks('u', [
-      { text: 'one', completed: false },
-      { text: 'two', completed: true },
+      { text: 'one', completed: false, position: 0, parent_id: null },
+      { text: 'two', completed: true, position: 1, parent_id: null },
     ]);
     expect(recorder.inserted).toEqual([
-      { user_id: 'u', text: 'one', completed: false },
-      { user_id: 'u', text: 'two', completed: true },
+      { user_id: 'u', text: 'one', completed: false, position: 0, parent_id: null },
+      { user_id: 'u', text: 'two', completed: true, position: 1, parent_id: null },
     ]);
   });
 });

@@ -32,9 +32,9 @@ export async function loadTasks(userId: string): Promise<Task[]> {
   try {
     const { data, error } = await supabase
       .from('tasks')
-      .select('text, completed')
+      .select('id, text, completed, position, parent_id')
       .eq('user_id', userId)
-      .order('created_at', { ascending: true });
+      .order('position', { ascending: true });
 
     if (error || !data) {
       if (error) console.error('Error loading tasks from Supabase:', error);
@@ -42,8 +42,11 @@ export async function loadTasks(userId: string): Promise<Task[]> {
     }
 
     return data.map(task => ({
+      id: task.id,
       text: task.text,
       completed: task.completed,
+      position: task.position ?? 0,
+      parent_id: task.parent_id ?? null,
     }));
   } catch (error) {
     console.error('Error loading tasks:', error);
@@ -53,12 +56,28 @@ export async function loadTasks(userId: string): Promise<Task[]> {
 
 export async function saveTasks(userId: string, tasks: Task[]): Promise<void> {
   try {
-    const tasksToInsert = tasks.map(task => ({
+    const tasksToInsert = tasks.map((task, i) => ({
       user_id: userId,
       text: task.text,
       completed: task.completed,
+      position: task.position ?? i,
+      parent_id: task.parent_id ?? null,
     }));
     await replaceAllForUser('tasks', userId, tasksToInsert);
+
+    // Re-read to get server-generated IDs
+    const { data } = await supabase
+      .from('tasks')
+      .select('id, text, completed, position, parent_id')
+      .eq('user_id', userId)
+      .order('position', { ascending: true });
+
+    if (data) {
+      // Update the tasks array in-place with IDs from DB
+      data.forEach((row, i) => {
+        if (tasks[i]) tasks[i].id = row.id;
+      });
+    }
   } catch (error) {
     console.error('Error saving tasks:', error);
     throw error;
