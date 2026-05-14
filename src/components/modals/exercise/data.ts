@@ -597,6 +597,40 @@ export const STRETCH_ROUTINES: ReadonlyArray<StretchEntry> = [
   ]},
 ];
 
+/* ── Muscle focus per workout type ──────────────────────────────────────── */
+
+export interface MuscleGroup {
+  name: string;
+  role: 'primary' | 'secondary';
+}
+
+export const MUSCLE_FOCUS: Record<Exclude<WorkoutType, 'rest'>, MuscleGroup[]> = {
+  push: [
+    { name: 'Chest', role: 'primary' },
+    { name: 'Shoulders', role: 'primary' },
+    { name: 'Triceps', role: 'secondary' },
+  ],
+  pull: [
+    { name: 'Back', role: 'primary' },
+    { name: 'Biceps', role: 'primary' },
+    { name: 'Rear delts', role: 'secondary' },
+    { name: 'Traps', role: 'secondary' },
+  ],
+  legs: [
+    { name: 'Quads', role: 'primary' },
+    { name: 'Glutes', role: 'primary' },
+    { name: 'Hamstrings', role: 'primary' },
+    { name: 'Calves', role: 'secondary' },
+  ],
+  upper: [
+    { name: 'Shoulders', role: 'primary' },
+    { name: 'Biceps', role: 'primary' },
+    { name: 'Triceps', role: 'primary' },
+    { name: 'Core', role: 'secondary' },
+    { name: 'Upper back', role: 'secondary' },
+  ],
+};
+
 /** Exposed for tests. */
 export const __INTERNAL = {
   djb2,
@@ -607,4 +641,5 @@ export const __INTERNAL = {
   LEGS_POOL,
   UPPER_POOL,
   STRETCH_ROUTINES,
+  MUSCLE_FOCUS,
 };

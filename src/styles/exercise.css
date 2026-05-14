@@ -1,14 +1,14 @@
-/* Exercise modal — monthly calendar + per-day plan panel.
+/* Exercise modal — minimal calendar + muscle-focus chips + compact cards.
    Locked design tokens only. Special Elite, grey ramp, soft shadows. */
 
-.exercise-view {
+.ex-view {
     font-family: 'Special Elite', monospace;
     color: #374151;
 }
 
 /* ── Calendar header ─────────────────────────────────────────────────────── */
 
-.exercise-cal__header {
+.ex-cal__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -16,7 +16,7 @@
     margin-bottom: 0.75rem;
 }
 
-.exercise-cal__title {
+.ex-cal__title {
     flex: 1;
     text-align: center;
     font-family: 'Special Elite', monospace;
@@ -25,7 +25,7 @@
     letter-spacing: 0.025em;
 }
 
-.exercise-cal__nav {
+.ex-cal__nav {
     background: none;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
@@ -40,24 +40,24 @@
     transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.exercise-cal__nav:hover {
+.ex-cal__nav:hover {
     color: #374151;
     background-color: #f3f4f6;
     border-color: #d1d5db;
 }
 
-.exercise-cal__nav:focus {
+.ex-cal__nav:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
 }
 
-.exercise-cal__nav:active {
+.ex-cal__nav:active {
     transform: scale(0.95);
 }
 
 /* ── Weekday header ──────────────────────────────────────────────────────── */
 
-.exercise-cal__weekdays {
+.ex-cal__weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.25rem;
@@ -65,7 +65,7 @@
     text-align: center;
 }
 
-.exercise-cal__weekdays span {
+.ex-cal__weekdays span {
     font-size: 0.7rem;
     color: #6b7280;
     letter-spacing: 0.05em;
@@ -74,21 +74,19 @@
 
 /* ── Calendar grid ───────────────────────────────────────────────────────── */
 
-.exercise-cal__grid {
+.ex-cal__grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.25rem;
     margin-bottom: 1.25rem;
 }
 
-.exercise-cal__cell {
+.ex-cal__cell {
     aspect-ratio: 1 / 1;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.125rem;
-    padding: 0.25rem 0.125rem;
+    padding: 0.25rem;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
@@ -98,20 +96,19 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
-    overflow: hidden;
 }
 
-.exercise-cal__cell:hover {
+.ex-cal__cell:hover {
     background-color: #f8f9fa;
     border-color: #d1d5db;
 }
 
-.exercise-cal__cell:focus {
+.ex-cal__cell:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
 }
 
-.exercise-cal__cell--empty {
+.ex-cal__cell--empty {
     background: transparent;
     border: 1px dashed transparent;
     box-shadow: none;
@@ -119,139 +116,205 @@
     pointer-events: none;
 }
 
-/* Rest cells stay slightly muted to read as "off" days at a glance. */
-.exercise-cal__cell--rest {
+.ex-cal__cell--rest {
     background-color: #f8f9fa;
     color: #9ca3af;
 }
 
-.exercise-cal__cell.is-today {
+.ex-cal__cell.is-today {
     border-color: #374151;
     border-width: 1.5px;
 }
 
-.exercise-cal__cell.is-selected {
+.ex-cal__cell.is-selected {
     background-color: #374151;
     border-color: #374151;
     color: #ffffff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.exercise-cal__cell.is-selected.exercise-cal__cell--rest {
+.ex-cal__cell.is-selected.ex-cal__cell--rest {
     color: #ffffff;
 }
 
-.exercise-cal__num {
+.ex-cal__num {
     font-size: 0.95rem;
     line-height: 1;
-}
-
-.exercise-cal__type {
-    font-size: 0.6rem;
-    line-height: 1;
-    letter-spacing: 0.025em;
-    opacity: 0.85;
 }
 
 /* ── Day panel ───────────────────────────────────────────────────────────── */
 
-.exercise-panel {
+.ex-panel {
     border-top: 1px solid #e5e7eb;
     padding-top: 1rem;
 }
 
-.exercise-panel__heading {
+.ex-panel__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.ex-panel__date {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.9rem;
+    color: #6b7280;
+    letter-spacing: 0.025em;
+}
+
+.ex-panel__type {
     font-family: 'Special Elite', monospace;
     font-size: 0.95rem;
     color: #374151;
-    margin: 0 0 0.875rem 0;
     letter-spacing: 0.025em;
+    font-weight: normal;
 }
 
-/* Each exercise card in the day's plan */
+.ex-panel__type--rest {
+    color: #9ca3af;
+}
 
-.exercise-entries {
+/* ── Muscle focus chips ──────────────────────────────────────────────────── */
+
+.ex-focus {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 0.875rem;
 }
 
-.exercise-entry {
-    background-color: #f8f9fa;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 0.875rem 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.exercise-entry__header {
-    margin-bottom: 0.5rem;
-}
-
-.exercise-entry__name {
+.ex-chip {
     font-family: 'Special Elite', monospace;
-    font-size: 1rem;
-    color: #374151;
-    margin: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.025em;
+    padding: 0.25rem 0.625rem;
+    border-radius: 1rem;
     line-height: 1.3;
 }
 
-.exercise-entry__muscles {
+.ex-chip--primary {
+    background-color: #374151;
+    color: #ffffff;
+    border: 1px solid #374151;
+}
+
+.ex-chip--secondary {
+    background-color: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+/* ── Exercise cards ──────────────────────────────────────────────────────── */
+
+.ex-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ex-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.75rem 0.875rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ex-card__row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.ex-card__left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.ex-card__name {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.95rem;
+    color: #374151;
+    line-height: 1.3;
+}
+
+.ex-card__muscles {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    color: #6b7280;
+    letter-spacing: 0.025em;
+}
+
+.ex-card__rx {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.95rem;
+    color: #374151;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Collapsible details */
+
+.ex-card__details {
+    margin-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 0.5rem;
+}
+
+.ex-card__details[open] {
+    padding-bottom: 0.25rem;
+}
+
+.ex-card__toggle {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    color: #6b7280;
+    cursor: pointer;
+    letter-spacing: 0.025em;
+    list-style: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.ex-card__toggle::-webkit-details-marker {
+    display: none;
+}
+
+.ex-card__toggle::before {
+    content: '+ ';
+}
+
+.ex-card__details[open] > .ex-card__toggle::before {
+    content: '- ';
+}
+
+.ex-card__toggle:hover {
+    color: #374151;
+}
+
+.ex-card__text {
     font-family: 'Special Elite', monospace;
     font-size: 0.8rem;
-    color: #6b7280;
-    margin: 0.125rem 0 0;
-    letter-spacing: 0.025em;
-}
-
-.exercise-entry__details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.875rem;
-    margin-bottom: 0.625rem;
-    padding-bottom: 0.625rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.exercise-entry__detail {
-    font-family: 'Special Elite', monospace;
-    font-size: 0.85rem;
     color: #374151;
-    letter-spacing: 0.025em;
+    line-height: 1.55;
+    margin: 0.375rem 0 0;
 }
 
-.exercise-entry__detail--muted {
-    color: #6b7280;
-}
-
-.exercise-entry__section {
-    margin-top: 0.625rem;
-}
-
-.exercise-entry__section:first-of-type {
-    margin-top: 0;
-}
-
-.exercise-entry__heading {
+.ex-card__tip {
     font-family: 'Special Elite', monospace;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 0 0 0.25rem 0;
-}
-
-.exercise-entry__body {
-    font-family: 'Special Elite', monospace;
-    font-size: 0.85rem;
-    color: #374151;
     line-height: 1.5;
-    margin: 0;
+    margin: 0.375rem 0 0;
+    font-style: italic;
 }
 
-/* Rest panel */
+/* ── Rest panel ──────────────────────────────────────────────────────────── */
 
-.exercise-rest {
+.ex-rest {
     background-color: #f8f9fa;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
@@ -259,28 +322,20 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.exercise-rest__title {
+.ex-rest__label {
     font-family: 'Special Elite', monospace;
     font-size: 1rem;
-    color: #374151;
-    margin: 0 0 0.5rem;
+    color: #9ca3af;
+    margin: 0;
 }
 
-.exercise-rest__body {
-    font-family: 'Special Elite', monospace;
-    font-size: 0.85rem;
-    color: #6b7280;
-    line-height: 1.5;
-    margin: 0 0 0.75rem;
-}
-
-.exercise-rest__list {
+.ex-rest__list {
     list-style: none;
     padding: 0;
-    margin: 0.25rem 0 0;
+    margin: 0.5rem 0 0;
 }
 
-.exercise-rest__list li {
+.ex-rest__list li {
     font-family: 'Special Elite', monospace;
     font-size: 0.85rem;
     color: #374151;
@@ -288,27 +343,28 @@
     border-bottom: 1px solid #e5e7eb;
 }
 
-.exercise-rest__list li:last-child {
+.ex-rest__list li:last-child {
     border-bottom: none;
 }
 
 /* ── Stretch section ────────────────────────────────────────────────────── */
 
-.stretch-section {
+.ex-stretch {
     border-top: 1px solid #e5e7eb;
     padding-top: 1rem;
     margin-top: 1rem;
 }
 
-.stretch-section__heading {
+.ex-stretch__label {
     font-family: 'Special Elite', monospace;
     font-size: 0.95rem;
     color: #374151;
-    margin: 0 0 0.75rem 0;
     letter-spacing: 0.025em;
+    display: block;
+    margin-bottom: 0.625rem;
 }
 
-.stretch-section__grid {
+.ex-stretch__row {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -351,32 +407,33 @@
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-    .exercise-cal__title {
+    .ex-cal__title {
         font-size: 0.9rem;
     }
 
-    .exercise-cal__weekdays span {
+    .ex-cal__weekdays span {
         font-size: 0.65rem;
     }
 
-    .exercise-cal__num {
+    .ex-cal__num {
         font-size: 0.85rem;
     }
 
-    .exercise-cal__type {
-        font-size: 0.55rem;
-    }
-
-    .exercise-cal__cell {
+    .ex-cal__cell {
         border-radius: 0.375rem;
         padding: 0.125rem;
     }
 
-    .exercise-entry {
-        padding: 0.75rem 0.875rem;
+    .ex-card {
+        padding: 0.625rem 0.75rem;
     }
 
-    .exercise-entry__name {
-        font-size: 0.95rem;
+    .ex-card__name {
+        font-size: 0.9rem;
+    }
+
+    .ex-chip {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
     }
 }
