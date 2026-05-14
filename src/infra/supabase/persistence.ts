@@ -54,18 +54,91 @@ export async function loadTasks(userId: string): Promise<Task[]> {
   }
 }
 
-export async function saveTasks(userId: string, tasks: Task[]): Promise<void> {
-  try {
-    const tasksToInsert = tasks.map((task, i) => ({
-      user_id: userId,
-      text: task.text,
-      completed: task.completed,
-      position: task.position ?? i,
-      parent_id: task.parent_id ?? null,
-    }));
-    await replaceAllForUser('tasks', userId, tasksToInsert);
+/**
+ * Safely persist the full task list for a user.
+ *
+ * Strategy: upsert rows that have IDs, insert new rows, then delete any
+ * DB rows that are no longer in the local list. This avoids the dangerous
+ * "delete-all → insert" pattern that can wipe data on an empty load.
+ *
+ * Safety guard: if `tasks` is empty **and** `opts.loadedSuccessfully` is
+ * not explicitly `true`, the save is skipped entirely. This prevents an
+ * empty initial load (network error, wrong user, etc.) from triggering a
+ * wipe on the next auto-save.
+ */
+export async function saveTasks(
+  userId: string,
+  tasks: Task[],
+  opts: { loadedSuccessfully?: boolean } = {}
+): Promise<void> {
+  // ── Guard: never wipe all tasks unless we know the load was clean ──
+  if (tasks.length === 0 && !opts.loadedSuccessfully) {
+    console.warn(
+      'saveTasks: skipped — empty task list without confirmed load. ' +
+        'This prevents accidental data loss.'
+    );
+    return;
+  }
 
-    // Re-read to get server-generated IDs
+  try {
+    // Separate tasks that already have a server ID from brand-new ones.
+    const existing = tasks.filter(t => t.id);
+    const brandNew = tasks.filter(t => !t.id);
+
+    // 1. Upsert existing tasks (update text, completed, position, parent_id).
+    if (existing.length > 0) {
+      const rows = existing.map((task, i) => ({
+        id: task.id,
+        user_id: userId,
+        text: task.text,
+        completed: task.completed,
+        position: task.position ?? i,
+        parent_id: task.parent_id ?? null,
+      }));
+      const { error } = await supabase
+        .from('tasks')
+        .upsert(rows, { onConflict: 'id' });
+      if (error) throw error;
+    }
+
+    // 2. Insert brand-new tasks.
+    if (brandNew.length > 0) {
+      const rows = brandNew.map((task, i) => ({
+        user_id: userId,
+        text: task.text,
+        completed: task.completed,
+        position: task.position ?? existing.length + i,
+        parent_id: task.parent_id ?? null,
+      }));
+      const { error } = await supabase.from('tasks').insert(rows);
+      if (error) throw error;
+    }
+
+    // 3. Delete tasks that were removed locally.
+    //    Fetch current server IDs, diff against local IDs.
+    const { data: serverRows } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('user_id', userId);
+
+    if (serverRows) {
+      const localIds = new Set(existing.map(t => t.id));
+      const toDelete = serverRows
+        .map(r => r.id as string)
+        .filter(id => !localIds.has(id));
+
+      if (toDelete.length > 0) {
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .in('id', toDelete);
+        if (error) {
+          console.error('Error deleting removed tasks:', error);
+        }
+      }
+    }
+
+    // 4. Re-read to get server-generated IDs for newly inserted tasks.
     const { data } = await supabase
       .from('tasks')
       .select('id, text, completed, position, parent_id')
@@ -73,9 +146,14 @@ export async function saveTasks(userId: string, tasks: Task[]): Promise<void> {
       .order('position', { ascending: true });
 
     if (data) {
-      // Update the tasks array in-place with IDs from DB
-      data.forEach((row, i) => {
-        if (tasks[i]) tasks[i].id = row.id;
+      // Match by position + text for new tasks that didn't have IDs.
+      data.forEach((row) => {
+        const match = tasks.find(
+          t => !t.id && t.text === row.text && t.position === row.position
+        );
+        if (match) {
+          match.id = row.id;
+        }
       });
     }
   } catch (error) {

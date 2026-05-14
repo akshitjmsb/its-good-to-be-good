@@ -575,6 +575,21 @@ export function getDayPlan(date: Date): DayPlan {
   };
 }
 
+/* ── Stretch routines ───────────────────────────────────────────────────── */
+
+export interface StretchEntry {
+  bodyPart: string;
+  url: string;
+}
+
+/**
+ * Curated stretch videos — each body part links directly to a YouTube
+ * routine. Add new entries here; the UI picks them up automatically.
+ */
+export const STRETCH_ROUTINES: ReadonlyArray<StretchEntry> = [
+  { bodyPart: 'Face', url: 'https://youtu.be/4SBoTzwSQB8?si=eVdeleAjxE5AkDU7' },
+];
+
 /** Exposed for tests. */
 export const __INTERNAL = {
   djb2,
@@ -584,4 +599,5 @@ export const __INTERNAL = {
   PULL_POOL,
   LEGS_POOL,
   UPPER_POOL,
+  STRETCH_ROUTINES,
 };

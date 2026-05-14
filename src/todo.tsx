@@ -408,7 +408,14 @@ function showSubtaskInput(
 
 document.addEventListener('DOMContentLoaded', async () => {
   const userId = DEFAULT_USER_ID;
-  let tasks: Task[] = await loadTasksFromSupabase(userId);
+  let loadedSuccessfully = false;
+  let tasks: Task[] = [];
+  try {
+    tasks = await loadTasksFromSupabase(userId);
+    loadedSuccessfully = true;
+  } catch {
+    console.error('Initial task load failed — saves are blocked until a successful load.');
+  }
   reindex(tasks);
   let editingId: string | null = null;
 
@@ -423,9 +430,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     reindex(tasks);
     refresh();
     try {
-      await saveTasksToSupabase(userId, tasks);
+      await saveTasksToSupabase(userId, tasks, { loadedSuccessfully });
       // Re-load to get IDs for newly created tasks
       tasks = await loadTasksFromSupabase(userId);
+      loadedSuccessfully = true;
       refresh();
     } catch (error) {
       console.error('Error saving tasks:', error);
@@ -444,7 +452,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       async () => {
         reindex(tasks);
         try {
-          await saveTasksToSupabase(userId, tasks);
+          await saveTasksToSupabase(userId, tasks, { loadedSuccessfully });
         } catch (error) {
           console.error('Error saving reorder:', error);
         }

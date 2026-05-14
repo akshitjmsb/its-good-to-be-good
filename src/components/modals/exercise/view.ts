@@ -10,7 +10,7 @@
  */
 
 import { createSafeHtml, escapeHtml } from '../../../utils/escapeHtml';
-import { type DayPlan, type Exercise, getDayPlan } from './data';
+import { type DayPlan, type Exercise, getDayPlan, STRETCH_ROUTINES } from './data';
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
 const TYPE_LABELS = {
@@ -167,6 +167,20 @@ function renderPanel(state: ViewState): string {
   `;
 }
 
+function renderStretchSection(): string {
+  if (!STRETCH_ROUTINES.length) return '';
+  const buttons = STRETCH_ROUTINES.map(
+    s =>
+      `<button type="button" class="stretch-btn" data-stretch-url="${escapeHtml(s.url)}" aria-label="Stretch: ${escapeHtml(s.bodyPart)}">${escapeHtml(s.bodyPart)}</button>`
+  ).join('');
+  return `
+    <section class="stretch-section">
+      <h3 class="stretch-section__heading">Stretch</h3>
+      <div class="stretch-section__grid">${buttons}</div>
+    </section>
+  `;
+}
+
 function renderShell(state: ViewState): string {
   return `
     <div class="exercise-view">
@@ -182,6 +196,7 @@ function renderShell(state: ViewState): string {
         ${buildMonthCells(state)}
       </div>
       ${renderPanel(state)}
+      ${renderStretchSection()}
     </div>
   `;
 }
@@ -213,6 +228,13 @@ export function renderExerciseView(container: HTMLElement, today: Date): void {
       );
       state.displayedMonth = next;
       paint();
+      return;
+    }
+
+    const stretchBtn = target.closest<HTMLButtonElement>('.stretch-btn');
+    if (stretchBtn) {
+      const url = stretchBtn.dataset.stretchUrl;
+      if (url) window.open(url, '_blank', 'noopener');
       return;
     }
 

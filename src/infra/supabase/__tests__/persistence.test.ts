@@ -3,9 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 type Recorder = {
   table?: string;
   inserted?: unknown;
+  upserted?: unknown;
   deletedFor?: string;
+  deletedIds?: string[];
   insertError?: { message: string } | null;
   deleteError?: { message: string } | null;
+  upsertError?: { message: string } | null;
+  /** Rows the mock DB pretends exist (for select queries). */
+  serverRows?: Array<Record<string, unknown>>;
 };
 
 const recorder: Recorder = {};
@@ -20,14 +25,25 @@ function buildSupabaseMock() {
             recorder.deletedFor = value;
             return { error: recorder.deleteError ?? null };
           }),
+          in: vi.fn(async (_col: string, ids: string[]) => {
+            recorder.deletedIds = ids;
+            return { error: recorder.deleteError ?? null };
+          }),
         }),
         insert: vi.fn(async (rows: unknown) => {
           recorder.inserted = rows;
           return { error: recorder.insertError ?? null };
         }),
+        upsert: vi.fn(async (rows: unknown) => {
+          recorder.upserted = rows;
+          return { error: recorder.upsertError ?? null };
+        }),
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            order: vi.fn(async () => ({ data: [], error: null })),
+            order: vi.fn(async () => ({
+              data: recorder.serverRows ?? [],
+              error: null,
+            })),
           })),
         })),
       };
@@ -48,9 +64,13 @@ import {
 beforeEach(() => {
   recorder.table = undefined;
   recorder.inserted = undefined;
+  recorder.upserted = undefined;
   recorder.deletedFor = undefined;
+  recorder.deletedIds = undefined;
   recorder.insertError = null;
   recorder.deleteError = null;
+  recorder.upsertError = null;
+  recorder.serverRows = undefined;
 });
 
 afterEach(() => {
@@ -82,15 +102,54 @@ describe('replaceAllForUser', () => {
 });
 
 describe('saveTasks', () => {
-  it('shapes tasks into rows with user_id and persists them', async () => {
-    await saveTasks('u', [
-      { text: 'one', completed: false, position: 0, parent_id: null },
-      { text: 'two', completed: true, position: 1, parent_id: null },
-    ]);
+  it('inserts brand-new tasks (no id) with user_id', async () => {
+    await saveTasks(
+      'u',
+      [
+        { text: 'one', completed: false, position: 0, parent_id: null },
+        { text: 'two', completed: true, position: 1, parent_id: null },
+      ],
+      { loadedSuccessfully: true }
+    );
     expect(recorder.inserted).toEqual([
       { user_id: 'u', text: 'one', completed: false, position: 0, parent_id: null },
       { user_id: 'u', text: 'two', completed: true, position: 1, parent_id: null },
     ]);
+    // No upsert since none had IDs
+    expect(recorder.upserted).toBeUndefined();
+  });
+
+  it('upserts tasks that have a server id', async () => {
+    await saveTasks(
+      'u',
+      [
+        { id: 'abc-1', text: 'existing', completed: false, position: 0, parent_id: null },
+      ],
+      { loadedSuccessfully: true }
+    );
+    expect(recorder.upserted).toEqual([
+      { id: 'abc-1', user_id: 'u', text: 'existing', completed: false, position: 0, parent_id: null },
+    ]);
+    // No insert since none were new
+    expect(recorder.inserted).toBeUndefined();
+  });
+
+  it('skips save when tasks are empty and load was NOT confirmed', async () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await saveTasks('u', []);
+    // Should not have touched the DB at all
+    expect(recorder.upserted).toBeUndefined();
+    expect(recorder.inserted).toBeUndefined();
+    expect(recorder.deletedFor).toBeUndefined();
+    expect(recorder.deletedIds).toBeUndefined();
+    spy.mockRestore();
+  });
+
+  it('allows saving empty list when loadedSuccessfully is true (intentional clear)', async () => {
+    await saveTasks('u', [], { loadedSuccessfully: true });
+    // With an empty list and confirmed load, it should proceed (no inserts/upserts,
+    // but the delete-stale step runs via select)
+    expect(recorder.table).toBe('tasks');
   });
 });
 
