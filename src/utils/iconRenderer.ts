@@ -137,6 +137,13 @@ const journeyIconSvgs: Record<JourneyModuleId, string> = {
             <path d="M3.5 6.5c4 2.5 13 2.5 17 0" />
             <path d="M3.5 17.5c4-2.5 13-2.5 17 0" />
         </svg>
+    `,
+    'khyaali-bhoot': `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C8 2 5 5.6 5 10v7c0 1 .5 2 1.5 2s1.5-1 2-2c.5 1 1.5 2 2.5 2s2-1 2.5-2c.5 1 1 2 2 2s1.5-1 1.5-2v-7c0-4.4-3-8-7-8z" />
+            <circle cx="9.5" cy="10" r="0.5" />
+            <circle cx="14.5" cy="10" r="0.5" />
+        </svg>
     `
 };
 

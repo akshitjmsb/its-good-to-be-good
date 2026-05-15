@@ -21,6 +21,7 @@ export default defineConfig(() => {
             quantum: path.resolve(__dirname, 'quantum.html'),
             travel: path.resolve(__dirname, 'travel.html'),
             tennis: path.resolve(__dirname, 'tennis.html'),
+            'khyaali-bhoot': path.resolve(__dirname, 'khyaali-bhoot.html'),
             french: path.resolve(__dirname, 'french.html'),
             custom: path.resolve(__dirname, 'custom.html'),
           }

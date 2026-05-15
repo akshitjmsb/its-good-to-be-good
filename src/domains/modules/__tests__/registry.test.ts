@@ -13,6 +13,7 @@ const EXPECTED_JOURNEY_IDS = [
   'health',
   'travel',
   'tennis',
+  'khyaali-bhoot',
 ];
 
 const EXPECTED_LEARN_IDS = [

@@ -84,6 +84,18 @@ export const MODULE_REGISTRY_DATA = [
     dataModule: 'tennis',
   },
   {
+    id: 'khyaali-bhoot',
+    displayName: 'Khyaali Bhoot',
+    category: 'journey',
+    surface: 'page',
+    entrySelector: 'a[href="khyaali-bhoot.html"]',
+    handlerName: 'navigateKhyaaliBhootPage',
+    ownerPath: 'src/pages/khyaali-bhoot.ts',
+    iconElementId: 'khyaali-bhoot-icon',
+    routeHref: 'khyaali-bhoot.html',
+    dataModule: 'khyaali-bhoot',
+  },
+  {
     id: 'world-order',
     displayName: 'World Order',
     category: 'learn',

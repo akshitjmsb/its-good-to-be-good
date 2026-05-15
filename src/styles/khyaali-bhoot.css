@@ -1,0 +1,164 @@
+/* ─────────────────────────────────────────────────────────────────
+   Khyaali Bhoot — talk to your imaginary ghosts.
+   Vintage typewriter aesthetic, tokens from home-lock.css.
+   ───────────────────────────────────────────────────────────────── */
+
+.kb-page .theme-icon {
+    margin-left: 0.5rem;
+    font-size: 1.4rem;
+}
+
+/* ── Container ────────────────────────────────────────────────────── */
+
+.kb-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.kb-prompt {
+    text-align: center;
+    color: var(--home-muted, #6b7280);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+    letter-spacing: 0.015em;
+}
+
+/* ── Textarea ─────────────────────────────────────────────────────── */
+
+.kb-writing-area {
+    position: relative;
+}
+
+.kb-textarea {
+    width: 100%;
+    min-height: 160px;
+    padding: 1.25rem;
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--home-text, #374151);
+    background-color: var(--home-card-bg, #f8f9fa);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.75rem;
+    resize: vertical;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.8s ease;
+    box-sizing: border-box;
+}
+
+.kb-textarea::placeholder {
+    color: var(--home-muted, #6b7280);
+    opacity: 0.6;
+}
+
+.kb-textarea:focus {
+    outline: none;
+    border-color: #9ca3af;
+    box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.15);
+}
+
+/* Dissolve animation when letting go. */
+.kb-textarea.kb-dissolving {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+/* ── Actions ──────────────────────────────────────────────────────── */
+
+.kb-actions {
+    text-align: center;
+    margin-top: 1.25rem;
+    transition: opacity 0.3s ease;
+}
+
+.kb-actions.kb-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.kb-release-btn {
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: var(--home-surface, #ffffff);
+    background-color: var(--home-text, #374151);
+    border: none;
+    border-radius: 9999px;
+    padding: 0.65rem 2rem;
+    cursor: pointer;
+    min-height: 44px;
+    transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.kb-release-btn:hover:not(:disabled) {
+    background-color: var(--home-ink, #111111);
+    transform: translateY(-1px);
+}
+
+.kb-release-btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.kb-release-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* ── Whisper (post-release message) ───────────────────────────────── */
+
+.kb-whisper {
+    text-align: center;
+    color: var(--home-muted, #6b7280);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-top: 2rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.kb-whisper--visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ── Footer verse ─────────────────────────────────────────────────── */
+
+.kb-footer {
+    max-width: 480px;
+    margin: 3rem auto 1.5rem;
+    padding: 1.5rem 1rem 0;
+    border-top: 1px solid var(--home-border, #e5e7eb);
+    text-align: center;
+}
+
+.kb-verse {
+    color: var(--home-muted, #6b7280);
+    font-size: 0.85rem;
+    line-height: 1.8;
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+
+.kb-attribution {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    margin: 0.5rem 0 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    .kb-container {
+        padding: 0 0.75rem;
+    }
+
+    .kb-textarea {
+        min-height: 140px;
+        padding: 1rem;
+        font-size: 0.95rem;
+    }
+}

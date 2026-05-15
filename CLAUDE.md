@@ -104,6 +104,23 @@ To add a module:
 - `.nav-item[hidden]` must stay `display: none`. The `[hidden]` UA rule
   loses to `.nav-item { display: flex }` without the explicit override.
 
+## Icon style
+
+All module icons in `src/utils/iconRenderer.ts` must be **monoline SVG
+stroke art** — no emoji, no filled shapes. Every icon follows the same
+template:
+
+```
+width="24" height="24" viewBox="0 0 24 24"
+fill="none" stroke="currentColor" stroke-width="2.5"
+stroke-linecap="round" stroke-linejoin="round"
+```
+
+Keep paths simple (3–5 elements max). The icons render at nav-tile size
+so fine detail is lost — aim for recognisable silhouettes. Never use
+emoji as module icons in the carousel or grid; emoji belong only in the
+page header `<span class="theme-icon">`.
+
 ## Things to avoid
 
 - Marketing-style gradients, drop-shadows beyond the existing 1–3px hairline

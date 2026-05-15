@@ -19,6 +19,7 @@ const EXPECTED_JOURNEY_MODULES = [
   'health',
   'travel',
   'tennis',
+  'khyaali-bhoot',
 ];
 
 const EXPECTED_LEARN_MODULES = [

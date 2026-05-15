@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khyaali Bhoot — It's Good To Be King</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/index.css">
+    <link rel="stylesheet" href="src/styles/home-lock.css">
+    <link rel="stylesheet" href="src/styles/khyaali-bhoot.css">
+    <link rel="icon" href="/vitruvian-logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="It's Good To Be King">
+    <meta name="theme-color" content="#111111">
+</head>
+<body class="home-vintage-lock">
+    <div id="app-container" class="app-container kb-page">
+        <nav class="page-back-nav">
+            <a href="index.html" class="home-link">← Home</a>
+        </nav>
+
+        <header class="text-center mb-6">
+            <div class="flex justify-center items-center">
+                <h1>Khyaali Bhoot</h1>
+                <span class="theme-icon" aria-hidden="true">🌱</span>
+            </div>
+        </header>
+
+        <section class="kb-container">
+            <p class="kb-prompt" id="kb-prompt">What's the ghost saying today?</p>
+
+            <div class="kb-writing-area">
+                <textarea
+                    id="kb-textarea"
+                    class="kb-textarea"
+                    placeholder="Write to your fear…"
+                    rows="6"
+                    aria-label="Write to your fear"
+                ></textarea>
+            </div>
+
+            <div class="kb-actions" id="kb-actions">
+                <button
+                    type="button"
+                    id="kb-release-btn"
+                    class="kb-release-btn"
+                    disabled
+                    aria-label="Let the ghost go"
+                >
+                    Let it go
+                </button>
+            </div>
+
+            <p class="kb-whisper" id="kb-whisper" hidden>
+                The ghost heard you. It's leaving now.
+            </p>
+        </section>
+
+        <footer class="kb-footer">
+            <p class="kb-verse">
+                उम्र भर ख़्याली भूतों से अगर मैं न डरता<br>
+                ख़ुदा मैं क्या ज़ोर से जीता, ख़ुदा मैं क्या चैन से मरता
+            </p>
+            <p class="kb-attribution">— Sapne vs Everyone, TVF</p>
+        </footer>
+    </div>
+
+    <script type="module" src="src/pages/khyaali-bhoot.ts"></script>
+</body>
+</html>

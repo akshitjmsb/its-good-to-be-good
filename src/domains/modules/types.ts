@@ -5,7 +5,8 @@ export type JourneyModuleId =
   | 'money'
   | 'health'
   | 'travel'
-  | 'tennis';
+  | 'tennis'
+  | 'khyaali-bhoot';
 
 export type LearnModuleId =
   | 'world-order'
