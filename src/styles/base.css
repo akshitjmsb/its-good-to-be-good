@@ -5,8 +5,8 @@ body {
     background-color: #f4f4f4; 
     color: #374151; /* Default text color - dark grey for good contrast */
     display: flex; 
-    justify-content: center; 
-    align-items: center; 
+    justify-content: safe center;
+    align-items: safe center;
     min-height: 100vh; 
     margin: 0; 
     padding: 0.5rem;
