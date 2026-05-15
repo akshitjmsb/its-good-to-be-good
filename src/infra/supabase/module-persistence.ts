@@ -9,6 +9,7 @@
 
 import { supabase } from '../../lib/supabase';
 import type { CustomModule, ModuleOverride, ModuleOverrides } from '../../domains/modules/customModules';
+import type { ModuleCategory } from '../../domains/modules/types';
 
 const TABLE = 'user_modules';
 
@@ -39,6 +40,34 @@ export async function loadCustomModulesFromSupabase(
     }));
   } catch (error) {
     console.error('Error loading custom modules:', error);
+    return null;
+  }
+}
+
+/**
+ * Load the set of currently-archived module ids for this user.
+ *
+ * Returns the ids regardless of `is_custom` — built-in archives live in
+ * placeholder rows that the override loader skips on its own.
+ */
+export async function loadArchivedFromSupabase(
+  userId: string
+): Promise<string[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('module_id, archived_at')
+      .eq('user_id', userId)
+      .not('archived_at', 'is', null);
+
+    if (error || !data) {
+      if (error) console.error('Error loading archived modules from Supabase:', error);
+      return null;
+    }
+
+    return data.map((row) => row.module_id);
+  } catch (error) {
+    console.error('Error loading archived modules:', error);
     return null;
   }
 }
@@ -171,6 +200,75 @@ export async function saveOverrideToSupabase(
     }
   } catch (error) {
     console.error('Error saving module override:', error);
+  }
+}
+
+/* ── Archive state ─────────────────────────────────────────────────── */
+
+/**
+ * Mark a module archived or active in Supabase. Built-in modules that
+ * have no row yet (no override, not custom) get a placeholder row so
+ * the archive bit has somewhere to land — `display_name`/`emoji` stay
+ * empty, and the override loader skips empty rows.
+ *
+ * The diff against current state happens in-memory; this call only
+ * pushes the chosen state. There is no read-modify-write here, so the
+ * saveTasks-style "diff wipes new rows" failure mode does not apply.
+ */
+export async function setArchivedInSupabase(
+  userId: string,
+  moduleId: string,
+  archived: boolean,
+  options: {
+    /** Required when the module may not yet have a row (built-ins on first archive). */
+    category?: ModuleCategory;
+    /** True if this is a custom module — preserves the is_custom flag on upsert. */
+    isCustom?: boolean;
+  } = {}
+): Promise<void> {
+  try {
+    const archivedAt = archived ? new Date().toISOString() : null;
+
+    // Try update first — preserves any existing override/custom fields.
+    const { data: updateData, error: updateError } = await supabase
+      .from(TABLE)
+      .update({ archived_at: archivedAt })
+      .eq('user_id', userId)
+      .eq('module_id', moduleId)
+      .select('module_id');
+
+    if (updateError) {
+      console.error('Error updating archive state in Supabase:', updateError);
+      return;
+    }
+
+    // Row already existed → nothing more to do.
+    if (updateData && updateData.length > 0) return;
+
+    // No existing row — only meaningful when archiving. Unarchiving a
+    // non-existent row is a no-op (it was never archived to begin with).
+    if (!archived) return;
+
+    const row = {
+      user_id: userId,
+      module_id: moduleId,
+      display_name: '',
+      emoji: '',
+      category: options.category ?? 'learn',
+      is_custom: options.isCustom ?? false,
+      position: 0,
+      archived_at: archivedAt,
+    };
+
+    const { error: insertError } = await supabase
+      .from(TABLE)
+      .upsert(row, { onConflict: 'user_id,module_id' });
+
+    if (insertError) {
+      console.error('Error inserting archive placeholder in Supabase:', insertError);
+    }
+  } catch (error) {
+    console.error('Error setting archive state:', error);
   }
 }
 

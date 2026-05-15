@@ -2821,8 +2821,27 @@ body.module-edit-mode #module-edit-toggle {
     margin-top: 0.5rem;
 }
 
+/* Left-align: the last left-side action (secondary if present, else danger)
+   gets margin-right: auto, pushing Cancel/Save to the right. */
+.module-edit-dialog__actions > .module-edit-dialog__btn--secondary {
+    margin-right: auto;
+}
+
 .module-edit-dialog__actions > .module-edit-dialog__btn--danger {
     margin-right: auto;
+}
+
+/* When both are present, only the secondary (rendered after danger) needs
+   the auto margin. Reset danger so the two cluster together on the left. */
+.module-edit-dialog__actions
+    > .module-edit-dialog__btn--danger
+    + .module-edit-dialog__btn--secondary {
+    /* secondary already has margin-right: auto */
+}
+
+.module-edit-dialog__actions
+    > .module-edit-dialog__btn--danger:has(+ .module-edit-dialog__btn--secondary) {
+    margin-right: 0;
 }
 
 .module-edit-dialog__btn {
@@ -2864,6 +2883,19 @@ body.module-edit-mode #module-edit-toggle {
     color: #6b7280;
 }
 
+/* Non-destructive secondary action (Archive). Quieter than danger, still
+   anchored to the left side of the actions row. */
+.module-edit-dialog__btn--secondary {
+    color: #6b7280;
+    border-color: #d1d5db;
+}
+
+.module-edit-dialog__btn--secondary:hover {
+    color: #111111;
+    background-color: #f8f9fa;
+    border-color: #9ca3af;
+}
+
 .module-edit-dialog__btn--danger {
     color: #b91c1c;
     border-color: #fca5a5;
@@ -2878,6 +2910,102 @@ body.module-edit-mode #module-edit-toggle {
 .module-edit-dialog__btn:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Archived section — sits below the Learn grid. Hidden when empty.
+   Each chip is a quiet pill showing the emoji + module name + ↩.
+   Clicking the chip restores the module to its original surface.
+   ───────────────────────────────────────────────────────────────── */
+.archived-section {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--home-border, #e5e7eb);
+}
+
+.archived-section__title {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--home-muted, #6b7280);
+    margin: 0 0 0.15rem;
+    text-align: center;
+}
+
+.archived-section__hint {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--home-muted, #6b7280);
+    margin: 0 0 0.75rem;
+    text-align: center;
+    opacity: 0.75;
+}
+
+.archived-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.archived-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem 0.35rem 0.55rem;
+    background-color: var(--home-card-bg, #f8f9fa);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 999px;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--home-text, #374151);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.archived-item:hover {
+    background-color: #ffffff;
+    border-color: #9ca3af;
+    color: var(--home-ink, #111111);
+}
+
+.archived-item:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.archived-item__glyph {
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji',
+        'Special Elite', serif;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.archived-item__label {
+    line-height: 1;
+}
+
+.archived-item__restore {
+    color: var(--home-muted, #6b7280);
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.archived-item:hover .archived-item__restore {
+    color: var(--home-ink, #111111);
+}
+
+/* Hidden tiles in the Learn grid: `.module-card { display: flex }` (no
+   !important) is at the same specificity as the UA `[hidden]` rule, so
+   without this explicit override an archived module-card would still
+   render and steal a grid slot. Mirrors the existing `.nav-item[hidden]`
+   safety rule above. */
+.module-card[hidden] {
+    display: none !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────

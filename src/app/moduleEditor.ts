@@ -19,12 +19,14 @@
  */
 import {
   addCustomModule,
+  archiveModule,
   deleteCustomModule,
   isCustomId,
   updateCustomModule,
   saveOverride,
   type CustomModule,
 } from '../domains/modules/customModules';
+import { renderArchivedSection } from './customModules';
 
 const EDIT_BADGE_CLASS = 'module-edit-badge';
 const ADD_BUTTON_ID = 'module-add-btn';
@@ -121,6 +123,10 @@ function openEditDialog(meta: TileMeta): void {
       },
     ],
     primaryLabel: 'Save',
+    secondaryAction: {
+      label: 'Archive',
+      onAction: () => handleArchive(meta),
+    },
     extraAction: meta.isCustom
       ? { label: 'Delete', dangerous: true, onAction: () => handleDelete(meta) }
       : null,
@@ -131,6 +137,27 @@ function openEditDialog(meta: TileMeta): void {
   requestAnimationFrame(() => {
     dialog.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
   });
+}
+
+function handleArchive(meta: TileMeta): void {
+  archiveModule(meta.id, meta.category);
+  // Hide the live tile immediately; the Archived section renderer
+  // picks the entry up on the next call.
+  const tile = document.querySelector<HTMLElement>(
+    `[data-module="${CSS.escape(meta.id)}"]`
+  );
+  if (tile) {
+    if (meta.isCustom) {
+      // Custom tiles are injected at render time; remove rather than
+      // hide so re-rendering can rebuild them without duplicating.
+      tile.remove();
+    } else {
+      tile.hidden = true;
+      tile.dataset.archivedHidden = 'true';
+    }
+  }
+  renderArchivedSection();
+  closeOpenDialog();
 }
 
 function handleEditSave(meta: TileMeta, values: Record<string, string>): boolean {
@@ -424,7 +451,18 @@ interface DialogConfig {
   title: string;
   fields: DialogField[];
   primaryLabel: string;
+  /**
+   * Left-aligned destructive action (e.g. Delete). Only shown when set.
+   * Dialog stays open after invoking — the handler is responsible for
+   * closing it (so confirm-cancel can leave the dialog up).
+   */
   extraAction: { label: string; dangerous: boolean; onAction: () => void } | null;
+  /**
+   * Left-aligned non-destructive action (e.g. Archive). Sits between
+   * the danger button and the form controls. Closes the dialog after
+   * invoking so the page re-renders cleanly.
+   */
+  secondaryAction?: { label: string; onAction: () => void } | null;
   onSubmit: (values: Record<string, string>) => boolean;
 }
 
@@ -522,6 +560,15 @@ function buildDialog(config: DialogConfig): HTMLDivElement {
     extra.textContent = config.extraAction.label;
     extra.addEventListener('click', () => config.extraAction!.onAction());
     actions.appendChild(extra);
+  }
+
+  if (config.secondaryAction) {
+    const sec = document.createElement('button');
+    sec.type = 'button';
+    sec.className = 'module-edit-dialog__btn module-edit-dialog__btn--secondary';
+    sec.textContent = config.secondaryAction.label;
+    sec.addEventListener('click', () => config.secondaryAction!.onAction());
+    actions.appendChild(sec);
   }
 
   const cancel = document.createElement('button');

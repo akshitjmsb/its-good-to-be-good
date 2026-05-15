@@ -20,15 +20,18 @@ import type { ModuleCategory, ModuleId } from './types';
 import {
   loadCustomModulesFromSupabase,
   loadOverridesFromSupabase,
+  loadArchivedFromSupabase,
   saveCustomModuleToSupabase,
   deleteCustomModuleFromSupabase,
   updateCustomModuleInSupabase,
   saveOverrideToSupabase,
+  setArchivedInSupabase,
   migrateLocalStorageToSupabase,
 } from '../../infra/supabase/module-persistence';
 
 const OVERRIDES_KEY = 'module.overrides';
 const CUSTOM_LIST_KEY = 'module.custom.list';
+const ARCHIVED_KEY = 'module.archived';
 const MIGRATED_KEY = 'module.migrated-to-supabase';
 
 export interface ModuleOverride {
@@ -50,6 +53,7 @@ export interface CustomModule {
 
 let _cachedCustoms: CustomModule[] | null = null;
 let _cachedOverrides: ModuleOverrides | null = null;
+let _cachedArchived: Set<string> | null = null;
 let _userId: string | null = null;
 let _initialized = false;
 
@@ -94,6 +98,20 @@ function loadOverridesFromLocalStorage(): ModuleOverrides {
     if (override.displayName || override.emoji) out[id] = override;
   }
   return out;
+}
+
+function loadArchivedFromLocalStorage(): Set<string> {
+  const raw = readJson<unknown>(ARCHIVED_KEY, []);
+  if (!Array.isArray(raw)) return new Set();
+  const out = new Set<string>();
+  for (const id of raw) {
+    if (typeof id === 'string' && id) out.add(id);
+  }
+  return out;
+}
+
+function cacheArchived(set: Set<string>): void {
+  writeJson(ARCHIVED_KEY, Array.from(set));
 }
 
 function loadCustomModulesFromLocalStorage(): CustomModule[] {
@@ -141,9 +159,10 @@ export async function initModuleStore(userId: string): Promise<void> {
   _userId = userId;
 
   // Try Supabase first.
-  const [remoteCustoms, remoteOverrides] = await Promise.all([
+  const [remoteCustoms, remoteOverrides, remoteArchived] = await Promise.all([
     loadCustomModulesFromSupabase(userId),
     loadOverridesFromSupabase(userId),
+    loadArchivedFromSupabase(userId),
   ]);
 
   const supabaseWorked = remoteCustoms !== null && remoteOverrides !== null;
@@ -151,10 +170,15 @@ export async function initModuleStore(userId: string): Promise<void> {
   if (supabaseWorked) {
     _cachedCustoms = remoteCustoms;
     _cachedOverrides = remoteOverrides;
+    // Archived can independently fail; default to empty rather than wipe.
+    _cachedArchived = remoteArchived === null
+      ? loadArchivedFromLocalStorage()
+      : new Set(remoteArchived);
 
     // Update localStorage cache to match Supabase.
     cacheCustomModules(_cachedCustoms);
     cacheOverrides(_cachedOverrides);
+    cacheArchived(_cachedArchived);
 
     // Check if localStorage has data that Supabase doesn't (first-time migration).
     const alreadyMigrated = readJson<boolean>(MIGRATED_KEY, false);
@@ -189,6 +213,7 @@ export async function initModuleStore(userId: string): Promise<void> {
     // Supabase unavailable — use localStorage.
     _cachedCustoms = loadCustomModulesFromLocalStorage();
     _cachedOverrides = loadOverridesFromLocalStorage();
+    _cachedArchived = loadArchivedFromLocalStorage();
   }
 
   _initialized = true;
@@ -277,6 +302,13 @@ export function deleteCustomModule(id: string): void {
     _cachedOverrides = overrides;
     cacheOverrides(overrides);
   }
+  // Drop the archive flag too — Supabase row is gone, local state must agree.
+  const archived = readArchivedSet();
+  if (archived.has(id)) {
+    archived.delete(id);
+    _cachedArchived = archived;
+    cacheArchived(archived);
+  }
 
   // Fire-and-forget to Supabase.
   if (_userId) {
@@ -308,4 +340,60 @@ export function findCustomModule(id: string): CustomModule | undefined {
 
 export function isCustomId(id: string): boolean {
   return id.startsWith('custom-');
+}
+
+/* ── Archive state ─────────────────────────────────────────────────── */
+
+function readArchivedSet(): Set<string> {
+  if (_initialized && _cachedArchived) return new Set(_cachedArchived);
+  return loadArchivedFromLocalStorage();
+}
+
+export function loadArchivedIds(): string[] {
+  return Array.from(readArchivedSet());
+}
+
+export function isModuleArchived(id: string): boolean {
+  return readArchivedSet().has(id);
+}
+
+/**
+ * Archive a module so it disappears from the carousel/grid. Built-in
+ * modules need a category passed in so we can write a placeholder row
+ * the first time. Custom modules ignore the option since their row
+ * already exists with `is_custom=true`.
+ *
+ * Updates the in-memory cache + localStorage synchronously so the
+ * caller can re-render immediately, then fires the Supabase write
+ * fire-and-forget. No read-modify-write — the diff against the desired
+ * state lives on the row itself.
+ */
+export function archiveModule(
+  id: ModuleId | string,
+  category: ModuleCategory
+): void {
+  const set = readArchivedSet();
+  if (set.has(id)) return;
+  set.add(id);
+  _cachedArchived = set;
+  cacheArchived(set);
+
+  if (_userId) {
+    setArchivedInSupabase(_userId, String(id), true, {
+      category,
+      isCustom: isCustomId(String(id)),
+    }).catch(() => {});
+  }
+}
+
+export function unarchiveModule(id: ModuleId | string): void {
+  const set = readArchivedSet();
+  if (!set.has(id)) return;
+  set.delete(id);
+  _cachedArchived = set;
+  cacheArchived(set);
+
+  if (_userId) {
+    setArchivedInSupabase(_userId, String(id), false).catch(() => {});
+  }
 }
