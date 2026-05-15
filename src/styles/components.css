@@ -33,6 +33,9 @@ button.preview-card {
      min-height: 60px; /* Slightly larger touch target for mobile */
      padding: 0.875rem; /* Increased padding for mobile */
      width: 100%;
+     /* Disable iOS double-tap-to-zoom on tiles so a real double-tap
+        fires two `click` events (used to enter edit mode). */
+     touch-action: manipulation;
 }
 
 .module-icon {
@@ -565,6 +568,10 @@ button.preview-card {
     border-radius: 8px;
     min-height: 60px;
     cursor: pointer;
+    /* Disable iOS double-tap-to-zoom on tiles so a real double-tap
+       fires two `click` events (used to enter edit mode). The pan-y
+       gesture still works for vertical scrolling of the page. */
+    touch-action: manipulation;
 }
 
 /* `display: flex` above otherwise wins over the UA `[hidden]` rule, so a
@@ -2477,14 +2484,15 @@ button.preview-card {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Module reorder — Apple-style edit mode with jiggle + drag.
-   Long-press a tile to enter edit mode; tap "Done" (or outside any
-   tile, or press Escape) to exit. While editing both home containers
-   gain .module-edit-mode on the body and tiles wiggle.
+   Module edit mode — Apple-style jiggle while editing.
+   Double-click (or double-tap on mobile) any tile to enter edit
+   mode; tap "Done" (or outside any tile, or press Escape) to exit.
+   While editing both home containers gain .module-edit-mode on the
+   body and tiles wiggle.
    ───────────────────────────────────────────────────────────────── */
 
-/* Quiet -webkit selection / callout while a tile is being pressed
-   so the long-press doesn't surface the iOS magnifying loupe. */
+/* Quiet -webkit selection / callout while a tile is being tapped so
+   the rapid double-tap doesn't surface the iOS magnifying loupe. */
 body.module-edit-mode .nav-item,
 body.module-edit-mode .module-card {
     -webkit-user-select: none;

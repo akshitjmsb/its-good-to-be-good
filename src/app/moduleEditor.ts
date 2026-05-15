@@ -289,6 +289,9 @@ function ensureDoneButton(): HTMLButtonElement {
 
 function enterEditMode(): void {
   if (editMode) return;
+  // Cancel any in-flight single-click replay so we don't navigate
+  // ~280ms after entering edit mode.
+  clearPendingClick();
   editMode = true;
   document.body.classList.add('module-edit-mode');
   ensureDoneButton().classList.add('is-visible');
@@ -307,21 +310,115 @@ function toggleEditMode(): void {
   else enterEditMode();
 }
 
-function onDocumentClickCapture(e: MouseEvent): void {
-  if (!editMode) return;
-  const target = e.target as HTMLElement | null;
-  if (!target) return;
-  // Editor chrome handles its own clicks.
-  if (target.closest(EDITOR_CHROME_SELECTOR)) return;
-  const tile = target.closest<HTMLElement>('.nav-item, .module-card');
-  if (tile) {
-    // Don't navigate or open modals while editing.
-    e.preventDefault();
-    e.stopPropagation();
+/* ─────────────────────────────────────────────────────────────────
+ * Double-click → edit mode.
+ *
+ * Anchor tiles (`<a href>`) navigate on the first synchronous click,
+ * which means a native `dblclick` listener never fires — the page is
+ * already leaving. We synthesize a double-click by intercepting every
+ * tile click at capture phase: hold the first one for a short window
+ * and either fire the original action (single click) or enter edit
+ * mode (second click on the same tile).
+ *
+ * The cost: a ~DOUBLE_CLICK_MS delay on single clicks of tiles. Other
+ * elements (Edit pill, Add button, header refresh, …) are untouched.
+ *
+ * On iOS, `touch-action: manipulation` on the tiles (set in CSS)
+ * disables the double-tap-to-zoom delay so two quick taps both fire
+ * `click` events and our timer sees them.
+ * ───────────────────────────────────────────────────────────────── */
+
+const DOUBLE_CLICK_MS = 280;
+const SYNTHETIC_FLAG = '__kingTileSynthetic';
+
+interface PendingClick {
+  tile: HTMLElement;
+  timer: number;
+}
+
+let pendingClick: PendingClick | null = null;
+
+function clearPendingClick(): void {
+  if (!pendingClick) return;
+  window.clearTimeout(pendingClick.timer);
+  pendingClick = null;
+}
+
+/**
+ * Replay the tile's natural action after the double-click window
+ * expired without a second click. For anchors that's a navigation; for
+ * Learn buttons it's the delegated click handler in modalManager.ts —
+ * we re-dispatch a click marked as synthetic so this interceptor lets
+ * it through.
+ */
+function performTileAction(tile: HTMLElement): void {
+  if (tile instanceof HTMLAnchorElement && tile.href) {
+    if (tile.target === '_blank') window.open(tile.href, '_blank');
+    else window.location.href = tile.href;
     return;
   }
-  // Tap somewhere else on the page → exit edit mode.
-  exitEditMode();
+  const ev = new MouseEvent('click', { bubbles: true, cancelable: true });
+  (ev as unknown as Record<string, unknown>)[SYNTHETIC_FLAG] = true;
+  tile.dispatchEvent(ev);
+}
+
+function onDocumentClickCapture(e: MouseEvent): void {
+  // Let our own re-dispatched click reach the delegated handlers.
+  if ((e as unknown as Record<string, unknown>)[SYNTHETIC_FLAG]) return;
+
+  const target = e.target as HTMLElement | null;
+  if (!target) return;
+
+  // Editor chrome (pencil badge, Edit/Add pills, Done button, dialog)
+  // handles its own clicks regardless of edit-mode state. Cancel any
+  // pending tile-action replay so it doesn't fire after the user
+  // tapped a chrome control.
+  if (target.closest(EDITOR_CHROME_SELECTOR)) {
+    clearPendingClick();
+    return;
+  }
+
+  if (editMode) {
+    const tile = target.closest<HTMLElement>('.nav-item, .module-card');
+    if (tile) {
+      // Don't navigate or open modals while editing.
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    // Tap somewhere else on the page → exit edit mode.
+    exitEditMode();
+    return;
+  }
+
+  // Not editing: a tile click might be the start of a double-click.
+  const tile = target.closest<HTMLElement>('.nav-item, .module-card');
+  if (!tile) {
+    // Click on empty page / non-tile UI — cancel any pending replay
+    // so it doesn't fire 200ms later in the user's face.
+    clearPendingClick();
+    return;
+  }
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (pendingClick && pendingClick.tile === tile) {
+    // Second click on the same tile within the window — enter edit mode.
+    clearPendingClick();
+    enterEditMode();
+    return;
+  }
+
+  // First click — start the timer. If a second click doesn't arrive
+  // in time, replay the original tile action.
+  clearPendingClick();
+  const capturedTile = tile;
+  const timer = window.setTimeout(() => {
+    pendingClick = null;
+    performTileAction(capturedTile);
+  }, DOUBLE_CLICK_MS);
+  pendingClick = { tile: capturedTile, timer };
 }
 
 function onDocumentKeyDown(e: KeyboardEvent): void {
