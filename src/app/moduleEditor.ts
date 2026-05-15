@@ -21,8 +21,7 @@ import {
   addCustomModule,
   deleteCustomModule,
   isCustomId,
-  loadCustomModules,
-  saveCustomModules,
+  updateCustomModule,
   saveOverride,
   type CustomModule,
 } from '../domains/modules/customModules';
@@ -141,15 +140,8 @@ function handleEditSave(meta: TileMeta, values: Record<string, string>): boolean
   if (meta.isCustom && !emoji) return false;
 
   if (meta.isCustom) {
-    // Custom modules are stored by id directly — update the canonical entry,
-    // not the override map.
-    const list = loadCustomModules();
-    const target = list.find(m => m.id === meta.id);
-    if (target) {
-      target.name = name;
-      target.emoji = emoji;
-      saveCustomModules(list);
-    }
+    // Update in both localStorage cache and Supabase.
+    updateCustomModule(meta.id, { name, emoji });
   } else {
     saveOverride(meta.id, {
       displayName: name === meta.currentName ? undefined : name,

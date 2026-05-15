@@ -5,16 +5,31 @@
  *   1. Overrides — the user renamed or re-emoji'd a built-in module. Stored
  *      as a sparse map keyed by the registry's static id.
  *   2. Custom modules — entirely new tiles the user added at runtime. Each
- *      gets its own generated id (`custom-…`) and lives only in
- *      localStorage; the generic `custom.html` page renders their shell.
+ *      gets its own generated id (`custom-…`).
+ *
+ * Storage strategy:
+ *   • Primary: Supabase `user_modules` table (persists across devices).
+ *   • Cache: localStorage (write-through — immediate reads, offline resilience).
+ *   • On boot `initModuleStore()` loads from Supabase, backfills localStorage,
+ *     and auto-migrates any localStorage-only data to Supabase.
  *
  * Both stores degrade silently to empty values on parse/quota errors so
  * the home keeps rendering even if storage is corrupt.
  */
 import type { ModuleCategory, ModuleId } from './types';
+import {
+  loadCustomModulesFromSupabase,
+  loadOverridesFromSupabase,
+  saveCustomModuleToSupabase,
+  deleteCustomModuleFromSupabase,
+  updateCustomModuleInSupabase,
+  saveOverrideToSupabase,
+  migrateLocalStorageToSupabase,
+} from '../../infra/supabase/module-persistence';
 
 const OVERRIDES_KEY = 'module.overrides';
 const CUSTOM_LIST_KEY = 'module.custom.list';
+const MIGRATED_KEY = 'module.migrated-to-supabase';
 
 export interface ModuleOverride {
   displayName?: string;
@@ -30,6 +45,15 @@ export interface CustomModule {
   category: ModuleCategory;
   createdAt: number;
 }
+
+/* ── In-memory cache (populated by initModuleStore) ────────────────── */
+
+let _cachedCustoms: CustomModule[] | null = null;
+let _cachedOverrides: ModuleOverrides | null = null;
+let _userId: string | null = null;
+let _initialized = false;
+
+/* ── localStorage helpers ──────────────────────────────────────────── */
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -51,7 +75,9 @@ function writeJson(key: string, value: unknown): void {
   }
 }
 
-export function loadOverrides(): ModuleOverrides {
+/* ── Load from localStorage (fallback / cache read) ────────────────── */
+
+function loadOverridesFromLocalStorage(): ModuleOverrides {
   const raw = readJson<unknown>(OVERRIDES_KEY, {});
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
   const out: ModuleOverrides = {};
@@ -70,26 +96,7 @@ export function loadOverrides(): ModuleOverrides {
   return out;
 }
 
-export function saveOverride(id: ModuleId | string, patch: ModuleOverride): void {
-  const current = loadOverrides();
-  const merged: ModuleOverride = { ...current[id] };
-  if (patch.displayName !== undefined) {
-    if (patch.displayName.trim()) merged.displayName = patch.displayName.trim();
-    else delete merged.displayName;
-  }
-  if (patch.emoji !== undefined) {
-    if (patch.emoji.trim()) merged.emoji = patch.emoji.trim();
-    else delete merged.emoji;
-  }
-  if (!merged.displayName && !merged.emoji) {
-    delete current[id];
-  } else {
-    current[id] = merged;
-  }
-  writeJson(OVERRIDES_KEY, current);
-}
-
-export function loadCustomModules(): CustomModule[] {
+function loadCustomModulesFromLocalStorage(): CustomModule[] {
   const raw = readJson<unknown>(CUSTOM_LIST_KEY, []);
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((entry): CustomModule[] => {
@@ -113,8 +120,122 @@ export function loadCustomModules(): CustomModule[] {
   });
 }
 
-export function saveCustomModules(modules: CustomModule[]): void {
+/* ── Write to localStorage (cache) ─────────────────────────────────── */
+
+function cacheCustomModules(modules: CustomModule[]): void {
   writeJson(CUSTOM_LIST_KEY, modules);
+}
+
+function cacheOverrides(overrides: ModuleOverrides): void {
+  writeJson(OVERRIDES_KEY, overrides);
+}
+
+/* ── Initialization ────────────────────────────────────────────────── */
+
+/**
+ * Boot the module store: load from Supabase, fall back to localStorage,
+ * and auto-migrate if needed. Call once at app startup before rendering
+ * custom tiles or applying overrides.
+ */
+export async function initModuleStore(userId: string): Promise<void> {
+  _userId = userId;
+
+  // Try Supabase first.
+  const [remoteCustoms, remoteOverrides] = await Promise.all([
+    loadCustomModulesFromSupabase(userId),
+    loadOverridesFromSupabase(userId),
+  ]);
+
+  const supabaseWorked = remoteCustoms !== null && remoteOverrides !== null;
+
+  if (supabaseWorked) {
+    _cachedCustoms = remoteCustoms;
+    _cachedOverrides = remoteOverrides;
+
+    // Update localStorage cache to match Supabase.
+    cacheCustomModules(_cachedCustoms);
+    cacheOverrides(_cachedOverrides);
+
+    // Check if localStorage has data that Supabase doesn't (first-time migration).
+    const alreadyMigrated = readJson<boolean>(MIGRATED_KEY, false);
+    if (!alreadyMigrated) {
+      const localCustoms = loadCustomModulesFromLocalStorage();
+      const localOverrides = loadOverridesFromLocalStorage();
+
+      // Find localStorage entries not yet in Supabase.
+      const remoteCustomIds = new Set(_cachedCustoms.map(m => m.id));
+      const newCustoms = localCustoms.filter(m => !remoteCustomIds.has(m.id));
+
+      const remoteOverrideIds = new Set(Object.keys(_cachedOverrides));
+      const newOverrides: ModuleOverrides = {};
+      for (const [id, override] of Object.entries(localOverrides)) {
+        if (!remoteOverrideIds.has(id)) newOverrides[id] = override;
+      }
+
+      if (newCustoms.length > 0 || Object.keys(newOverrides).length > 0) {
+        await migrateLocalStorageToSupabase(userId, newCustoms, newOverrides);
+        // Merge into cache.
+        _cachedCustoms = [..._cachedCustoms, ...newCustoms];
+        for (const [id, override] of Object.entries(newOverrides)) {
+          _cachedOverrides[id] = override;
+        }
+        cacheCustomModules(_cachedCustoms);
+        cacheOverrides(_cachedOverrides);
+      }
+
+      writeJson(MIGRATED_KEY, true);
+    }
+  } else {
+    // Supabase unavailable — use localStorage.
+    _cachedCustoms = loadCustomModulesFromLocalStorage();
+    _cachedOverrides = loadOverridesFromLocalStorage();
+  }
+
+  _initialized = true;
+}
+
+/* ── Public API (synchronous — reads from in-memory cache) ─────────── */
+
+export function loadOverrides(): ModuleOverrides {
+  if (_initialized && _cachedOverrides) return { ..._cachedOverrides };
+  return loadOverridesFromLocalStorage();
+}
+
+export function saveOverride(id: ModuleId | string, patch: ModuleOverride): void {
+  const current = loadOverrides();
+  const merged: ModuleOverride = { ...current[id] };
+  if (patch.displayName !== undefined) {
+    if (patch.displayName.trim()) merged.displayName = patch.displayName.trim();
+    else delete merged.displayName;
+  }
+  if (patch.emoji !== undefined) {
+    if (patch.emoji.trim()) merged.emoji = patch.emoji.trim();
+    else delete merged.emoji;
+  }
+  if (!merged.displayName && !merged.emoji) {
+    delete current[id];
+  } else {
+    current[id] = merged;
+  }
+
+  // Update caches.
+  _cachedOverrides = current;
+  cacheOverrides(current);
+
+  // Fire-and-forget to Supabase.
+  if (_userId) {
+    saveOverrideToSupabase(_userId, String(id), merged).catch(() => {});
+  }
+}
+
+export function loadCustomModules(): CustomModule[] {
+  if (_initialized && _cachedCustoms) return [..._cachedCustoms];
+  return loadCustomModulesFromLocalStorage();
+}
+
+export function saveCustomModules(modules: CustomModule[]): void {
+  _cachedCustoms = modules;
+  cacheCustomModules(modules);
 }
 
 export function generateCustomId(): string {
@@ -137,6 +258,12 @@ export function addCustomModule(input: {
   };
   list.push(created);
   saveCustomModules(list);
+
+  // Fire-and-forget to Supabase.
+  if (_userId) {
+    saveCustomModuleToSupabase(_userId, created).catch(() => {});
+  }
+
   return created;
 }
 
@@ -147,7 +274,31 @@ export function deleteCustomModule(id: string): void {
   const overrides = loadOverrides();
   if (overrides[id]) {
     delete overrides[id];
-    writeJson(OVERRIDES_KEY, overrides);
+    _cachedOverrides = overrides;
+    cacheOverrides(overrides);
+  }
+
+  // Fire-and-forget to Supabase.
+  if (_userId) {
+    deleteCustomModuleFromSupabase(_userId, id).catch(() => {});
+  }
+}
+
+/**
+ * Update an existing custom module's name/emoji in both caches and Supabase.
+ */
+export function updateCustomModule(id: string, patch: { name?: string; emoji?: string }): void {
+  const list = loadCustomModules();
+  const target = list.find(m => m.id === id);
+  if (!target) return;
+
+  if (patch.name !== undefined) target.name = patch.name;
+  if (patch.emoji !== undefined) target.emoji = patch.emoji;
+  saveCustomModules(list);
+
+  // Fire-and-forget to Supabase.
+  if (_userId) {
+    updateCustomModuleInSupabase(_userId, target).catch(() => {});
   }
 }
 

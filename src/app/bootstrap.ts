@@ -17,6 +17,7 @@ import { initializeSchedulers } from './scheduler';
 // import { initializeModuleReorder } from './moduleReorder';
 import { initializeCustomModules } from './customModules';
 import { initializeModuleEditor } from './moduleEditor';
+import { initModuleStore } from '../domains/modules/customModules';
 
 function showSyncStatus(message: string, isFinal = false): void {
   const statusEl = document.getElementById('sync-status');
@@ -88,6 +89,10 @@ export async function bootstrapApp(): Promise<void> {
   async function initializeApp() {
     try {
       renderModuleIcons();
+      // Load custom modules + overrides from Supabase (falls back to
+      // localStorage). Must finish before tiles are injected.
+      const { currentUserId: bootUserId } = store.getState();
+      await initModuleStore(bootUserId);
       // Inject user-created tiles + apply name/emoji overrides on top of
       // the static icon paint. The editor wiring then attaches the
       // "+ Add module" pill, "Edit" toggle, and per-tile pencils.
