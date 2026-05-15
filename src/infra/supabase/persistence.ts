@@ -101,21 +101,11 @@ export async function saveTasks(
       if (error) throw error;
     }
 
-    // 2. Insert brand-new tasks.
-    if (brandNew.length > 0) {
-      const rows = brandNew.map((task, i) => ({
-        user_id: userId,
-        text: task.text,
-        completed: task.completed,
-        position: task.position ?? existing.length + i,
-        parent_id: task.parent_id ?? null,
-      }));
-      const { error } = await supabase.from('tasks').insert(rows);
-      if (error) throw error;
-    }
-
-    // 3. Delete tasks that were removed locally.
-    //    Fetch current server IDs, diff against local IDs.
+    // 2. Delete tasks that were removed locally.
+    //    Must run BEFORE inserting brand-new tasks: otherwise the freshly
+    //    inserted rows show up in `serverRows` but are absent from `localIds`
+    //    (which only contains pre-existing IDs), so the diff would wrongly
+    //    delete the row we just created.
     const { data: serverRows } = await supabase
       .from('tasks')
       .select('id')
@@ -136,6 +126,19 @@ export async function saveTasks(
           console.error('Error deleting removed tasks:', error);
         }
       }
+    }
+
+    // 3. Insert brand-new tasks.
+    if (brandNew.length > 0) {
+      const rows = brandNew.map((task, i) => ({
+        user_id: userId,
+        text: task.text,
+        completed: task.completed,
+        position: task.position ?? existing.length + i,
+        parent_id: task.parent_id ?? null,
+      }));
+      const { error } = await supabase.from('tasks').insert(rows);
+      if (error) throw error;
     }
 
     // 4. Re-read to get server-generated IDs for newly inserted tasks.
