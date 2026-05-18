@@ -1,10 +1,7 @@
-import { showFoodModal } from './foodModal';
-import { showAnalyticsModal, cleanupAnalyticsEventListeners } from './analyticsModal';
-import { showHoodModal } from './hoodModal';
-import { showExerciseModal } from './exerciseModal';
-import { fetchAndShowWorldOrder } from './worldOrderModal';
-import { showCoffeeMenu } from './coffeeModal';
-import { fetchAndShowPoetry } from './poetryModal';
+// Modal handlers are imported lazily — none of them are needed for first
+// paint of the home, so keeping them off the initial chunk shaves both JS
+// and CSS weight from the cold-start path. Dynamic imports resolve
+// instantly on the second open because the module graph is cached.
 import {
     getModulesByCategory,
     type LearnModuleId,
@@ -32,15 +29,36 @@ function openMrMojoRising(): void {
 }
 
 const LEARN_MODULE_HANDLERS: Record<LearnModuleId, LearnModuleHandler> = {
-    'world-order': () => fetchAndShowWorldOrder(),
-    coffee: ({ dates }) => showCoffeeMenu(dates.active),
+    'world-order': async () => {
+        const m = await import('./worldOrderModal');
+        return m.fetchAndShowWorldOrder();
+    },
+    coffee: async ({ dates }) => {
+        const m = await import('./coffeeModal');
+        return m.showCoffeeMenu(dates.active);
+    },
     guitar: openMrMojoRising,
-    poetry: ({ dates }) => fetchAndShowPoetry(dates.active),
+    poetry: async ({ dates }) => {
+        const m = await import('./poetryModal');
+        return m.fetchAndShowPoetry(dates.active);
+    },
     french: navigateToFrenchPage,
-    food: ({ dates, keys }) => showFoodModal(dates.active, keys.today),
-    analytics: ({ dates }) => showAnalyticsModal(dates.active),
-    curious: ({ dates }) => showHoodModal(dates.active),
-    exercise: ({ dates }) => showExerciseModal(dates.active),
+    food: async ({ dates, keys }) => {
+        const m = await import('./foodModal');
+        return m.showFoodModal(dates.active, keys.today);
+    },
+    analytics: async ({ dates }) => {
+        const m = await import('./analyticsModal');
+        return m.showAnalyticsModal(dates.active);
+    },
+    curious: async ({ dates }) => {
+        const m = await import('./hoodModal');
+        return m.showHoodModal(dates.active);
+    },
+    exercise: async ({ dates }) => {
+        const m = await import('./exerciseModal');
+        return m.showExerciseModal(dates.active);
+    },
 };
 
 export function initializeModalManager(
@@ -59,7 +77,12 @@ export function initializeModalManager(
             activeModal.classList.remove('flex');
 
             if (activeModal.id === 'analytics-engineer-modal') {
-                cleanupAnalyticsEventListeners();
+                // The analytics module is already in the module graph here
+                // (the modal couldn't have opened otherwise), so this import
+                // resolves synchronously from cache.
+                void import('./analyticsModal').then(m =>
+                    m.cleanupAnalyticsEventListeners()
+                );
             }
             return;
         }

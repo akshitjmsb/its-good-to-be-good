@@ -150,43 +150,75 @@ function cacheOverrides(overrides: ModuleOverrides): void {
 
 /* ── Initialization ────────────────────────────────────────────────── */
 
+export interface InitModuleStoreOptions {
+  /**
+   * Fires after a successful background Supabase refresh, so the caller
+   * can re-render tiles/overrides with the fresh remote state. Not called
+   * if Supabase is unreachable — the localStorage cache stays authoritative.
+   */
+  onRefresh?: () => void;
+}
+
 /**
- * Boot the module store: load from Supabase, fall back to localStorage,
- * and auto-migrate if needed. Call once at app startup before rendering
- * custom tiles or applying overrides.
+ * Boot the module store. Cache-first: populates the in-memory cache from
+ * localStorage synchronously so the home can paint immediately, then
+ * kicks off a Supabase refresh in the background. When fresh data lands,
+ * `options.onRefresh` is invoked so the caller can re-render.
+ *
+ * The returned Promise resolves as soon as the synchronous paint is
+ * ready — it does NOT wait on the network.
  */
-export async function initModuleStore(userId: string): Promise<void> {
+export function initModuleStore(
+  userId: string,
+  options: InitModuleStoreOptions = {}
+): Promise<void> {
   _userId = userId;
 
-  // Try Supabase first.
-  const [remoteCustoms, remoteOverrides, remoteArchived] = await Promise.all([
-    loadCustomModulesFromSupabase(userId),
-    loadOverridesFromSupabase(userId),
-    loadArchivedFromSupabase(userId),
-  ]);
+  if (!_initialized) {
+    _cachedCustoms = loadCustomModulesFromLocalStorage();
+    _cachedOverrides = loadOverridesFromLocalStorage();
+    _cachedArchived = loadArchivedFromLocalStorage();
+    _initialized = true;
+  }
 
-  const supabaseWorked = remoteCustoms !== null && remoteOverrides !== null;
+  void refreshFromSupabase(userId, options.onRefresh);
 
-  if (supabaseWorked) {
+  return Promise.resolve();
+}
+
+async function refreshFromSupabase(
+  userId: string,
+  onRefresh: (() => void) | undefined
+): Promise<void> {
+  try {
+    const [remoteCustoms, remoteOverrides, remoteArchived] = await Promise.all([
+      loadCustomModulesFromSupabase(userId),
+      loadOverridesFromSupabase(userId),
+      loadArchivedFromSupabase(userId),
+    ]);
+
+    const supabaseWorked = remoteCustoms !== null && remoteOverrides !== null;
+    if (!supabaseWorked) {
+      // Supabase unavailable — localStorage cache from sync init stays authoritative.
+      return;
+    }
+
     _cachedCustoms = remoteCustoms;
     _cachedOverrides = remoteOverrides;
-    // Archived can independently fail; default to empty rather than wipe.
-    _cachedArchived = remoteArchived === null
-      ? loadArchivedFromLocalStorage()
-      : new Set(remoteArchived);
+    if (remoteArchived !== null) {
+      _cachedArchived = new Set(remoteArchived);
+    }
 
-    // Update localStorage cache to match Supabase.
     cacheCustomModules(_cachedCustoms);
     cacheOverrides(_cachedOverrides);
-    cacheArchived(_cachedArchived);
+    if (_cachedArchived) cacheArchived(_cachedArchived);
 
-    // Check if localStorage has data that Supabase doesn't (first-time migration).
+    // First-time migration: push any localStorage-only entries to Supabase.
     const alreadyMigrated = readJson<boolean>(MIGRATED_KEY, false);
     if (!alreadyMigrated) {
       const localCustoms = loadCustomModulesFromLocalStorage();
       const localOverrides = loadOverridesFromLocalStorage();
 
-      // Find localStorage entries not yet in Supabase.
       const remoteCustomIds = new Set(_cachedCustoms.map(m => m.id));
       const newCustoms = localCustoms.filter(m => !remoteCustomIds.has(m.id));
 
@@ -198,7 +230,6 @@ export async function initModuleStore(userId: string): Promise<void> {
 
       if (newCustoms.length > 0 || Object.keys(newOverrides).length > 0) {
         await migrateLocalStorageToSupabase(userId, newCustoms, newOverrides);
-        // Merge into cache.
         _cachedCustoms = [..._cachedCustoms, ...newCustoms];
         for (const [id, override] of Object.entries(newOverrides)) {
           _cachedOverrides[id] = override;
@@ -209,14 +240,12 @@ export async function initModuleStore(userId: string): Promise<void> {
 
       writeJson(MIGRATED_KEY, true);
     }
-  } else {
-    // Supabase unavailable — use localStorage.
-    _cachedCustoms = loadCustomModulesFromLocalStorage();
-    _cachedOverrides = loadOverridesFromLocalStorage();
-    _cachedArchived = loadArchivedFromLocalStorage();
-  }
 
-  _initialized = true;
+    onRefresh?.();
+  } catch {
+    // Network or parse failure — keep the localStorage-painted state. The
+    // user-visible UI is already up; no need to surface this.
+  }
 }
 
 /* ── Public API (synchronous — reads from in-memory cache) ─────────── */

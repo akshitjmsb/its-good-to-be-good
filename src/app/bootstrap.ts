@@ -89,10 +89,18 @@ export async function bootstrapApp(): Promise<void> {
   async function initializeApp() {
     try {
       renderModuleIcons();
-      // Load custom modules + overrides from Supabase (falls back to
-      // localStorage). Must finish before tiles are injected.
+      // Cache-first: initModuleStore hydrates from localStorage synchronously
+      // so we can paint tiles immediately, then refreshes from Supabase in the
+      // background. When fresh data lands, re-inject tiles and re-render the
+      // day module so any remote name/emoji/archive changes appear without
+      // a reload. Both callees are idempotent.
       const { currentUserId: bootUserId } = store.getState();
-      await initModuleStore(bootUserId);
+      await initModuleStore(bootUserId, {
+        onRefresh: () => {
+          initializeCustomModules();
+          void mainRender();
+        },
+      });
       // Inject user-created tiles + apply name/emoji overrides on top of
       // the static icon paint. The editor wiring then attaches the
       // "+ Add module" pill, "Edit" toggle, and per-tile pencils.
