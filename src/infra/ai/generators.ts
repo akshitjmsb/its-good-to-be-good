@@ -1,19 +1,15 @@
 import {
   getCachedContent,
-  getCachedFoodPlan,
   saveCachedContent,
-  saveFoodPlan,
 } from '../supabase/content-cache';
 import { callPerplexityAPI, hasApiKey, parseJsonResponse } from './client';
 import { ErrorHandler } from '../../utils/errorHandling';
 import {
   getFallbackAnalytics,
-  getFallbackFoodPlan,
   getFallbackPhysics,
 } from './fallbacks';
 import {
   AnalyticsContent,
-  FoodPlanText,
   PhysicsContent,
 } from '../../domains/content/types';
 
@@ -146,55 +142,6 @@ export async function getOrGenerateDynamicContent<T extends ContentType>(
     console.error('Error saving content to Supabase cache', error);
   }
   return generated;
-}
-
-export async function getOrGeneratePlanForDate(
-  userId: string,
-  date: Date,
-  dateKey: string
-): Promise<FoodPlanText> {
-  const cachedPlan = await getCachedFoodPlan(userId, dateKey);
-  if (cachedPlan) return cachedPlan;
-
-  const generatedPlan = await generateFoodPlanForDate(date);
-  if (generatedPlan && !generatedPlan.startsWith('Could not generate')) {
-    try {
-      await saveFoodPlan(userId, dateKey, generatedPlan);
-    } catch (error) {
-      console.error('Error saving food plan to Supabase cache', error);
-    }
-  }
-  return generatedPlan;
-}
-
-export async function generateFoodPlanForDate(
-  date: Date
-): Promise<FoodPlanText> {
-  if (!hasApiKey) {
-    return getFallbackFoodPlan(date);
-  }
-
-  const dayOfWeek = date.getDay();
-  let prompt =
-    'Create a full-day meal plan using only whole, minimally processed foods that naturally support libido. Format the output as a simple, scannable list with clear headings (Breakfast, Lunch, Dinner, Snack). Be very concise. Prioritize ingredients known to boost sexual health: oysters, leafy greens, avocados, nuts, dark chocolate, berries, watermelon, olive oil, eggs, fatty fish, ginger, cinnamon. Avoid processed foods, refined sugar, and alcohol. Do not use any markdown formatting like asterisks.';
-
-  if (dayOfWeek === 2 || dayOfWeek === 4) {
-    prompt +=
-      ' Avoid all meat (including poultry and red meat), but allow seafood, eggs, and plant-based protein.';
-  }
-
-  try {
-    const responseText = await callPerplexityAPI(prompt, {
-      model: 'sonar-pro',
-      responseFormat: 'text',
-    });
-    const text = responseText.replace(/\*/g, '');
-    return text || 'Could not generate a food plan. The response was empty.';
-  } catch (error) {
-    const appError = ErrorHandler.handleApiError(error, 'Food plan generation');
-    ErrorHandler.logError(appError);
-    return getFallbackFoodPlan(date);
-  }
 }
 
 function getAnalyticsPrompt(dateKey: string): string {

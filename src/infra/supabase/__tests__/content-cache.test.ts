@@ -45,7 +45,6 @@ vi.mock('../../../lib/supabase', () => ({
 
 import {
   getCachedContent,
-  getCachedFoodPlan,
   saveCachedContent,
 } from '../content-cache';
 
@@ -82,34 +81,19 @@ describe('getCachedContent', () => {
 
 describe('saveCachedContent', () => {
   it('upserts with the conflict key', async () => {
-    await saveCachedContent('u-1', 'food-plan', '2026-05-01', 'plan text');
+    await saveCachedContent('u-1', 'analytics', '2026-05-01', { topic: 'sql' });
     const upserted = recorder.upserted as Record<string, unknown>;
     expect(upserted.user_id).toBe('u-1');
-    expect(upserted.content_type).toBe('food-plan');
+    expect(upserted.content_type).toBe('analytics');
     expect(upserted.date_key).toBe('2026-05-01');
-    expect(upserted.content).toBe('plan text');
+    expect(upserted.content).toEqual({ topic: 'sql' });
     expect(recorder.upsertConflict).toBe('user_id,content_type,date_key');
   });
 
   it('rethrows when upsert returns an error', async () => {
     recorder.upsertError = { message: 'denied' };
     await expect(
-      saveCachedContent('u-1', 'food-plan', '2026-05-01', 'x')
+      saveCachedContent('u-1', 'analytics', '2026-05-01', 'x')
     ).rejects.toEqual({ message: 'denied' });
-  });
-});
-
-describe('getCachedFoodPlan', () => {
-  it('unwraps a string-form cached plan', async () => {
-    recorder.selectResult = { data: { content: 'PLAIN PLAN' }, error: null };
-    expect(await getCachedFoodPlan('u', '2026-05-01')).toBe('PLAIN PLAN');
-  });
-
-  it('unwraps an object-form { plan } cached plan', async () => {
-    recorder.selectResult = {
-      data: { content: { plan: 'OBJECT PLAN' } },
-      error: null,
-    };
-    expect(await getCachedFoodPlan('u', '2026-05-01')).toBe('OBJECT PLAN');
   });
 });

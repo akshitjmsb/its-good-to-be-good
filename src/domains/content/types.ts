@@ -1,7 +1,6 @@
 export type ContentType =
   | 'analytics'
-  | 'transportation-physics'
-  | 'food-plan';
+  | 'transportation-physics';
 
 export interface AnalyticsQuestionTopic {
   title: string;
@@ -34,5 +33,3 @@ export interface PhysicsContent {
   title: string;
   explanation: string;
 }
-
-export type FoodPlanText = string;

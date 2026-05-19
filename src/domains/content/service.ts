@@ -1,12 +1,5 @@
-import {
-  getOrGenerateDynamicContent,
-  getOrGeneratePlanForDate,
-} from '../../infra/ai/generators';
-import {
-  AnalyticsContent,
-  FoodPlanText,
-  PhysicsContent,
-} from './types';
+import { getOrGenerateDynamicContent } from '../../infra/ai/generators';
+import { AnalyticsContent, PhysicsContent } from './types';
 
 export async function getAnalyticsContent(
   userId: string,
@@ -29,12 +22,3 @@ export async function getPhysicsContent(
     date
   )) as PhysicsContent | null;
 }
-
-export async function getFoodPlan(
-  userId: string,
-  date: Date,
-  dateKey: string
-): Promise<FoodPlanText> {
-  return await getOrGeneratePlanForDate(userId, date, dateKey);
-}
-

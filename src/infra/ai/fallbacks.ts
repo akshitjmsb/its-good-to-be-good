@@ -57,21 +57,3 @@ export function getFallbackPhysics(): PhysicsContent {
         explanation: "Airplane wings create lift by creating a pressure difference. Air moves faster over the top of the wing, creating lower pressure, while slower air underneath creates higher pressure, pushing the wing upward."
     };
 }
-
-
-export function getFallbackFoodPlan(date: Date): string {
-    const dayOfWeek = date.getDay();
-    const isNoMeatDay = dayOfWeek === 2 || dayOfWeek === 4;
-
-    if (isNoMeatDay) {
-        return `Breakfast: Oatmeal with berries, nuts, and cinnamon
-Lunch: Quinoa salad with avocado, leafy greens, and olive oil
-Dinner: Grilled salmon with steamed vegetables
-Snack: Dark chocolate and mixed nuts`;
-    } else {
-        return `Breakfast: Scrambled eggs with spinach and avocado
-Lunch: Grilled chicken with mixed greens and olive oil dressing
-Dinner: Lean beef stir-fry with vegetables
-Snack: Berries with Greek yogurt`;
-    }
-}

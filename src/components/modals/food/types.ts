@@ -1,3 +1,1 @@
-export interface FoodPlanContent {
-  text: string;
-}
+export type { MealCategory, Meal, DayMealPlan } from './data';

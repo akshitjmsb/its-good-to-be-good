@@ -88,9 +88,8 @@ export const MODAL_CONFIGS: Record<string, ModalConfig> = {
     },
     food: {
         modalId: 'food-modal',
-        contentId: 'food-plan-content',
-        titleId: 'food-modal-title',
-        loadingMessage: 'Loading food plan...'
+        contentId: 'food-content',
+        titleId: 'food-modal-title'
     },
     hood: {
         modalId: 'hood-modal',

@@ -2,7 +2,6 @@ import { supabase } from '../../lib/supabase';
 
 export type CachedContentType =
   | 'archive'
-  | 'food-plan'
   | 'analytics'
   | 'transportation-physics'
   | 'quote-deep-dive';
@@ -59,32 +58,4 @@ export async function saveCachedContent<T>(
     console.error('Error saving cached content:', error);
     throw error;
   }
-}
-
-export async function getCachedFoodPlan(
-  userId: string,
-  dateKey: string
-): Promise<string | null> {
-  try {
-    const cached = await getCachedContent<string | { plan: string }>(
-      userId,
-      'food-plan',
-      dateKey
-    );
-    if (!cached) return null;
-    if (typeof cached === 'string') return cached;
-    if (typeof cached === 'object' && 'plan' in cached) return cached.plan;
-    return null;
-  } catch (error) {
-    console.error('Error getting cached food plan:', error);
-    return null;
-  }
-}
-
-export async function saveFoodPlan(
-  userId: string,
-  dateKey: string,
-  plan: string
-): Promise<void> {
-  await saveCachedContent(userId, 'food-plan', dateKey, plan);
 }

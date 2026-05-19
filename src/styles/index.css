@@ -4,6 +4,7 @@
 @import './modals.css';
 @import './analytics.css';
 @import './exercise.css';
+@import './food.css';
 @import './topics.css';
 
 @tailwind base;
