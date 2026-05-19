@@ -157,7 +157,7 @@ export const MODULE_REGISTRY_DATA = [
   },
   {
     id: 'food',
-    displayName: "Today's Food",
+    displayName: 'Food',
     category: 'learn',
     surface: 'modal',
     entrySelector: '#food-clickable-day',

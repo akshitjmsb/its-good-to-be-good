@@ -9,6 +9,6 @@ export function showFoodModal(date: Date, _todayKey: string): void {
   elements.modal.classList.remove('hidden');
   elements.modal.classList.add('flex');
   elements.content.innerHTML = '';
-  setModalTitle(elements, "Today's Food");
+  setModalTitle(elements, 'Food');
   renderFoodView(elements.content, date);
 }
