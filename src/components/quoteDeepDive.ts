@@ -13,8 +13,8 @@
  */
 
 import {
-  callPerplexityAPI,
-  hasApiKey,
+  callAI,
+  hasProviderReady,
   parseJsonResponse,
 } from '../infra/ai/client';
 import {
@@ -90,8 +90,7 @@ async function fetchAndCache(
   userId: string,
   quote: MultilingualQuote
 ): Promise<QuoteDeepDive> {
-  const responseText = await callPerplexityAPI(buildPrompt(quote), {
-    model: 'sonar-pro',
+  const responseText = await callAI(buildPrompt(quote), {
     temperature: 0.6,
   });
   const parsed = parseJsonResponse(responseText);
@@ -131,7 +130,7 @@ export async function loadQuoteDeepDive(
 }
 
 export function renderDeepDiveScaffold(): string {
-  if (!hasApiKey) return '';
+  if (!hasProviderReady()) return '';
   return `
     <button type="button" class="quote-explore-toggle" aria-expanded="false" aria-controls="quote-deep-dive-panel">↓ Tap to explore</button>
     <div id="quote-deep-dive-panel" class="quote-deep-dive" hidden></div>
@@ -232,7 +231,7 @@ export function setActiveQuote(userId: string, quote: MultilingualQuote): void {
 }
 
 export function attachQuoteDeepDive(): void {
-  if (attached || !hasApiKey) return;
+  if (attached || !hasProviderReady()) return;
   const host = document.getElementById('life-pointer-display-day');
   if (!host) return;
   attached = true;

@@ -2,6 +2,9 @@
 
 interface ImportMetaEnv {
   readonly VITE_PERPLEXITY_API_KEY?: string;
+  readonly VITE_ANTHROPIC_API_KEY?: string;
+  readonly VITE_OLLAMA_URL?: string;
+  readonly VITE_OLLAMA_MODEL?: string;
 }
 
 interface ImportMeta {

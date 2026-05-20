@@ -2,7 +2,7 @@ import {
   getCachedContent,
   saveCachedContent,
 } from '../supabase/content-cache';
-import { callPerplexityAPI, hasApiKey, parseJsonResponse } from './client';
+import { callAI, hasProviderReady, parseJsonResponse } from './client';
 import { ErrorHandler } from '../../utils/errorHandling';
 import {
   getFallbackAnalytics,
@@ -92,7 +92,7 @@ async function generateDynamicContent<T extends ContentType>(
   contentType: T,
   dateKey: string
 ): Promise<GeneratedContentMap[T]> {
-  if (!hasApiKey) {
+  if (!hasProviderReady()) {
     return getFallbackContent(contentType) as GeneratedContentMap[T];
   }
 
@@ -102,8 +102,7 @@ async function generateDynamicContent<T extends ContentType>(
   }
 
   try {
-    const responseText = await callPerplexityAPI(prompt, {
-      model: 'sonar-pro',
+    const responseText = await callAI(prompt, {
       responseFormat: 'json_object',
     });
 

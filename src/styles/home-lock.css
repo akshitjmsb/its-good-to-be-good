@@ -54,3 +54,57 @@ body.home-vintage-lock .quote-author,
 body.home-vintage-lock .text-xs {
     color: var(--home-muted);
 }
+
+/* Provider selector — sits beneath the date/time line in the home header.
+   Reads as a quiet line of journal metadata: `powered by <provider> ▾`.
+   The native <select> is unstyled chrome; the caret and prefix sit beside
+   it so the whole thing reads as one continuous line. */
+.ai-provider-select {
+    margin-top: 0.25rem;
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--home-muted, #6b7280);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.15rem;
+    text-align: center;
+}
+
+.ai-provider-select__prefix {
+    color: inherit;
+}
+
+.ai-provider-select__select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0;
+    padding: 0 0 1px 0;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.ai-provider-select__select:focus {
+    outline: none;
+    border-bottom-color: var(--home-text, #374151);
+    color: var(--home-text, #374151);
+}
+
+.ai-provider-select__select:hover {
+    color: var(--home-text, #374151);
+}
+
+.ai-provider-select__caret {
+    color: inherit;
+    pointer-events: none;
+    margin-left: 0.1rem;
+}

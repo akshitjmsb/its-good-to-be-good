@@ -1,28 +1,48 @@
 /**
- * Perplexity API Client
- * Core API wrapper for making requests to Perplexity AI
+ * AI router — dispatches calls to the user-selected provider.
+ *
+ * The active provider is selected via `domains/ai/providerStore` and
+ * implemented in `./providers/*`. Each call looks up the selected provider
+ * at request time so flipping the dropdown takes effect for the next call
+ * without re-importing modules.
  */
 
-const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
-const apiKey = import.meta.env.VITE_PERPLEXITY_API_KEY as string;
+import { getSelectedProvider } from '../../domains/ai/providerStore';
+import { anthropicProvider } from './providers/anthropic';
+import { ollamaProvider } from './providers/ollama';
+import { perplexityProvider } from './providers/perplexity';
+import type { AIProvider, CallOptions, ProviderId } from './providers/types';
 
-export let hasApiKey = false;
+const PROVIDERS: Record<ProviderId, AIProvider> = {
+  perplexity: perplexityProvider,
+  claude: anthropicProvider,
+  'qwen-local': ollamaProvider,
+};
 
-if (apiKey && apiKey !== 'test_key_for_development') {
-  hasApiKey = true;
-} else {
-  console.warn('Using development mode without Perplexity API key');
-  hasApiKey = false;
+export function getProvider(id?: ProviderId): AIProvider {
+  return PROVIDERS[id ?? getSelectedProvider()];
 }
 
-export interface PerplexityOptions {
-  model?: string;
-  responseFormat?: 'json_object' | 'text';
-  temperature?: number;
+export function listProviders(): AIProvider[] {
+  return [perplexityProvider, anthropicProvider, ollamaProvider];
 }
+
+export async function callAI(
+  prompt: string,
+  opts: CallOptions = {}
+): Promise<string> {
+  return getProvider().chat(prompt, opts);
+}
+
+export function hasProviderReady(id?: ProviderId): boolean {
+  return getProvider(id).isReady();
+}
+
+export type { AIProvider, CallOptions, ProviderId } from './providers/types';
 
 /**
- * Schema property for AI response format
+ * Schema property for AI response format (legacy — used by modal controllers
+ * that previously targeted Gemini's structured output API).
  */
 export interface SchemaProperty {
   type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT';
@@ -31,9 +51,6 @@ export interface SchemaProperty {
   properties?: Record<string, SchemaProperty>;
 }
 
-/**
- * Response schema for structured AI responses
- */
 export interface ResponseSchema {
   type: 'OBJECT' | 'ARRAY';
   properties?: Record<string, SchemaProperty>;
@@ -41,9 +58,6 @@ export interface ResponseSchema {
   required?: string[];
 }
 
-/**
- * Configuration for generateContent
- */
 export interface GenerateContentConfig {
   responseMimeType?: string;
   responseSchema?: ResponseSchema;
@@ -51,54 +65,11 @@ export interface GenerateContentConfig {
 }
 
 /**
- * Call Perplexity API with a prompt
- */
-export async function callPerplexityAPI(
-  prompt: string,
-  options: PerplexityOptions = {}
-): Promise<string> {
-  if (!hasApiKey) {
-    throw new Error('Perplexity API key not configured');
-  }
-
-  const { model = 'sonar-pro', temperature = 0.7 } = options;
-
-  const requestBody = {
-    model,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-    temperature,
-  };
-
-  const response = await fetch(PERPLEXITY_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Perplexity API error: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  return data.choices[0]?.message?.content || '';
-}
-
-/**
- * Parse JSON from API response, handling markdown code blocks
+ * Parse JSON from API response, handling markdown code blocks.
  */
 export function parseJsonResponse(responseText: string): unknown {
   let jsonText = responseText.trim();
 
-  // Remove markdown code blocks if present
   jsonText = jsonText
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
@@ -107,7 +78,6 @@ export function parseJsonResponse(responseText: string): unknown {
   try {
     return JSON.parse(jsonText);
   } catch (parseError) {
-    // Try to extract JSON object from text
     const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -116,7 +86,11 @@ export function parseJsonResponse(responseText: string): unknown {
   }
 }
 
-// Export a simple AI object for compatibility with existing modal code
+/**
+ * Legacy shim — preserves the `ai.models.generateContent` shape used by
+ * older modal controllers (worldOrder, poetry, solutionExplanation). Routes
+ * the call through whichever provider is currently selected.
+ */
 export const ai = {
   models: {
     generateContent: async (params: {
@@ -124,14 +98,15 @@ export const ai = {
       contents: string;
       config?: GenerateContentConfig;
     }) => {
-      const prompt = params.contents;
-      const config = params.config;
-      const expectsJson = config?.responseMimeType === 'application/json';
+      const expectsJson =
+        params.config?.responseMimeType === 'application/json';
 
-      const response = await callPerplexityAPI(prompt, {
-        model: params.model || 'sonar-pro',
-        responseFormat: 'text',
-      });
+      const callOpts: CallOptions = {
+        responseFormat: expectsJson ? 'json_object' : 'text',
+      };
+      if (params.model) callOpts.model = params.model;
+
+      const response = await callAI(params.contents, callOpts);
 
       let text = response;
       if (expectsJson) {
@@ -147,3 +122,4 @@ export const ai = {
     },
   },
 };
+

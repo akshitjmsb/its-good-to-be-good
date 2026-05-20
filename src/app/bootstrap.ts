@@ -4,6 +4,7 @@ import {
   attachQuoteDeepDive,
   setActiveQuote,
 } from '../components/quoteDeepDive';
+import { initializeAIProviderSelect } from '../components/aiProviderSelect';
 import { initializeQuantumTimer } from '../components/quantumTimer';
 import { initializeModalManager } from '../components/modals/modalManager';
 import {
@@ -112,6 +113,7 @@ export async function bootstrapApp(): Promise<void> {
       // initializeModuleReorder();
       updateDateDerivedData();
       initializeQuantumTimer();
+      initializeAIProviderSelect();
 
       // PWA users on the home screen have no browser refresh button.
       document
