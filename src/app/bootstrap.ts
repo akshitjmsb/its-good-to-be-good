@@ -18,6 +18,7 @@ import { initializeSchedulers } from './scheduler';
 // import { initializeModuleReorder } from './moduleReorder';
 import { initializeCustomModules } from './customModules';
 import { initializeModuleEditor } from './moduleEditor';
+import { createAppRouter } from './moduleRouter';
 import { initModuleStore } from '../domains/modules/customModules';
 
 function showSyncStatus(message: string, isFinal = false): void {
@@ -123,10 +124,20 @@ export async function bootstrapApp(): Promise<void> {
       const appContainer = document.getElementById('app-container');
       if (appContainer) {
         const { activeContentDate, todayKey } = store.getState();
-        initializeModalManager(appContainer, {
-          dates: { active: activeContentDate },
-          keys: { today: todayKey },
+        const router = createAppRouter({
+          today: () => store.getState().todayKey,
         });
+        initializeModalManager(
+          appContainer,
+          {
+            dates: { active: activeContentDate },
+            keys: { today: todayKey },
+          },
+          { router }
+        );
+        // start() applies the current hash — so a deep link like
+        // `index.html#/m/coffee` opens Coffee on cold-start.
+        void router.start();
       }
 
       updateTimeDisplay();
