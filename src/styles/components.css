@@ -684,27 +684,39 @@ button.preview-card {
     }
 }
 
+/* ── Slim top header bar ─────────────────────────────────────────────────── */
+/* Flush against the top of the app-container — holds the refresh icon on
+   the left and the Quantum timer on the right. Keeps the hero stack
+   (logo → title → chip → date) clean. */
+
+.app-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: -0.25rem -0.25rem 0.5rem;
+    padding: 0;
+}
+
 /* ── Header refresh button ───────────────────────────────────────────────── */
-/* Sits in the top-left corner of .app-container, mirroring the Quantum
+/* Sits at the left edge of the app-header-bar, mirroring the Quantum
    widget on the right. Mainly for PWA users who lack a browser reload. */
 
 .header-refresh {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
     background: none;
     border: none;
-    padding: 0.5rem;
+    padding: 0.4rem;
     color: #9ca3af;
     cursor: pointer;
     border-radius: 9999px;
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 36px;
+    min-height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
     touch-action: manipulation;
+    flex-shrink: 0;
 }
 
 .header-refresh:hover {
@@ -722,15 +734,32 @@ button.preview-card {
 }
 
 .header-refresh svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     display: block;
 }
 
+/* Quantum timer sits at the right edge of the header bar. Keep the
+   inline flex layout; the bar itself handles top-corner placement. */
+.app-header-bar .quantum-timer-container {
+    margin: 0;
+    padding: 0;
+}
+
 @media (max-width: 768px) {
+    .app-header-bar {
+        margin: -0.25rem -0.25rem 0.25rem;
+    }
+
     .header-refresh {
-        top: 0.5rem;
-        left: 0.5rem;
+        padding: 0.35rem;
+        min-width: 32px;
+        min-height: 32px;
+    }
+
+    .header-refresh svg {
+        width: 16px;
+        height: 16px;
     }
 }
 

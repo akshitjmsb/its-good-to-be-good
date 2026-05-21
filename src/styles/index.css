@@ -48,26 +48,23 @@
     }
 }
 
-/* Timer mobile positioning */
+/* Timer mobile sizing — the timer now lives inside .app-header-bar (a slim
+   flex row at the top of the app-container), so no absolute positioning. */
 @media (max-width: 768px) {
-    /* Keep absolute positioning but adjust for mobile */
     .quantum-timer-container {
-        position: absolute !important;
-        top: 0.5rem !important;
-        right: 0.5rem !important;
-        justify-content: flex-end !important;
-        margin-bottom: 0 !important;
-        padding: 0.25rem;
+        justify-content: flex-end;
+        margin-bottom: 0;
+        padding: 0;
     }
-    
+
     #quantum-timer-display {
-        font-size: 0.875rem !important;
+        font-size: 0.8rem !important;
     }
-    
+
     #quantum-timer-btn {
-        font-size: 0.75rem !important;
-        padding: 0.25rem 0.5rem !important;
-        min-height: 32px;
+        font-size: 0.7rem !important;
+        padding: 0.2rem 0.55rem !important;
+        min-height: 28px;
     }
 }
 
@@ -264,16 +261,28 @@
         margin-top: 1.5rem !important;
     }
     
-    /* Logo adjustments */
+    /* Logo adjustments — give the Vitruvian Man room to breathe between
+       the slim header bar above and the title below. */
+    .logo-container {
+        margin-top: 0.25rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
     .logo-svg {
         width: 64px !important;
         height: auto !important;
     }
-    
+
+    /* Title tucks closer to the chip / date stack on mobile. */
+    h1 {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
     /* Current datetime */
     #current-datetime {
         font-size: 0.75rem !important;
-        margin-top: 0.5rem !important;
+        margin-top: 0.35rem !important;
     }
 }
 
