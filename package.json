@@ -31,7 +31,8 @@
     "vercel:preview": "vercel",
     "vercel:env:pull": "vercel env pull .env.local",
     "vercel:env:ls": "vercel env ls",
-    "vercel:projects": "vercel projects list"
+    "vercel:projects": "vercel projects list",
+    "new:module": "node ./scripts/new-module.mjs"
   },
   "keywords": [
     "dashboard",
