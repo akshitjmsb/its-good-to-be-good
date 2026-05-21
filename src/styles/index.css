@@ -6,6 +6,7 @@
 @import './exercise.css';
 @import './food.css';
 @import './topics.css';
+@import './auth.css';
 
 @tailwind base;
 @tailwind components;

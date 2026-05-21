@@ -175,6 +175,12 @@ export interface UIAdapter {
 /* ── User ─────────────────────────────────────────────────────────────── */
 
 export interface UserAdapter {
-  /** Currently active user id (default user until real auth lands). */
+  /** Currently active user id. Throws when unauthenticated. */
   id(): string;
+  /** Email of the active user, or null if unauthenticated. */
+  email(): string | null;
+  /** True when a real authenticated session is present. */
+  isAuthenticated(): boolean;
+  /** Subscribe to auth-state changes (sign-in, sign-out, refresh). */
+  subscribe(listener: () => void): () => void;
 }

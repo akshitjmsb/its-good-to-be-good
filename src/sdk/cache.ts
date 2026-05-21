@@ -11,9 +11,12 @@ import {
   saveCachedContent,
   type CachedContentType,
 } from '../infra/supabase/content-cache';
-import type { CacheAdapter } from './types';
+import type { CacheAdapter, UserAdapter } from './types';
 
-export function createCacheAdapter(moduleId: string, userId: string): CacheAdapter {
+export function createCacheAdapter(
+  moduleId: string,
+  user: UserAdapter
+): CacheAdapter {
   function scope(contentType: string): CachedContentType {
     // The underlying type is a string union we widen at the call site.
     return `${moduleId}:${contentType}` as CachedContentType;
@@ -21,10 +24,10 @@ export function createCacheAdapter(moduleId: string, userId: string): CacheAdapt
 
   return {
     get<T>(contentType: string, dateKey: string) {
-      return getCachedContent<T>(userId, scope(contentType), dateKey);
+      return getCachedContent<T>(user.id(), scope(contentType), dateKey);
     },
     set<T>(contentType: string, dateKey: string, content: T) {
-      return saveCachedContent<T>(userId, scope(contentType), dateKey, content);
+      return saveCachedContent<T>(user.id(), scope(contentType), dateKey, content);
     },
   };
 }

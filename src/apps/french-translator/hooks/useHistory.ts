@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { DEFAULT_USER_ID } from '../../../core/default-user';
+import { getAuthState } from '../../../domains/auth/store';
 import { HistoryEntry, TranslationResponse, TranslationMode } from '../types';
 
 export function useHistory() {
@@ -9,11 +9,17 @@ export function useHistory() {
 
   // Load history from Supabase
   const loadHistory = useCallback(async () => {
+    const userId = getAuthState().user?.id;
+    if (!userId) {
+      setHistory([]);
+      setIsLoading(false);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('french_history')
         .select('*')
-        .eq('user_id', DEFAULT_USER_ID)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -32,11 +38,13 @@ export function useHistory() {
     sourceText: string,
     result: TranslationResponse
   ) => {
+    const userId = getAuthState().user?.id;
+    if (!userId) return null;
     try {
       const { data, error } = await supabase
         .from('french_history')
         .insert({
-          user_id: DEFAULT_USER_ID,
+          user_id: userId,
           mode,
           source_text: sourceText,
           translation: result.full_translation,
@@ -62,11 +70,13 @@ export function useHistory() {
 
   // Clear all history
   const clearHistory = useCallback(async () => {
+    const userId = getAuthState().user?.id;
+    if (!userId) return;
     try {
       const { error } = await supabase
         .from('french_history')
         .delete()
-        .eq('user_id', DEFAULT_USER_ID);
+        .eq('user_id', userId);
 
       if (error) throw error;
       setHistory([]);

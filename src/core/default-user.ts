@@ -1,5 +1,0 @@
-/**
- * Default anonymous user ID for apps without authentication
- */
-export const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
-

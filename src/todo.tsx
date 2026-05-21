@@ -15,7 +15,7 @@ import {
   loadTasks as loadTasksFromSupabase,
   saveTasks as saveTasksToSupabase,
 } from './infra/supabase/persistence';
-import { DEFAULT_USER_ID } from './core/default-user';
+import { initAuthStore, getAuthState } from './domains/auth/store';
 import { sanitizeTaskInput, createSafeHtml } from './utils/escapeHtml';
 import type { Task } from './types';
 
@@ -407,7 +407,12 @@ function showSubtaskInput(
 /* ── main ────────────────────────────────────────────────────────── */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const userId = DEFAULT_USER_ID;
+  await initAuthStore();
+  const userId = getAuthState().user?.id;
+  if (!userId) {
+    window.location.href = 'index.html';
+    return;
+  }
   let loadedSuccessfully = false;
   let tasks: Task[] = [];
   try {

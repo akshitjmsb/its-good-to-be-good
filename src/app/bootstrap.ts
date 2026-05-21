@@ -20,6 +20,11 @@ import { initializeCustomModules } from './customModules';
 import { initializeModuleEditor } from './moduleEditor';
 import { createAppRouter } from './moduleRouter';
 import { initModuleStore } from '../domains/modules/customModules';
+import { initAuthStore, getAuthState } from '../domains/auth/store';
+import { onAuthStateChange } from '../domains/auth/session';
+import { mountLoginGate } from '../auth/loginGate';
+import { mountUserChip } from '../auth/userChip';
+import { claimLegacyDataIfNeeded } from '../domains/auth/migrate-anon';
 
 function showSyncStatus(message: string, isFinal = false): void {
   const statusEl = document.getElementById('sync-status');
@@ -56,7 +61,34 @@ function updateTimeDisplay(): void {
 }
 
 export async function bootstrapApp(): Promise<void> {
+  await initAuthStore();
+  const authedUser = getAuthState().user;
+
+  if (!authedUser) {
+    const host = document.getElementById('app-container');
+    if (host) mountLoginGate(host);
+    // Once the user signs in, supabase fires SIGNED_IN — reload so the
+    // full app boots cleanly with the new session.
+    onAuthStateChange((_event, session) => {
+      if (session) window.location.reload();
+    });
+    return;
+  }
+
+  // Reattribute legacy anon data the first time we see a real session.
+  void claimLegacyDataIfNeeded();
+
+  // After sign-out, reload to drop module state cleanly and re-mount the gate.
+  onAuthStateChange((_event, session) => {
+    if (!session) window.location.reload();
+  });
+
+  const chipHost = document.getElementById('user-chip');
+  if (chipHost) mountUserChip(chipHost);
+
   const store = createAppRuntimeStore();
+  const userId = authedUser.id;
+  store.setState({ currentUserId: userId });
 
   function updateDateDerivedData() {
     const { now } = getCanonicalTime();
@@ -80,10 +112,10 @@ export async function bootstrapApp(): Promise<void> {
     // initializeCustomModules() guards against duplicate tile injection,
     // so calling it on every render is safe.
     initializeCustomModules();
-    const { todaysQuote, currentUserId } = store.getState();
+    const { todaysQuote } = store.getState();
     renderDayModule(todaysQuote);
     if (todaysQuote) {
-      setActiveQuote(currentUserId, todaysQuote);
+      setActiveQuote(userId, todaysQuote);
       attachQuoteDeepDive();
     }
   }
@@ -96,8 +128,7 @@ export async function bootstrapApp(): Promise<void> {
       // background. When fresh data lands, re-inject tiles and re-render the
       // day module so any remote name/emoji/archive changes appear without
       // a reload. Both callees are idempotent.
-      const { currentUserId: bootUserId } = store.getState();
-      await initModuleStore(bootUserId, {
+      await initModuleStore(userId, {
         onRefresh: () => {
           initializeCustomModules();
           void mainRender();

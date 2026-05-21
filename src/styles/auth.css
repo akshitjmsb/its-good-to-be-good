@@ -1,0 +1,229 @@
+/*
+ * Auth chrome — login gate + user chip.
+ *
+ * Inherits the home-vintage-lock tokens (--home-bg, --home-surface,
+ * --home-border, --home-text, --home-muted, --home-ink) so the login
+ * page reads as a quieter title page of the same journal. No new
+ * shades, no rounded pills, no shadows beyond a 1px hairline.
+ */
+
+/* ── Login gate ─────────────────────────────────────────────────────── */
+
+body.home-vintage-lock.auth-gate-open {
+    background-color: var(--home-bg);
+}
+
+.auth-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background-color: var(--home-bg);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    color: var(--home-text);
+}
+
+.auth-gate__card {
+    width: 100%;
+    max-width: 440px;
+    background-color: var(--home-surface);
+    border: 1px solid var(--home-border);
+    padding: 2.25rem 2rem 2rem;
+}
+
+.auth-gate__brand {
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+.auth-gate__brand svg {
+    width: 72px;
+    height: 72px;
+    stroke: var(--home-ink);
+    color: var(--home-ink);
+    margin: 0 auto 0.75rem;
+    display: block;
+}
+
+.auth-gate__title {
+    font-family: var(--home-font-family);
+    font-size: 1.125rem;
+    color: var(--home-text);
+    margin: 0;
+    letter-spacing: 0.04em;
+}
+
+.auth-gate__tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--home-border);
+}
+
+.auth-gate__tab {
+    appearance: none;
+    background: none;
+    border: none;
+    font-family: var(--home-font-family);
+    font-size: 0.875rem;
+    color: var(--home-muted);
+    padding: 0.5rem 0.25rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    margin-bottom: -1px;
+}
+
+.auth-gate__tab[aria-selected='true'] {
+    color: var(--home-ink);
+    border-bottom-color: var(--home-ink);
+}
+
+.auth-gate__field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.25rem;
+}
+
+.auth-gate__label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: var(--home-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+}
+
+.auth-gate__input {
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--home-border);
+    padding: 0.4rem 0;
+    font-family: var(--home-font-family);
+    font-size: 1rem;
+    color: var(--home-text);
+    letter-spacing: 0.02em;
+}
+
+.auth-gate__input:focus {
+    outline: none;
+    border-bottom-color: var(--home-ink);
+}
+
+.auth-gate__input::placeholder {
+    color: var(--home-muted);
+    opacity: 0.6;
+}
+
+.auth-gate__actions {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+}
+
+.auth-gate__submit {
+    appearance: none;
+    background: none;
+    border: none;
+    color: var(--home-ink);
+    font-family: var(--home-font-family);
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    padding: 0.25rem 0;
+}
+
+.auth-gate__submit:hover {
+    color: var(--home-text);
+}
+
+.auth-gate__submit:disabled {
+    color: var(--home-muted);
+    cursor: progress;
+}
+
+.auth-gate__secondary {
+    appearance: none;
+    background: none;
+    border: none;
+    color: var(--home-muted);
+    font-family: var(--home-font-family);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    letter-spacing: 0.04em;
+}
+
+.auth-gate__secondary:hover {
+    color: var(--home-text);
+}
+
+.auth-gate__feedback {
+    min-height: 1.25rem;
+    margin-top: 1rem;
+    color: var(--home-muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+}
+
+.auth-gate__feedback::before {
+    content: '* ';
+}
+
+.auth-gate__feedback:empty::before {
+    content: '';
+}
+
+/* ── User chip (signed-in header) ───────────────────────────────────── */
+
+.user-chip {
+    position: absolute;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: var(--home-muted);
+}
+
+.user-chip[hidden] {
+    display: none;
+}
+
+.user-chip__name {
+    color: var(--home-muted);
+}
+
+.user-chip__signout {
+    appearance: none;
+    background: none;
+    border: none;
+    color: var(--home-muted);
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+    margin-left: 0.5rem;
+    padding: 0;
+}
+
+.user-chip__signout:hover {
+    color: var(--home-ink);
+}
+
+@media (max-width: 768px) {
+    .user-chip {
+        top: 0.5rem;
+        font-size: 0.65rem;
+    }
+
+    .auth-gate__card {
+        padding: 1.75rem 1.25rem 1.5rem;
+    }
+}

@@ -6,6 +6,22 @@ vi.mock('../../lib/supabase', () => ({
   supabase: { from: vi.fn() },
 }));
 
+// Same for the auth store: pretend there is a signed-in user so the SDK
+// user adapter resolves to a deterministic id during router mounts.
+vi.mock('../../domains/auth/store', () => ({
+  initAuthStore: vi.fn().mockResolvedValue({
+    status: 'authed',
+    user: { id: 'test-user', email: 'test@example.com' },
+    session: null,
+  }),
+  getAuthState: () => ({
+    status: 'authed' as const,
+    user: { id: 'test-user', email: 'test@example.com' },
+    session: null,
+  }),
+  subscribeAuth: () => () => undefined,
+}));
+
 // Override the loader so we can register fake manifests + controllers
 // without needing real `src/modules/*` folders to be reshaped per test.
 const fakeManifests = new Map<string, import('../types').ModuleManifest>();

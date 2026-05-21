@@ -53,14 +53,13 @@ export function createModuleSDK(
 ): KingSDK {
   const permissions = new Set<ModulePermission>(manifest.permissions ?? []);
   const user = createUserAdapter(userIdOverride);
-  const userId = user.id();
 
   const ai = permissions.has('ai')
     ? createAIAdapter()
     : denyAdapter(manifest.id, 'ai', {} as ReturnType<typeof createAIAdapter>);
 
   const cache = permissions.has('cache')
-    ? createCacheAdapter(manifest.id, userId)
+    ? createCacheAdapter(manifest.id, user)
     : denyAdapter(
         manifest.id,
         'cache',
