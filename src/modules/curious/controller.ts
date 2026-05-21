@@ -9,7 +9,7 @@
 
 import type { ModuleContext, ModuleController } from '../../sdk/types';
 import { getPhysicsContent } from '../../domains/content/service';
-import { DEFAULT_USER_ID } from '../../core/default-user';
+import { getAuthState } from '../../domains/auth/store';
 import { createSafeHtml } from '../../utils/escapeHtml';
 import {
   MODAL_CONFIGS,
@@ -78,8 +78,15 @@ export async function showHoodModal(date: Date): Promise<void> {
   showModalWithLoading(elements, MODAL_CONFIGS.hood.loadingMessage);
   setModalTitle(elements, 'Under the Hood');
 
+  const userId = getAuthState().user?.id;
+  if (!userId) {
+    setModalTitle(elements, 'Sign in required');
+    showModalError(elements, 'Sign in to read today’s deep-dive.');
+    return;
+  }
+
   try {
-    const data = await getPhysicsContent(DEFAULT_USER_ID, date);
+    const data = await getPhysicsContent(userId, date);
 
     if (!data || !data.title || !data.explanation) {
       setModalTitle(elements, 'Error');

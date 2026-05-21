@@ -1,6 +1,6 @@
 import type { ModuleContext, ModuleController } from '../../sdk/types';
 import { getAnalyticsContent } from '../../domains/content/service';
-import { DEFAULT_USER_ID } from '../../core/default-user';
+import { getAuthState } from '../../domains/auth/store';
 import {
   MODAL_CONFIGS,
   getModalElements,
@@ -56,7 +56,15 @@ export async function showAnalyticsModal(date: Date) {
   showModalWithLoading(elements, MODAL_CONFIGS.analytics.loadingMessage);
 
   try {
-    analyticsData = await getAnalyticsContent(DEFAULT_USER_ID, date);
+    const userId = getAuthState().user?.id;
+    if (!userId) {
+      setModalContent(
+        elements,
+        '<div class="analytics-card flex items-center justify-center"><p>Sign in to view analytics.</p></div>'
+      );
+      return;
+    }
+    analyticsData = await getAnalyticsContent(userId, date);
     if (!analyticsData) {
       setModalContent(
         elements,

@@ -17,7 +17,7 @@ import {
   recordPoetrySelection,
   savePoetryRecents,
 } from '../../infra/supabase/persistence';
-import { DEFAULT_USER_ID } from '../../core/default-user';
+import { getAuthState } from '../../domains/auth/store';
 import {
   MODAL_CONFIGS,
   getModalElements,
@@ -130,9 +130,15 @@ export async function fetchAndShowPoetry(activeContentDate: Date): Promise<void>
 
   showModalWithLoading(elements, MODAL_CONFIGS.poetry.loadingMessage);
 
+  const userId = getAuthState().user?.id;
+  if (!userId) {
+    showModalError(elements, 'Sign in to read today’s poetry.');
+    return;
+  }
+
   await generateAndPersist(
     activeContentDate,
-    DEFAULT_USER_ID,
+    userId,
     rawText => setModalContent(elements, renderPoetryFallback(rawText)),
     html => setModalContent(elements, html),
     message => showModalError(elements, message)

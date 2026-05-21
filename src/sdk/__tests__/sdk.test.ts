@@ -2,9 +2,18 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The DB adapter pulls in `lib/supabase` which throws at import time when
 // VITE_SUPABASE_* env vars are missing. Mock the client to keep the test
-// hermetic.
+// hermetic. The auth store also reaches into supabase.auth; we stub it so
+// every test in this file runs without touching the network.
 vi.mock('../../lib/supabase', () => ({
-  supabase: { from: vi.fn() },
+  supabase: {
+    from: vi.fn(),
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
+    },
+  },
 }));
 
 import { createModuleSDK } from '../index';
@@ -33,14 +42,15 @@ describe('createModuleSDK', () => {
     expect(typeof sdk.db.client).toBe('function');
   });
 
-  it('returns the default user id when none is provided', () => {
+  it('throws from user.id() when no authenticated session is present', () => {
     const sdk = createModuleSDK(manifest());
-    expect(sdk.user.id()).toBe('00000000-0000-0000-0000-000000000000');
+    expect(() => sdk.user.id()).toThrow(/No authenticated user/);
   });
 
-  it('lets a caller override the user id', () => {
+  it('lets a caller override the user id (for tests / shell init)', () => {
     const sdk = createModuleSDK(manifest(), 'user-123');
     expect(sdk.user.id()).toBe('user-123');
+    expect(sdk.user.isAuthenticated()).toBe(true);
   });
 
   it('exposes ai adapter when "ai" permission is granted', () => {
