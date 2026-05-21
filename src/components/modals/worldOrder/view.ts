@@ -1,9 +1,5 @@
-import { createSafeHtml } from '../../../utils/escapeHtml';
-import { WorldOrderHeadlines } from './types';
-
-export function renderWorldOrderHeadlines(headlines: WorldOrderHeadlines): string {
-  const safeText = createSafeHtml(headlines.text.replace(/\*/g, ''), {
-    maxLength: 15000,
-  });
-  return `<div class="mb-4">${safeText}</div>`;
-}
+/**
+ * Back-compat re-export shim. Canonical view now lives at
+ * `src/modules/world-order/view.ts`.
+ */
+export { renderWorldOrderHeadlines } from '../../../modules/world-order/view';

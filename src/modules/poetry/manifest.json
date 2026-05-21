@@ -1,0 +1,10 @@
+{
+  "id": "poetry",
+  "displayName": "Poetry",
+  "category": "learn",
+  "surface": "modal",
+  "icon": "./icon.svg",
+  "version": "0.1.0",
+  "renderer": "dom",
+  "permissions": ["ai", "storage"]
+}

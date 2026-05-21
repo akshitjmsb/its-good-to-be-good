@@ -72,28 +72,59 @@ function createFixture(root: string) {
     if (module.ownerPath === 'src/components/modals/modalManager.ts') return;
     if (module.ownerPath === 'src/components/modals/factory.ts') return;
 
-    if (module.ownerPath === 'src/components/modals/analytics/controller.ts') {
+    if (module.ownerPath === 'src/modules/analytics/controller.ts') {
+      // Analytics must keep going through the content service. The fixture
+      // mirrors that — `validateModalControllerBoundaries` text-scans for
+      // the required import.
       writeFixtureFile(
         root,
         module.ownerPath,
-        "import { getAnalyticsContent } from '../../../domains/content/service';\nexport function showAnalyticsModal() { return getAnalyticsContent; }\n"
+        "import { getAnalyticsContent } from '../../domains/content/service';\nexport function showAnalyticsModal() { return getAnalyticsContent; }\nexport function init(){}\nexport function destroy(){}\n"
       );
-      return;
-    }
-
-    if (module.ownerPath === 'src/components/modals/exercise/controller.ts') {
-      // Exercise is self-contained — no domain-service import required,
-      // only the forbidden infra/ai import is checked. A bare module
-      // satisfies the (now-relaxed) rule.
+    } else if (module.surface === 'page' && module.routeHref) {
+      // Page-surface controllers carry their routeHref so the wiring
+      // check (now also looking at ownerPath) can find it.
       writeFixtureFile(
         root,
         module.ownerPath,
-        "export function showExerciseModal() {}\n"
+        `export const route = '${module.routeHref}';\nexport function init(){}\nexport function destroy(){}\n`
       );
-      return;
+    } else {
+      writeFixtureFile(
+        root,
+        module.ownerPath,
+        'export function init(){}\nexport function destroy(){}\n'
+      );
     }
 
-    writeFixtureFile(root, module.ownerPath, 'export {};');
+    // When the ownerPath lives inside src/modules/<id>/, the manifest
+    // module check also needs the required sidecar files for that folder.
+    const modulesMatch = module.ownerPath.match(/^src\/modules\/([^/]+)\//);
+    if (modulesMatch) {
+      const dirName = modulesMatch[1];
+      const baseDir = `src/modules/${dirName}`;
+      const manifest: Record<string, unknown> = {
+        id: dirName,
+        displayName: module.displayName,
+        category: module.category,
+        surface: module.surface,
+        icon: './icon.svg',
+        version: '0.1.0',
+        renderer: 'dom',
+      };
+      writeFixtureFile(
+        root,
+        `${baseDir}/manifest.json`,
+        JSON.stringify(manifest, null, 2) + '\n'
+      );
+      writeFixtureFile(root, `${baseDir}/icon.svg`, '<svg></svg>\n');
+      writeFixtureFile(root, `${baseDir}/AGENT.md`, `# ${module.displayName}\n`);
+      writeFixtureFile(
+        root,
+        `${baseDir}/__tests__/sentinel.test.ts`,
+        "import { it } from 'vitest'; it('exists', () => {});\n"
+      );
+    }
   });
 
   writeFixtureFile(root, 'src/domains/safe.ts', 'export const safe = true;');
