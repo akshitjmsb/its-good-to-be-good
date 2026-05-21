@@ -6,6 +6,8 @@ import {
     getModulesByCategory,
     type LearnModuleId,
 } from '../../domains/modules/registry';
+import { navigateToFrenchPage } from '../../modules/french/controller';
+import { openMrMojoRising } from '../../modules/guitar/controller';
 
 type ModalDependencies = {
     dates: {
@@ -17,16 +19,6 @@ type ModalDependencies = {
 };
 
 type LearnModuleHandler = (dependencies: ModalDependencies) => void | Promise<void>;
-
-function navigateToFrenchPage(): void {
-    window.location.href = 'french.html';
-}
-
-const MR_MOJO_RISING_URL = 'https://blissful-mccarthy-4d58a4.vercel.app';
-
-function openMrMojoRising(): void {
-    window.open(MR_MOJO_RISING_URL, '_blank', 'noopener,noreferrer');
-}
 
 const LEARN_MODULE_HANDLERS: Record<LearnModuleId, LearnModuleHandler> = {
     'world-order': async () => {

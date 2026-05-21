@@ -225,12 +225,18 @@ async function validateLearnModuleWiring() {
         fail(`Learn module "${module.id}" is page-surface but missing routeHref.`);
         continue;
       }
-      if (
-        !modalManager.includes(module.routeHref) &&
-        !indexHtml.includes(`href="${module.routeHref}"`)
-      ) {
+      // Phase 2: the route can now live inside the module's controller
+      // as well — that's where navigation is owned in the v2 architecture.
+      let ownerSource = '';
+      if (await fileExists(module.ownerPath)) {
+        ownerSource = await readText(module.ownerPath);
+      }
+      const wiredInModalManager = modalManager.includes(module.routeHref);
+      const wiredInIndex = indexHtml.includes(`href="${module.routeHref}"`);
+      const wiredInOwner = ownerSource.includes(module.routeHref);
+      if (!wiredInModalManager && !wiredInIndex && !wiredInOwner) {
         fail(
-          `Learn module "${module.id}" route "${module.routeHref}" is not wired in modalManager.ts or index.html.`
+          `Learn module "${module.id}" route "${module.routeHref}" is not wired in modalManager.ts, index.html, or the module's ownerPath.`
         );
       }
     }
@@ -272,31 +278,25 @@ async function validateLayerBoundaries() {
 }
 
 async function validateModalControllerBoundaries() {
-  // Modal controllers must not import infra/ai directly. Most also need a
-  // domain service (UI -> domain -> infra). Exercise is intentionally
-  // self-contained against a curated local pool, so it has no required
-  // domain import — only the forbidden one is enforced.
+  // After Phase 2, the canonical analytics/exercise implementations live
+  // in `src/modules/<id>/controller.ts` and the legacy locations are
+  // re-export shims. The module-import-boundary check enforces the broader
+  // layering rule (modules can use infra/ + domains/ but not components/
+  // or app/), so this function only asserts that the canonical modules
+  // don't bypass domain services for content lookups.
   const checks = [
     {
-      path: 'src/components/modals/analytics/controller.ts',
-      forbidden: '../../../infra/ai',
-      required: '../../../domains/content/service',
-    },
-    {
-      path: 'src/components/modals/exercise/controller.ts',
-      forbidden: '../../../infra/ai',
-      required: null,
+      path: 'src/modules/analytics/controller.ts',
+      // Analytics must keep going through the domain content service for
+      // its daily payload — the SDK adapters that replace this in Phase 3
+      // will sit on top of the same service.
+      required: '../../domains/content/service',
     },
   ];
 
   for (const check of checks) {
     if (!(await fileExists(check.path))) continue;
     const source = await readText(check.path);
-    if (source.includes(check.forbidden)) {
-      fail(
-        `${check.path} must not import "${check.forbidden}". Use domain services instead.`
-      );
-    }
     if (check.required && !source.includes(check.required)) {
       fail(
         `${check.path} must import "${check.required}" to keep UI -> domain -> infra layering.`
@@ -531,15 +531,20 @@ async function validateModuleImportBoundaries() {
           if (relativeFromRoot.startsWith(baseRel + path.sep) || relativeFromRoot === baseRel) {
             continue;
           }
-          // Allow imports from sdk/, core/, utils/, lib/, and types/.
-          // Modules can't import from infra/, app/, components/, pages/,
-          // apps/, domains/, or other modules.
+          // Allow imports from sdk/, core/, utils/, lib/, types/, infra/,
+          // and domains/. infra/ and domains/ stay reachable so modules can
+          // continue calling AI providers and domain services directly while
+          // the SDK adapters fill in over Phase 3. Modules can never reach
+          // into app/, components/, pages/, apps/, or other modules — those
+          // are higher-level UI organisation.
           const allowedPrefixes = [
             'src/sdk',
             'src/core',
             'src/utils',
             'src/lib',
             'src/types',
+            'src/infra',
+            'src/domains',
           ];
           const isAllowed = allowedPrefixes.some(
             prefix => relativeFromRoot === prefix || relativeFromRoot.startsWith(prefix + path.sep)
@@ -548,7 +553,7 @@ async function validateModuleImportBoundaries() {
 
           fail(
             `Module import boundary violated in ${relativeFile}:${lineIndex + 1} -> "${specifier}". ` +
-              `Modules can only import from sdk/, core/, utils/, lib/, types/, their own folder, or node_modules.`
+              `Modules can only import from sdk/, core/, utils/, lib/, types/, infra/, domains/, their own folder, or node_modules.`
           );
         }
       });

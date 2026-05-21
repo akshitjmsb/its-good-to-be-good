@@ -1,6 +1,8 @@
 /**
- * Backward-compatible re-export for analytics modal.
- * Canonical implementation lives in src/components/modals/analytics/controller.ts.
+ * Back-compat re-export. The analytics module now lives at
+ * `src/modules/analytics/`.
  */
-
-export { cleanupAnalyticsEventListeners, showAnalyticsModal } from './analytics/controller';
+export {
+  cleanupAnalyticsEventListeners,
+  showAnalyticsModal,
+} from '../../modules/analytics/controller';

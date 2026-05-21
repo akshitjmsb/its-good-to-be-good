@@ -1,0 +1,10 @@
+{
+  "id": "guitar",
+  "displayName": "Mr. Mojo",
+  "category": "learn",
+  "surface": "external",
+  "icon": "./icon.svg",
+  "version": "0.1.0",
+  "renderer": "dom",
+  "externalUrl": "https://blissful-mccarthy-4d58a4.vercel.app"
+}
