@@ -10,7 +10,7 @@
  * native <details>/<summary> reveal.
  */
 
-import { createSafeHtml, escapeHtml } from '../../../utils/escapeHtml';
+import { createSafeHtml, escapeHtml } from '../../utils/escapeHtml';
 import {
   CATEGORY_LABELS,
   DIFFICULTY_LABELS,

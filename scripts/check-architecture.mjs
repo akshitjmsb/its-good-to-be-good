@@ -75,6 +75,21 @@ function isForbiddenLayerImport(specifier) {
   return /(^|\/)(components|app)(\/|$)/.test(specifier);
 }
 
+const ALLOWED_PERMISSIONS = new Set(['ai', 'storage', 'timer', 'cache']);
+const ALLOWED_CATEGORIES = new Set(['journey', 'learn']);
+const ALLOWED_SURFACES = new Set(['page', 'modal', 'external']);
+const ALLOWED_RENDERERS = new Set(['dom', 'react']);
+const SEMVER_REGEX = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+
+async function listSubdirectories(relativeDir) {
+  const startPath = path.join(repoRoot, relativeDir);
+  if (!(await fileExists(relativeDir))) return [];
+  const entries = await fs.readdir(startPath, { withFileTypes: true });
+  return entries
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name);
+}
+
 async function collectCodeFiles(relativeDir) {
   const startPath = path.join(repoRoot, relativeDir);
   if (!(await fileExists(relativeDir))) return [];
@@ -355,6 +370,192 @@ async function validateNoExperimentalImports() {
   }
 }
 
+async function validateManifestModules() {
+  const moduleDirs = await listSubdirectories('src/modules');
+  if (moduleDirs.length === 0) return [];
+
+  const manifests = [];
+  const seenIds = new Set();
+
+  for (const dirName of moduleDirs) {
+    const baseRel = path.join('src/modules', dirName);
+    const manifestRel = path.join(baseRel, 'manifest.json');
+    const controllerRel = path.join(baseRel, 'controller.ts');
+    const iconRel = path.join(baseRel, 'icon.svg');
+    const agentRel = path.join(baseRel, 'AGENT.md');
+    const testsRel = path.join(baseRel, '__tests__');
+
+    if (!(await fileExists(manifestRel))) {
+      fail(`Module "${dirName}" is missing manifest.json.`);
+      continue;
+    }
+
+    let manifest;
+    try {
+      manifest = JSON.parse(await readText(manifestRel));
+    } catch (err) {
+      fail(`Module "${dirName}" manifest.json is not valid JSON: ${err.message}`);
+      continue;
+    }
+
+    if (manifest.id !== dirName) {
+      fail(
+        `Module "${dirName}" manifest.id "${manifest.id}" does not match its folder name.`
+      );
+    }
+
+    if (seenIds.has(manifest.id)) {
+      fail(`Duplicate module id "${manifest.id}" in src/modules/.`);
+    }
+    seenIds.add(manifest.id);
+
+    if (typeof manifest.displayName !== 'string' || manifest.displayName.trim() === '') {
+      fail(`Module "${dirName}" manifest is missing displayName.`);
+    }
+    if (!ALLOWED_CATEGORIES.has(manifest.category)) {
+      fail(`Module "${dirName}" manifest has invalid category "${manifest.category}".`);
+    }
+    if (!ALLOWED_SURFACES.has(manifest.surface)) {
+      fail(`Module "${dirName}" manifest has invalid surface "${manifest.surface}".`);
+    }
+    if (manifest.renderer !== undefined && !ALLOWED_RENDERERS.has(manifest.renderer)) {
+      fail(`Module "${dirName}" manifest has invalid renderer "${manifest.renderer}".`);
+    }
+    if (typeof manifest.icon !== 'string' || !manifest.icon.endsWith('.svg')) {
+      fail(`Module "${dirName}" manifest.icon must be a relative .svg path.`);
+    }
+    if (typeof manifest.version !== 'string' || !SEMVER_REGEX.test(manifest.version)) {
+      fail(`Module "${dirName}" manifest.version must be valid semver (was "${manifest.version}").`);
+    }
+    if (manifest.surface === 'external' && (typeof manifest.externalUrl !== 'string' || manifest.externalUrl.trim() === '')) {
+      fail(`Module "${dirName}" has surface=external but no externalUrl.`);
+    }
+    if (manifest.permissions !== undefined) {
+      if (!Array.isArray(manifest.permissions)) {
+        fail(`Module "${dirName}" manifest.permissions must be an array.`);
+      } else {
+        for (const perm of manifest.permissions) {
+          if (!ALLOWED_PERMISSIONS.has(perm)) {
+            fail(`Module "${dirName}" has unknown permission "${perm}".`);
+          }
+        }
+      }
+    }
+    if (manifest.dependencies !== undefined) {
+      if (!Array.isArray(manifest.dependencies)) {
+        fail(`Module "${dirName}" manifest.dependencies must be an array of module ids.`);
+      } else {
+        for (const dep of manifest.dependencies) {
+          if (typeof dep !== 'string' || dep.trim() === '') {
+            fail(`Module "${dirName}" has an invalid dependency entry "${dep}".`);
+          }
+        }
+      }
+    }
+
+    if (!(await fileExists(controllerRel))) {
+      fail(`Module "${dirName}" is missing controller.ts.`);
+    } else {
+      const controllerSrc = await readText(controllerRel);
+      // Accept either named exports (export const init / export function init)
+      // or a default export bundling init/destroy.
+      const exportsInit = /export\s+(?:const|function|async\s+function|let)\s+init\b/.test(controllerSrc)
+        || /\binit\b\s*:/.test(controllerSrc);
+      const exportsDestroy = /export\s+(?:const|function|let)\s+destroy\b/.test(controllerSrc)
+        || /\bdestroy\b\s*:/.test(controllerSrc);
+      if (!exportsInit) {
+        fail(`Module "${dirName}" controller.ts must export an "init" function.`);
+      }
+      if (!exportsDestroy) {
+        fail(`Module "${dirName}" controller.ts must export a "destroy" function.`);
+      }
+    }
+
+    if (!(await fileExists(iconRel))) {
+      fail(`Module "${dirName}" is missing icon.svg.`);
+    }
+    if (!(await fileExists(agentRel))) {
+      fail(`Module "${dirName}" is missing AGENT.md.`);
+    }
+    if (!(await fileExists(testsRel))) {
+      fail(`Module "${dirName}" is missing __tests__/ directory.`);
+    } else {
+      const testFiles = await collectCodeFiles(testsRel);
+      const hasTest = testFiles.some(file => /\.test\.(t|j)sx?$/.test(file));
+      if (!hasTest) {
+        fail(`Module "${dirName}" __tests__/ has no *.test.ts file.`);
+      }
+    }
+
+    manifests.push({ ...manifest, dirName });
+  }
+
+  return manifests;
+}
+
+async function validateModuleImportBoundaries() {
+  const moduleDirs = await listSubdirectories('src/modules');
+  if (moduleDirs.length === 0) return;
+
+  const fromImportRegex = /from\s+['"]([^'"]+)['"]/g;
+  const sideEffectImportRegex = /^\s*import\s+['"]([^'"]+)['"]/;
+
+  for (const dirName of moduleDirs) {
+    const baseRel = path.join('src/modules', dirName);
+    const files = await collectCodeFiles(baseRel);
+
+    for (const relativeFile of files) {
+      const source = await readText(relativeFile);
+      const lines = source.split('\n');
+
+      lines.forEach((line, lineIndex) => {
+        const specifiers = [];
+        for (const match of line.matchAll(fromImportRegex)) {
+          specifiers.push(match[1]);
+        }
+        const sideEffectMatch = sideEffectImportRegex.exec(line);
+        if (sideEffectMatch) specifiers.push(sideEffectMatch[1]);
+
+        for (const specifier of specifiers) {
+          // Bare module specifiers (node_modules) and relative imports.
+          if (!specifier.startsWith('.') && !specifier.startsWith('/')) {
+            // node_modules — fine.
+            continue;
+          }
+          // Resolve relative to the file's directory.
+          const fileDir = path.dirname(path.join(repoRoot, relativeFile));
+          const resolved = path.resolve(fileDir, specifier);
+          const relativeFromRoot = path.relative(repoRoot, resolved);
+
+          // Allow imports that stay within the module's own folder.
+          if (relativeFromRoot.startsWith(baseRel + path.sep) || relativeFromRoot === baseRel) {
+            continue;
+          }
+          // Allow imports from sdk/, core/, utils/, lib/, and types/.
+          // Modules can't import from infra/, app/, components/, pages/,
+          // apps/, domains/, or other modules.
+          const allowedPrefixes = [
+            'src/sdk',
+            'src/core',
+            'src/utils',
+            'src/lib',
+            'src/types',
+          ];
+          const isAllowed = allowedPrefixes.some(
+            prefix => relativeFromRoot === prefix || relativeFromRoot.startsWith(prefix + path.sep)
+          );
+          if (isAllowed) continue;
+
+          fail(
+            `Module import boundary violated in ${relativeFile}:${lineIndex + 1} -> "${specifier}". ` +
+              `Modules can only import from sdk/, core/, utils/, lib/, types/, their own folder, or node_modules.`
+          );
+        }
+      });
+    }
+  }
+}
+
 async function main() {
   validateRegistryBasics();
   await validateLearnModuleWiring();
@@ -362,6 +563,8 @@ async function main() {
   await validateModalControllerBoundaries();
   await validateUnsafeAiHtmlInjection();
   await validateNoExperimentalImports();
+  await validateManifestModules();
+  await validateModuleImportBoundaries();
 
   if (errors.length > 0) {
     console.error('Architecture guard check failed:\n');
