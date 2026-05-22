@@ -23,6 +23,22 @@
 <body class="home-vintage-lock">
 
     <div id="app-container" class="app-container">
+        <!-- Slim top bar: refresh on the left, quantum timer on the right.
+             Sits flush against the top of the app-container so the hero area
+             (logo + title + chip + date) gets its own clean stack. -->
+        <div class="app-header-bar">
+            <button id="header-refresh-btn" type="button" class="header-refresh" aria-label="Reload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-3-6.7L21 8"/>
+                    <polyline points="21 3 21 8 16 8"/>
+                </svg>
+            </button>
+            <div class="quantum-timer-container flex items-center space-x-2">
+                <span id="quantum-timer-display" class="font-mono text-sm font-bold text-gray-700">30:00</span>
+                <button id="quantum-timer-btn" class="panel-btn text-xs py-1 px-2">Quantum</button>
+            </div>
+        </div>
+
         <!-- Main App Header -->
         <header class="text-center mb-6">
             <div class="logo-container flex justify-center">
@@ -85,27 +101,12 @@
                 </svg>
             </div>
             <h1>It's Good To Be King</h1>
+            <!-- User chip — populated by src/auth/userChip.ts when signed in.
+                 Tucks under the title as quiet journal metadata. -->
+            <div id="user-chip" class="user-chip" hidden></div>
             <p id="current-datetime" class="text-xs mt-2"></p>
             <p id="ai-provider-select" class="ai-provider-select"></p>
         </header>
-
-        <!-- Refresh button — top-left, mirrors the Quantum widget. PWA users
-             on the home screen have no browser refresh, so we provide one. -->
-        <button id="header-refresh-btn" type="button" class="header-refresh" aria-label="Reload">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M21 12a9 9 0 1 1-3-6.7L21 8"/>
-                <polyline points="21 3 21 8 16 8"/>
-            </svg>
-        </button>
-
-        <!-- Quantum Timer UI - Top Right Corner -->
-        <div class="quantum-timer-container absolute top-4 right-4 flex items-center space-x-2">
-            <span id="quantum-timer-display" class="font-mono text-sm font-bold text-gray-700">30:00</span>
-            <button id="quantum-timer-btn" class="panel-btn text-xs py-1 px-2">Quantum</button>
-        </div>
-
-        <!-- User chip — populated by src/auth/userChip.ts when signed in. -->
-        <div id="user-chip" class="user-chip" hidden></div>
 
         <!-- Sync Status -->
         <div id="sync-status" class="hidden text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-md mb-4 transition-opacity duration-300"></div>

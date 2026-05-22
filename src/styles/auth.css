@@ -180,16 +180,18 @@ body.home-vintage-lock.auth-gate-open {
 }
 
 /* ── User chip (signed-in header) ───────────────────────────────────── */
+/* Sits as a quiet line of journal metadata under the H1 title, in the
+   same hero header stack. Smaller and muted so the logo + title still
+   read as the visual anchor. */
 
 .user-chip {
-    position: absolute;
-    top: 0.75rem;
-    left: 50%;
-    transform: translateX(-50%);
+    display: block;
+    margin: 0.25rem auto 0;
     font-family: var(--home-font-family, 'Special Elite', monospace);
     font-size: 0.7rem;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
     color: var(--home-muted);
+    line-height: 1.4;
 }
 
 .user-chip[hidden] {
@@ -209,7 +211,7 @@ body.home-vintage-lock.auth-gate-open {
     font-size: inherit;
     letter-spacing: inherit;
     cursor: pointer;
-    margin-left: 0.5rem;
+    margin-left: 0.4rem;
     padding: 0;
 }
 
@@ -219,8 +221,8 @@ body.home-vintage-lock.auth-gate-open {
 
 @media (max-width: 768px) {
     .user-chip {
-        top: 0.5rem;
         font-size: 0.65rem;
+        margin-top: 0.2rem;
     }
 
     .auth-gate__card {
