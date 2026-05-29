@@ -2,13 +2,16 @@
  * Todo page — minimal, Apple-Notes-inspired list with drag-to-reorder
  * and subtask support.
  *
- * Drag reorder: touch-friendly drag handle on each row. Long-press or
- * grab the handle to reorder. Position is persisted via a `position`
- * column in Supabase.
+ * Persistence is deterministic: every task gets a stable client-generated
+ * UUID the moment it is created, so saves are a plain upsert + delete-stale
+ * (see infra/supabase/persistence.ts) with no insert-then-reload guessing.
+ * All saves funnel through a single serialized queue so rapid edits never
+ * race each other or clobber one another's optimistic state.
  *
- * Subtasks: each task can have children (parent_id). Subtasks render
- * indented beneath their parent with an expand/collapse toggle.
- * Adding a subtask is done via a "+" button that appears on hover/focus.
+ * Rendering reconciles the list by id rather than rebuilding it: rows keep
+ * their DOM identity across changes, so focus, hover and CSS transitions
+ * survive, and reorders (e.g. a completed task sinking to the bottom)
+ * animate with a FLIP transition instead of teleporting.
  */
 
 import {
@@ -21,8 +24,21 @@ import type { Task } from './types';
 
 const LIST_ID = 'tasks-list-todo';
 const SYNC_INTERVAL_MS = 30_000;
+const FLIP_MS = 220;
 
 /* ── helpers ─────────────────────────────────────────────────────── */
+
+function makeId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for the rare non-secure context where randomUUID is missing.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, ch => {
+    const r = (Math.random() * 16) | 0;
+    const v = ch === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 /** Get top-level tasks sorted by position, completed sinking to bottom */
 function topLevel(tasks: Task[]): Task[] {
@@ -45,12 +61,11 @@ function childrenOf(tasks: Task[], parentId: string | undefined): Task[] {
     });
 }
 
-/** Reassign positions sequentially for top-level tasks */
+/** Reassign positions sequentially for top-level tasks and each parent's kids */
 function reindex(tasks: Task[]): void {
   const roots = tasks.filter(t => !t.parent_id).sort((a, b) => a.position - b.position);
   roots.forEach((t, i) => { t.position = i; });
 
-  // Also reindex each parent's children
   const parents = new Set(tasks.filter(t => t.parent_id).map(t => t.parent_id!));
   parents.forEach(pid => {
     const kids = tasks.filter(t => t.parent_id === pid).sort((a, b) => a.position - b.position);
@@ -58,88 +73,219 @@ function reindex(tasks: Task[]): void {
   });
 }
 
+const prefersReducedMotion = (): boolean =>
+  typeof matchMedia === 'function' &&
+  matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ── collapsed state (in-memory, not persisted) ──────────────────── */
 const collapsedParents = new Set<string>();
 
-/* ── render ──────────────────────────────────────────────────────── */
+/* ── row rendering ────────────────────────────────────────────────── */
 
-function renderRow(task: Task, tasks: Task[], isSubtask = false): string {
-  const completedClass = task.completed ? ' completed' : '';
-  const subtaskClass = isSubtask ? ' todo-row--subtask' : '';
-  const checked = task.completed ? ' checked' : '';
+function rowClassName(task: Task, isSubtask: boolean): string {
+  return `todo-row${task.completed ? ' completed' : ''}${isSubtask ? ' todo-row--subtask' : ''}`;
+}
+
+/**
+ * Cheap fingerprint of everything that affects a row's inner markup. When
+ * it is unchanged the row's DOM is left untouched on re-render.
+ */
+function rowSignature(task: Task, tasks: Task[], isSubtask: boolean): string {
+  const kids = childrenOf(tasks, task.id);
+  const done = kids.filter(k => k.completed).length;
+  return [
+    task.completed ? '1' : '0',
+    isSubtask ? 's' : 't',
+    collapsedParents.has(task.id) ? 'c' : 'o',
+    kids.length,
+    done,
+    task.text,
+  ].join('|');
+}
+
+function rowInnerHtml(task: Task, tasks: Task[], isSubtask: boolean): string {
   const safeText = createSafeHtml(task.text, { maxLength: 200 });
-  const taskId = task.id || `${task.position}-${task.text.slice(0, 10)}`;
-
-  const kids = task.id ? childrenOf(tasks, task.id) : [];
+  const kids = childrenOf(tasks, task.id);
   const hasChildren = kids.length > 0;
-  const isCollapsed = collapsedParents.has(taskId);
+  const isCollapsed = collapsedParents.has(task.id);
 
-  // Drag handle
   const dragHandle = `<span class="todo-row__drag" aria-label="Drag to reorder" title="Drag to reorder">⠿</span>`;
 
-  // Expand/collapse toggle for parents
   const toggle = hasChildren
-    ? `<button type="button" class="todo-row__toggle" data-task-id="${taskId}" aria-label="${isCollapsed ? 'Expand' : 'Collapse'}" title="${isCollapsed ? 'Expand' : 'Collapse'}">${isCollapsed ? '▸' : '▾'}</button>`
+    ? `<button type="button" class="todo-row__toggle" data-task-id="${task.id}" aria-label="${isCollapsed ? 'Expand' : 'Collapse'}" title="${isCollapsed ? 'Expand' : 'Collapse'}">${isCollapsed ? '▸' : '▾'}</button>`
     : '';
 
-  // Add subtask button (only for top-level, non-completed tasks)
   const addSubBtn = (!isSubtask && !task.completed)
-    ? `<button type="button" class="todo-row__add-sub" data-task-id="${taskId}" aria-label="Add subtask" title="Add subtask">+</button>`
+    ? `<button type="button" class="todo-row__add-sub" data-task-id="${task.id}" aria-label="Add subtask" title="Add subtask">+</button>`
     : '';
 
-  // Subtask count badge
   const badge = (hasChildren && !isSubtask)
     ? `<span class="todo-row__badge">${kids.filter(k => k.completed).length}/${kids.length}</span>`
     : '';
 
-  let html = `
-    <div class="todo-row${completedClass}${subtaskClass}" data-task-id="${taskId}" data-is-subtask="${isSubtask}" draggable="false">
-      ${dragHandle}
-      ${toggle}
-      <input
-        type="checkbox"
-        class="todo-row__checkbox"
-        data-task-id="${taskId}"
-        aria-label="Mark task complete"${checked}
-      >
-      <label
-        class="todo-row__label"
-        data-task-id="${taskId}"
-        role="button"
-        tabindex="0"
-        title="Click to edit"
-      >${safeText}</label>
-      ${badge}
-      ${addSubBtn}
-      <button
-        type="button"
-        class="todo-row__delete"
-        data-task-id="${taskId}"
-        aria-label="Delete task"
-        title="Delete"
-      >&times;</button>
-    </div>
+  const checked = task.completed ? ' checked' : '';
+
+  return `
+    ${dragHandle}
+    ${toggle}
+    <input
+      type="checkbox"
+      class="todo-row__checkbox"
+      data-task-id="${task.id}"
+      aria-label="Mark task complete"${checked}
+    >
+    <label
+      class="todo-row__label"
+      data-task-id="${task.id}"
+      role="button"
+      tabindex="0"
+      title="Click to edit"
+    >${safeText}</label>
+    ${badge}
+    ${addSubBtn}
+    <button
+      type="button"
+      class="todo-row__delete"
+      data-task-id="${task.id}"
+      aria-label="Delete task"
+      title="Delete"
+    >&times;</button>
   `;
-
-  // Render children if expanded
-  if (hasChildren && !isCollapsed) {
-    html += kids.map(kid => renderRow(kid, tasks, true)).join('');
-  }
-
-  return html;
 }
 
+function createRowEl(task: Task, tasks: Task[], isSubtask: boolean): HTMLElement {
+  const el = document.createElement('div');
+  el.className = rowClassName(task, isSubtask);
+  el.dataset.taskId = task.id;
+  el.dataset.isSubtask = String(isSubtask);
+  el.setAttribute('draggable', 'false');
+  el.innerHTML = rowInnerHtml(task, tasks, isSubtask);
+  el.dataset.sig = rowSignature(task, tasks, isSubtask);
+
+  // Fade/slide a freshly created row in. Removed next frame so the CSS
+  // transition runs from the entering state to rest.
+  el.classList.add('todo-row--enter');
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => el.classList.remove('todo-row--enter'))
+  );
+  return el;
+}
+
+function updateRow(el: HTMLElement, task: Task, tasks: Task[], isSubtask: boolean): void {
+  const cls = rowClassName(task, isSubtask);
+  if (el.className !== cls && !el.classList.contains('todo-row--enter')) {
+    el.className = cls;
+  }
+  const sig = rowSignature(task, tasks, isSubtask);
+  // Rebuild the inner markup when the signature changed, or when a stray
+  // inline-edit input is still mounted (an edit that was cancelled or left
+  // the text unchanged, so the signature alone wouldn't trigger a rebuild).
+  const hasStrayEdit = !!el.querySelector('.todo-row__edit');
+  if (el.dataset.sig !== sig || hasStrayEdit) {
+    el.innerHTML = rowInnerHtml(task, tasks, isSubtask);
+    el.dataset.sig = sig;
+  }
+}
+
+/** Flat, ordered list of rows to render: each parent followed by its
+ *  expanded children. */
+function flatRenderOrder(tasks: Task[]): Array<{ task: Task; isSubtask: boolean }> {
+  const out: Array<{ task: Task; isSubtask: boolean }> = [];
+  for (const parent of topLevel(tasks)) {
+    out.push({ task: parent, isSubtask: false });
+    if (!collapsedParents.has(parent.id)) {
+      for (const kid of childrenOf(tasks, parent.id)) {
+        out.push({ task: kid, isSubtask: true });
+      }
+    }
+  }
+  return out;
+}
+
+/** FLIP: animate rows from their pre-render position to the new one. */
+function flipAnimate(listEl: HTMLElement, prevRects: Map<string, DOMRect>): void {
+  listEl.querySelectorAll<HTMLElement>('.todo-row[data-task-id]').forEach(el => {
+    const id = el.dataset.taskId;
+    if (!id) return;
+    const prev = prevRects.get(id);
+    if (!prev) return; // newly created — handled by the enter transition
+    const next = el.getBoundingClientRect();
+    const dy = prev.top - next.top;
+    if (Math.abs(dy) < 1) return;
+
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${dy}px)`;
+    void el.offsetHeight; // force reflow so the transform is the start state
+    el.style.transition = `transform ${FLIP_MS}ms ease`;
+    el.style.transform = '';
+
+    const clear = (e: TransitionEvent) => {
+      if (e.propertyName !== 'transform') return;
+      el.style.transition = '';
+      el.style.transform = '';
+      el.removeEventListener('transitionend', clear);
+    };
+    el.addEventListener('transitionend', clear);
+  });
+}
+
+/**
+ * Reconcile the list DOM to match `tasks`, reusing existing row elements by
+ * id so DOM identity (and thus focus/transitions) is preserved.
+ */
 function renderList(tasks: Task[]): void {
   const listEl = document.getElementById(LIST_ID);
   if (!listEl) return;
 
-  if (tasks.length === 0) {
-    listEl.innerHTML = `<p class="todo-empty">No tasks yet.</p>`;
+  const ordered = flatRenderOrder(tasks);
+
+  if (ordered.length === 0) {
+    listEl.querySelectorAll('.todo-row[data-task-id]').forEach(el => el.remove());
+    if (!listEl.querySelector('.todo-empty')) {
+      const p = document.createElement('p');
+      p.className = 'todo-empty';
+      p.textContent = 'No tasks yet.';
+      listEl.appendChild(p);
+    }
     return;
   }
+  listEl.querySelector('.todo-empty')?.remove();
 
-  listEl.innerHTML = topLevel(tasks).map(t => renderRow(t, tasks)).join('');
+  const animate = !prefersReducedMotion();
+  const prevRects = new Map<string, DOMRect>();
+  const existing = new Map<string, HTMLElement>();
+  listEl.querySelectorAll<HTMLElement>('.todo-row[data-task-id]').forEach(el => {
+    const id = el.dataset.taskId!;
+    existing.set(id, el);
+    if (animate) prevRects.set(id, el.getBoundingClientRect());
+  });
+
+  // Remove rows that no longer exist.
+  const desiredIds = new Set(ordered.map(o => o.task.id));
+  existing.forEach((el, id) => {
+    if (!desiredIds.has(id)) {
+      el.remove();
+      existing.delete(id);
+    }
+  });
+
+  // Create/update + place each row in order.
+  let prev: HTMLElement | null = null;
+  for (const { task, isSubtask } of ordered) {
+    const found = existing.get(task.id);
+    const el: HTMLElement = found ?? createRowEl(task, tasks, isSubtask);
+    if (found) updateRow(el, task, tasks, isSubtask);
+    else existing.set(task.id, el);
+
+    const desiredNext: Element | null = prev ? prev.nextElementSibling : listEl.firstElementChild;
+    if (el !== desiredNext) {
+      if (prev) prev.after(el);
+      else listEl.prepend(el);
+    }
+    prev = el;
+  }
+
+  if (animate) flipAnimate(listEl, prevRects);
 }
 
 function renderCounter(tasks: Task[]): void {
@@ -162,7 +308,7 @@ function setupDragReorder(
   listEl: HTMLElement,
   getTasks: () => Task[],
   setTasks: (t: Task[]) => void,
-  onPersist: () => Promise<void>
+  onPersist: () => void
 ) {
   let draggedEl: HTMLElement | null = null;
   let placeholder: HTMLElement | null = null;
@@ -184,13 +330,11 @@ function setupDragReorder(
     const rect = row.getBoundingClientRect();
     offsetY = clientY - rect.top;
 
-    // Create placeholder
     placeholder = document.createElement('div');
     placeholder.className = 'todo-row todo-row--placeholder';
     placeholder.style.height = `${rect.height}px`;
     row.parentNode?.insertBefore(placeholder, row);
 
-    // Float the row
     row.classList.add('todo-row--dragging');
     row.style.position = 'fixed';
     row.style.left = `${rect.left}px`;
@@ -204,7 +348,6 @@ function setupDragReorder(
 
     draggedEl.style.top = `${clientY - offsetY}px`;
 
-    // Find which row we're hovering over
     const rows = getRowElements().filter(r => r !== draggedEl);
     for (const row of rows) {
       const rect = row.getBoundingClientRect();
@@ -214,7 +357,6 @@ function setupDragReorder(
         return;
       }
     }
-    // Past all rows — put placeholder at end
     if (rows.length > 0) {
       const lastRow = rows[rows.length - 1];
       lastRow.parentNode?.insertBefore(placeholder, lastRow.nextSibling);
@@ -227,7 +369,6 @@ function setupDragReorder(
       return;
     }
 
-    // Determine new order from placeholder position
     placeholder.parentNode?.insertBefore(draggedEl, placeholder);
     placeholder.remove();
     placeholder = null;
@@ -239,26 +380,25 @@ function setupDragReorder(
     draggedEl.style.top = '';
     draggedEl.style.zIndex = '';
 
-    // Read new order from DOM
+    // Read the new top-level order from the DOM and rewrite positions.
     const allTasks = getTasks();
     const newOrder = getRowElements().map(r => r.dataset.taskId);
     const roots = allTasks.filter(t => !t.parent_id);
     const reordered: Task[] = [];
 
     newOrder.forEach((tid, i) => {
-      const task = roots.find(t => (t.id || `${t.position}-${t.text.slice(0, 10)}`) === tid);
+      const task = roots.find(t => t.id === tid);
       if (task) {
         task.position = i;
         reordered.push(task);
       }
     });
 
-    // Keep subtasks as-is
     const subs = allTasks.filter(t => t.parent_id);
     setTasks([...reordered, ...subs]);
 
     cleanup();
-    void onPersist();
+    onPersist();
   }
 
   function cleanup() {
@@ -274,7 +414,6 @@ function setupDragReorder(
     }
   }
 
-  // Mouse events
   listEl.addEventListener('mousedown', (e) => {
     const target = e.target as HTMLElement;
     if (!isHandle(target)) return;
@@ -295,7 +434,6 @@ function setupDragReorder(
     if (isDragging) endDrag();
   });
 
-  // Touch events
   listEl.addEventListener('touchstart', (e) => {
     const target = e.target as HTMLElement;
     if (!isHandle(target)) return;
@@ -305,11 +443,9 @@ function setupDragReorder(
     const touch = e.touches[0];
     startY = touch.clientY;
 
-    // Long-press to start drag on touch
     longPressTimer = setTimeout(() => {
       e.preventDefault();
       startDrag(row, touch.clientY);
-      // Haptic feedback if available
       if (navigator.vibrate) navigator.vibrate(30);
     }, 200);
   }, { passive: false });
@@ -343,10 +479,8 @@ function setupDragReorder(
 function showSubtaskInput(
   listEl: HTMLElement,
   parentTaskId: string,
-  _tasks: Task[],
-  onAdd: (text: string, parentId: string) => Promise<void>
+  onAdd: (text: string, parentId: string) => void
 ) {
-  // Remove any existing subtask input
   listEl.querySelectorAll('.todo-subtask-input-row').forEach(el => el.remove());
 
   const parentRow = listEl.querySelector(`.todo-row[data-task-id="${parentTaskId}"]`);
@@ -368,7 +502,7 @@ function showSubtaskInput(
     >
   `;
 
-  // Find the right insertion point (after parent + its existing subtasks)
+  // Insert after the parent and any existing subtasks.
   let insertAfter: Element = parentRow;
   let next = parentRow.nextElementSibling;
   while (next && next.classList.contains('todo-row--subtask')) {
@@ -381,27 +515,25 @@ function showSubtaskInput(
   input.focus();
 
   let settled = false;
-  const finish = async (commit: boolean) => {
+  const finish = (commit: boolean) => {
     if (settled) return;
     settled = true;
     const text = sanitizeTaskInput(input.value.trim());
     inputRow.remove();
-    if (commit && text) {
-      await onAdd(text, parentTaskId);
-    }
+    if (commit && text) onAdd(text, parentTaskId);
   };
 
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.isComposing) {
       e.preventDefault();
-      void finish(true);
+      finish(true);
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      void finish(false);
+      finish(false);
     }
   });
 
-  input.addEventListener('blur', () => void finish(true));
+  input.addEventListener('blur', () => finish(true));
 }
 
 /* ── main ────────────────────────────────────────────────────────── */
@@ -413,6 +545,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = 'index.html';
     return;
   }
+
   let loadedSuccessfully = false;
   let tasks: Task[] = [];
   try {
@@ -422,53 +555,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Initial task load failed — saves are blocked until a successful load.');
   }
   reindex(tasks);
+
   let editingId: string | null = null;
 
   const refresh = () => {
-    if (editingId === null) {
-      renderList(tasks);
-    }
+    if (editingId === null) renderList(tasks);
     renderCounter(tasks);
   };
 
-  const persist = async () => {
-    reindex(tasks);
-    refresh();
+  /* ── serialized save queue ───────────────────────────────────────
+     Only one save runs at a time. Mutations that land while a save is
+     in flight set `dirty`, and the queue loops to flush the latest state
+     once. This makes overlapping edits converge instead of racing, and
+     removes the old save→reload→re-render round-trip that clobbered
+     optimistic updates. */
+  let saving = false;
+  let dirty = false;
+
+  const flushSave = async () => {
+    // Never diff against a server we failed to read — that would let
+    // delete-stale wipe real rows. Saves unlock once a load succeeds.
+    if (!loadedSuccessfully) return;
+    if (saving) { dirty = true; return; }
+    saving = true;
     try {
-      await saveTasksToSupabase(userId, tasks, { loadedSuccessfully });
-      // Re-load to get IDs for newly created tasks
-      tasks = await loadTasksFromSupabase(userId);
-      loadedSuccessfully = true;
-      refresh();
+      do {
+        dirty = false;
+        await saveTasksToSupabase(userId, tasks, { loadedSuccessfully: true });
+      } while (dirty);
     } catch (error) {
       console.error('Error saving tasks:', error);
+    } finally {
+      saving = false;
     }
+  };
+
+  const scheduleSave = () => { void flushSave(); };
+
+  // Optimistic, immediate render + a queued background save.
+  const persist = () => {
+    reindex(tasks);
+    refresh();
+    scheduleSave();
   };
 
   refresh();
 
-  // Set up drag reorder
   const listEl = document.getElementById(LIST_ID);
   if (listEl) {
     setupDragReorder(
       listEl,
       () => tasks,
-      (newTasks) => { tasks = newTasks; refresh(); },
-      async () => {
-        reindex(tasks);
-        try {
-          await saveTasksToSupabase(userId, tasks, { loadedSuccessfully });
-        } catch (error) {
-          console.error('Error saving reorder:', error);
-        }
-      }
+      (newTasks) => { tasks = newTasks; },
+      () => persist()
     );
   }
 
   const form = document.getElementById('add-task-form-todo') as HTMLFormElement | null;
   const input = document.getElementById('todo-input') as HTMLInputElement | null;
 
-  const submitTask = async () => {
+  const submitTask = () => {
     if (!input) return;
     const sanitized = sanitizeTaskInput(input.value.trim());
     if (!sanitized) {
@@ -476,30 +622,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
     const maxPos = tasks.filter(t => !t.parent_id).reduce((m, t) => Math.max(m, t.position), -1);
-    tasks = [...tasks, { text: sanitized, completed: false, position: maxPos + 1, parent_id: null }];
+    tasks = [...tasks, { id: makeId(), text: sanitized, completed: false, position: maxPos + 1, parent_id: null }];
     input.value = '';
-    await persist();
+    persist();
   };
 
-  form?.addEventListener('submit', async event => {
+  form?.addEventListener('submit', event => {
     event.preventDefault();
-    await submitTask();
+    submitTask();
   });
 
-  input?.addEventListener('keydown', async event => {
+  input?.addEventListener('keydown', event => {
     if (event.key !== 'Enter' || event.isComposing) return;
     event.preventDefault();
-    await submitTask();
+    submitTask();
   });
 
   const getTaskId = (el: HTMLElement | null): string | null =>
     el?.dataset.taskId || el?.closest('[data-task-id]')?.getAttribute('data-task-id') || null;
 
-  const findTask = (taskId: string): Task | undefined =>
-    tasks.find(t => (t.id || `${t.position}-${t.text.slice(0, 10)}`) === taskId);
-
-  const findTaskIdx = (taskId: string): number =>
-    tasks.findIndex(t => (t.id || `${t.position}-${t.text.slice(0, 10)}`) === taskId);
+  const findTask = (taskId: string): Task | undefined => tasks.find(t => t.id === taskId);
+  const findTaskIdx = (taskId: string): number => tasks.findIndex(t => t.id === taskId);
 
   /* ── inline edit ─────────────────────────────────────────────── */
 
@@ -529,18 +672,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let settled = false;
 
-    const finish = async (commit: boolean) => {
+    const finish = (commit: boolean) => {
       if (settled) return;
       settled = true;
-      const original = tasks[idx]?.text ?? '';
+      const editIdx = findTaskIdx(taskId);
+      const original = editIdx === -1 ? '' : tasks[editIdx].text;
       const sanitized = commit ? sanitizeTaskInput(editInput.value.trim()) : '';
       editingId = null;
-      if (commit && sanitized && sanitized !== original) {
+      if (commit && sanitized && sanitized !== original && editIdx !== -1) {
         tasks = tasks.map((task, i) =>
-          i === idx ? { ...task, text: sanitized } : task
+          i === editIdx ? { ...task, text: sanitized } : task
         );
-        await persist();
+        persist();
       } else {
+        // Restore the label (updateRow rebuilds the row with the stray edit input gone).
         refresh();
       }
     };
@@ -548,19 +693,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     editInput.addEventListener('keydown', event => {
       if (event.key === 'Enter' && !event.isComposing) {
         event.preventDefault();
-        void finish(true);
+        finish(true);
       } else if (event.key === 'Escape') {
         event.preventDefault();
-        void finish(false);
+        finish(false);
       }
     });
 
-    editInput.addEventListener('blur', () => void finish(true));
+    editInput.addEventListener('blur', () => finish(true));
   };
 
   /* ── event delegation ────────────────────────────────────────── */
 
-  listEl?.addEventListener('click', async event => {
+  listEl?.addEventListener('click', event => {
     const target = event.target as HTMLElement;
 
     // Toggle expand/collapse
@@ -568,11 +713,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (toggleBtn) {
       const taskId = toggleBtn.dataset.taskId;
       if (taskId) {
-        if (collapsedParents.has(taskId)) {
-          collapsedParents.delete(taskId);
-        } else {
-          collapsedParents.add(taskId);
-        }
+        if (collapsedParents.has(taskId)) collapsedParents.delete(taskId);
+        else collapsedParents.add(taskId);
         refresh();
       }
       return;
@@ -584,34 +726,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       const parentTaskId = addSubBtn.dataset.taskId;
       if (!parentTaskId) return;
 
-      // Make sure parent is expanded
       collapsedParents.delete(parentTaskId);
       refresh();
 
-      showSubtaskInput(listEl, parentTaskId, tasks, async (text, parentId) => {
-        const parentTask = findTask(parentId);
-        const parentDbId = parentTask?.id;
-        if (!parentDbId) {
-          // Can't add subtask without parent having an ID — persist parent first
-          await persist();
-          const refreshedParent = tasks.find(t =>
-            (t.id || `${t.position}-${t.text.slice(0, 10)}`) === parentId
-          );
-          if (!refreshedParent?.id) return;
-        }
-
-        const actualParentId = findTask(parentId)?.id;
-        if (!actualParentId) return;
-
-        const siblings = childrenOf(tasks, actualParentId);
+      showSubtaskInput(listEl, parentTaskId, (text, parentId) => {
+        const parent = findTask(parentId);
+        if (!parent) return;
+        const siblings = childrenOf(tasks, parent.id);
         const maxPos = siblings.reduce((m, t) => Math.max(m, t.position), -1);
-        tasks.push({
+        tasks = [...tasks, {
+          id: makeId(),
           text,
           completed: false,
           position: maxPos + 1,
-          parent_id: actualParentId,
-        });
-        await persist();
+          parent_id: parent.id,
+        }];
+        persist();
       });
       return;
     }
@@ -623,14 +753,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!taskId) return;
       const task = findTask(taskId);
       if (!task) return;
-
-      // Also remove children if it's a parent
-      if (task.id) {
-        tasks = tasks.filter(t => t.parent_id !== task.id);
-      }
-      tasks = tasks.filter(t => t !== task);
-      reindex(tasks);
-      await persist();
+      // Drop the task and any of its children.
+      tasks = tasks.filter(t => t.id !== task.id && t.parent_id !== task.id);
+      persist();
       return;
     }
 
@@ -652,7 +777,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (taskId) beginEdit(taskId);
   });
 
-  listEl?.addEventListener('change', async event => {
+  listEl?.addEventListener('change', event => {
     const target = event.target as HTMLInputElement;
     if (!target || target.type !== 'checkbox') return;
     const taskId = getTaskId(target);
@@ -660,30 +785,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     const idx = findTaskIdx(taskId);
     if (idx === -1) return;
 
+    const checked = target.checked;
     tasks = tasks.map((task, i) =>
-      i === idx ? { ...task, completed: target.checked } : task
+      i === idx ? { ...task, completed: checked } : task
     );
 
-    // If completing a parent, also complete all children
+    // Completing a parent cascades to its children.
     const task = tasks[idx];
-    if (task.id && !task.parent_id && target.checked) {
+    if (!task.parent_id && checked) {
       tasks = tasks.map(t =>
         t.parent_id === task.id ? { ...t, completed: true } : t
       );
     }
 
-    await persist();
+    persist();
   });
 
-  /* ── sync ────────────────────────────────────────────────────── */
-
+  /* ── periodic sync ───────────────────────────────────────────────
+     Pull server state on an interval, but never while the user is
+     editing or while a local save is pending/in-flight — otherwise a
+     stale read would clobber unsaved work. */
   setInterval(async () => {
-    if (editingId !== null) return;
+    if (editingId !== null || saving || dirty) return;
+    let fresh: Task[];
     try {
-      tasks = await loadTasksFromSupabase(userId);
-      refresh();
+      fresh = await loadTasksFromSupabase(userId);
     } catch (error) {
       console.warn('Failed to sync tasks:', error);
+      return;
     }
+    if (editingId !== null || saving || dirty) return; // re-check after the await
+    tasks = fresh;
+    loadedSuccessfully = true;
+    reindex(tasks);
+    refresh();
   }, SYNC_INTERVAL_MS);
 });

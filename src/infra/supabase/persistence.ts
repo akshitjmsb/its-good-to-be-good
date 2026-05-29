@@ -28,38 +28,49 @@ export async function replaceAllForUser<TRow extends Record<string, unknown>>(
   if (insertError) throw insertError;
 }
 
+/**
+ * Load a user's tasks.
+ *
+ * Throws on a real failure (network/query error) rather than swallowing it
+ * and returning `[]`. That distinction is load-bearing: the caller uses a
+ * successful load to unlock saves, and a failed load that masqueraded as
+ * "no tasks" would let the next save's delete-stale step wipe every real
+ * row on the server. A genuinely empty list still resolves to `[]`.
+ */
 export async function loadTasks(userId: string): Promise<Task[]> {
-  try {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('id, text, completed, position, parent_id')
-      .eq('user_id', userId)
-      .order('position', { ascending: true });
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('id, text, completed, position, parent_id')
+    .eq('user_id', userId)
+    .order('position', { ascending: true });
 
-    if (error || !data) {
-      if (error) console.error('Error loading tasks from Supabase:', error);
-      return [];
-    }
-
-    return data.map(task => ({
-      id: task.id,
-      text: task.text,
-      completed: task.completed,
-      position: task.position ?? 0,
-      parent_id: task.parent_id ?? null,
-    }));
-  } catch (error) {
-    console.error('Error loading tasks:', error);
-    return [];
+  if (error) {
+    console.error('Error loading tasks from Supabase:', error);
+    throw error;
   }
+
+  return (data ?? []).map(task => ({
+    id: task.id,
+    text: task.text,
+    completed: task.completed,
+    position: task.position ?? 0,
+    parent_id: task.parent_id ?? null,
+  }));
 }
 
 /**
  * Safely persist the full task list for a user.
  *
- * Strategy: upsert rows that have IDs, insert new rows, then delete any
- * DB rows that are no longer in the local list. This avoids the dangerous
- * "delete-all → insert" pattern that can wipe data on an empty load.
+ * Every task carries a stable `id` — client-generated (a UUID) the moment
+ * it is created, never invented by the server. That turns the whole save
+ * into two deterministic steps:
+ *
+ *   1. Upsert every task keyed on `id`. One statement handles both new
+ *      rows and edits; no insert-then-reload dance, no guessing which
+ *      server row belongs to which local task by text + position.
+ *   2. Delete any server row whose id is no longer present locally. This
+ *      runs *after* the upsert so freshly created rows are already on the
+ *      server and never get diffed away.
  *
  * Safety guard: if `tasks` is empty **and** `opts.loadedSuccessfully` is
  * not explicitly `true`, the save is skipped entirely. This prevents an
@@ -81,13 +92,11 @@ export async function saveTasks(
   }
 
   try {
-    // Separate tasks that already have a server ID from brand-new ones.
-    const existing = tasks.filter(t => t.id);
-    const brandNew = tasks.filter(t => !t.id);
-
-    // 1. Upsert existing tasks (update text, completed, position, parent_id).
-    if (existing.length > 0) {
-      const rows = existing.map((task, i) => ({
+    // 1. Upsert every task. Parents and their children can share one
+    //    statement: the self-referencing FK is checked at statement end,
+    //    by which point every parent row is already present.
+    if (tasks.length > 0) {
+      const rows = tasks.map((task, i) => ({
         id: task.id,
         user_id: userId,
         text: task.text,
@@ -101,18 +110,17 @@ export async function saveTasks(
       if (error) throw error;
     }
 
-    // 2. Delete tasks that were removed locally.
-    //    Must run BEFORE inserting brand-new tasks: otherwise the freshly
-    //    inserted rows show up in `serverRows` but are absent from `localIds`
-    //    (which only contains pre-existing IDs), so the diff would wrongly
-    //    delete the row we just created.
-    const { data: serverRows } = await supabase
+    // 2. Delete rows the user removed locally. ON DELETE CASCADE on
+    //    parent_id means deleting a parent also clears any children, so a
+    //    single `.in()` covers parents and orphaned subtasks alike.
+    const { data: serverRows, error: selectError } = await supabase
       .from('tasks')
       .select('id')
       .eq('user_id', userId);
+    if (selectError) throw selectError;
 
     if (serverRows) {
-      const localIds = new Set(existing.map(t => t.id));
+      const localIds = new Set(tasks.map(t => t.id));
       const toDelete = serverRows
         .map(r => r.id as string)
         .filter(id => !localIds.has(id));
@@ -122,42 +130,8 @@ export async function saveTasks(
           .from('tasks')
           .delete()
           .in('id', toDelete);
-        if (error) {
-          console.error('Error deleting removed tasks:', error);
-        }
+        if (error) throw error;
       }
-    }
-
-    // 3. Insert brand-new tasks.
-    if (brandNew.length > 0) {
-      const rows = brandNew.map((task, i) => ({
-        user_id: userId,
-        text: task.text,
-        completed: task.completed,
-        position: task.position ?? existing.length + i,
-        parent_id: task.parent_id ?? null,
-      }));
-      const { error } = await supabase.from('tasks').insert(rows);
-      if (error) throw error;
-    }
-
-    // 4. Re-read to get server-generated IDs for newly inserted tasks.
-    const { data } = await supabase
-      .from('tasks')
-      .select('id, text, completed, position, parent_id')
-      .eq('user_id', userId)
-      .order('position', { ascending: true });
-
-    if (data) {
-      // Match by position + text for new tasks that didn't have IDs.
-      data.forEach((row) => {
-        const match = tasks.find(
-          t => !t.id && t.text === row.text && t.position === row.position
-        );
-        if (match) {
-          match.id = row.id;
-        }
-      });
     }
   } catch (error) {
     console.error('Error saving tasks:', error);

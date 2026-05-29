@@ -9,6 +9,7 @@ type Recorder = {
   insertError?: { message: string } | null;
   deleteError?: { message: string } | null;
   upsertError?: { message: string } | null;
+  selectError?: { message: string } | null;
   /** Rows the mock DB pretends exist (for select queries). */
   serverRows?: Array<Record<string, unknown>>;
 };
@@ -38,14 +39,21 @@ function buildSupabaseMock() {
           recorder.upserted = rows;
           return { error: recorder.upsertError ?? null };
         }),
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(async () => ({
-              data: recorder.serverRows ?? [],
-              error: null,
-            })),
-          })),
-        })),
+        // Awaitable query builder: `.select().eq()` (delete-stale) resolves
+        // directly, while `.select().eq().order()` (loadTasks) also works.
+        select: vi.fn(() => {
+          const result = {
+            data: recorder.serverRows ?? [],
+            error: recorder.selectError ?? null,
+          };
+          const builder = {
+            eq: vi.fn(() => builder),
+            order: vi.fn(() => Promise.resolve(result)),
+            then: (onFulfilled: (r: typeof result) => unknown) =>
+              Promise.resolve(result).then(onFulfilled),
+          };
+          return builder;
+        }),
       };
     }),
   };
@@ -70,6 +78,7 @@ beforeEach(() => {
   recorder.insertError = null;
   recorder.deleteError = null;
   recorder.upsertError = null;
+  recorder.selectError = null;
   recorder.serverRows = undefined;
 });
 
@@ -102,36 +111,72 @@ describe('replaceAllForUser', () => {
 });
 
 describe('saveTasks', () => {
-  it('inserts brand-new tasks (no id) with user_id', async () => {
+  it('upserts every task keyed on id — new and existing alike use one path', async () => {
     await saveTasks(
       'u',
       [
-        { text: 'one', completed: false, position: 0, parent_id: null },
-        { text: 'two', completed: true, position: 1, parent_id: null },
-      ],
-      { loadedSuccessfully: true }
-    );
-    expect(recorder.inserted).toEqual([
-      { user_id: 'u', text: 'one', completed: false, position: 0, parent_id: null },
-      { user_id: 'u', text: 'two', completed: true, position: 1, parent_id: null },
-    ]);
-    // No upsert since none had IDs
-    expect(recorder.upserted).toBeUndefined();
-  });
-
-  it('upserts tasks that have a server id', async () => {
-    await saveTasks(
-      'u',
-      [
-        { id: 'abc-1', text: 'existing', completed: false, position: 0, parent_id: null },
+        { id: 'id-1', text: 'one', completed: false, position: 0, parent_id: null },
+        { id: 'id-2', text: 'two', completed: true, position: 1, parent_id: null },
       ],
       { loadedSuccessfully: true }
     );
     expect(recorder.upserted).toEqual([
-      { id: 'abc-1', user_id: 'u', text: 'existing', completed: false, position: 0, parent_id: null },
+      { id: 'id-1', user_id: 'u', text: 'one', completed: false, position: 0, parent_id: null },
+      { id: 'id-2', user_id: 'u', text: 'two', completed: true, position: 1, parent_id: null },
     ]);
-    // No insert since none were new
+    // Single upsert path — the legacy insert branch is gone.
     expect(recorder.inserted).toBeUndefined();
+  });
+
+  it('carries parent_id through for subtasks', async () => {
+    await saveTasks(
+      'u',
+      [
+        { id: 'parent', text: 'p', completed: false, position: 0, parent_id: null },
+        { id: 'child', text: 'c', completed: false, position: 0, parent_id: 'parent' },
+      ],
+      { loadedSuccessfully: true }
+    );
+    expect(recorder.upserted).toEqual([
+      { id: 'parent', user_id: 'u', text: 'p', completed: false, position: 0, parent_id: null },
+      { id: 'child', user_id: 'u', text: 'c', completed: false, position: 0, parent_id: 'parent' },
+    ]);
+  });
+
+  it('deletes server rows that are absent from the local list', async () => {
+    recorder.serverRows = [{ id: 'keep' }, { id: 'gone-1' }, { id: 'gone-2' }];
+    await saveTasks(
+      'u',
+      [{ id: 'keep', text: 'keep', completed: false, position: 0, parent_id: null }],
+      { loadedSuccessfully: true }
+    );
+    expect(recorder.deletedIds).toEqual(['gone-1', 'gone-2']);
+  });
+
+  it('does not delete anything when the server matches the local list', async () => {
+    recorder.serverRows = [{ id: 'a' }, { id: 'b' }];
+    await saveTasks(
+      'u',
+      [
+        { id: 'a', text: 'a', completed: false, position: 0, parent_id: null },
+        { id: 'b', text: 'b', completed: false, position: 1, parent_id: null },
+      ],
+      { loadedSuccessfully: true }
+    );
+    expect(recorder.deletedIds).toBeUndefined();
+  });
+
+  it('throws when the upsert returns an error', async () => {
+    recorder.upsertError = { message: 'boom' };
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(
+      saveTasks(
+        'u',
+        [{ id: 'x', text: 'x', completed: false, position: 0, parent_id: null }],
+        { loadedSuccessfully: true }
+      )
+    ).rejects.toEqual({ message: 'boom' });
+    spy.mockRestore();
   });
 
   it('skips save when tasks are empty and load was NOT confirmed', async () => {
@@ -145,11 +190,12 @@ describe('saveTasks', () => {
     spy.mockRestore();
   });
 
-  it('allows saving empty list when loadedSuccessfully is true (intentional clear)', async () => {
+  it('clears every server row when saving an empty list with a confirmed load', async () => {
+    recorder.serverRows = [{ id: 'a' }, { id: 'b' }];
     await saveTasks('u', [], { loadedSuccessfully: true });
-    // With an empty list and confirmed load, it should proceed (no inserts/upserts,
-    // but the delete-stale step runs via select)
-    expect(recorder.table).toBe('tasks');
+    // No upsert (nothing to write) but the stale rows are swept.
+    expect(recorder.upserted).toBeUndefined();
+    expect(recorder.deletedIds).toEqual(['a', 'b']);
   });
 });
 
