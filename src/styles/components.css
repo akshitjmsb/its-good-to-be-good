@@ -632,6 +632,23 @@ button.preview-card {
     color: #1f2937;
 }
 
+/* Today's lift — a quiet caption below the nav carousel. Glance-able,
+   never demanding: muted ink, wide tracking, no chrome. Empty until the
+   inline script fills it, so it leaves no gap before paint. */
+.workout-indicator {
+    margin: 0.75rem 0 0;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    color: #6b7280;
+}
+
+.workout-indicator:empty {
+    display: none;
+}
+
 /* Responsive navigation sizing */
 @media (max-width: 640px) {
     .nav-item {

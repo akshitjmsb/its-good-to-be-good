@@ -210,8 +210,20 @@
                         </a>
                     </div>
                 </div>
+                <!-- Today's lift — a quiet glance at the PPL+Upper rotation.
+                     Schedule mirrors src/modules/being/exercise-data.ts; it's a
+                     fixed weekly rotation so the day map is inlined here rather
+                     than imported, keeping this paint with the document. -->
+                <p id="today-workout" class="workout-indicator" aria-live="polite"></p>
+                <script>
+                    (function () {
+                        var schedule = ['Rest', 'Push', 'Rest', 'Pull', 'Rest', 'Legs', 'Upper'];
+                        var el = document.getElementById('today-workout');
+                        if (el) el.textContent = schedule[new Date().getDay()] + ' Day';
+                    })();
+                </script>
             </section>
-            
+
             <!-- LEARN SECTION -->
             <section class="mobile-section">
                 <h2>Learn</h2>
