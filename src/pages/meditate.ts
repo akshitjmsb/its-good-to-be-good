@@ -1,11 +1,15 @@
 /**
- * Meditate page — view layer over the shared countdown core.
+ * Meditate view — the timer + breath UI over the shared countdown core.
  *
  * The timer + persistence + cross-tab sync live in
  * `src/core/countdownTimer.ts` (consumed via `getMeditateTimer()`).
  * This file owns the meditation-specific UI: chime on completion,
  * breath-ring guidance during running sessions, and the preset
  * duration row.
+ *
+ * `initMeditate()` wires the UI against the `meditate-*` DOM ids. It is
+ * called by the Being page entry (`src/pages/being.ts`) for the Meditate
+ * tab; it returns early if those elements aren't present.
  *
  * All audio uses HTMLAudioElement, not Web Audio. iOS Safari's
  * autoplay policy is too strict for the Web Audio path to be reliable.
@@ -38,7 +42,7 @@ const LEGACY_SOUND_KEY = 'meditate.soundEnabled';
 type SoundMode = 'bell' | 'off';
 const SOUND_MODES: readonly SoundMode[] = ['bell', 'off'];
 
-document.addEventListener('DOMContentLoaded', () => {
+export function initMeditate(): void {
   const display = document.getElementById('meditate-display');
   const button = document.getElementById(
     'meditate-toggle'
@@ -390,4 +394,4 @@ document.addEventListener('DOMContentLoaded', () => {
     omAudio.pause();
     sleepAudio.pause();
   });
-});
+}

@@ -14,7 +14,7 @@ const repoRoot = process.env.ARCH_CHECK_ROOT
 const EXPECTED_JOURNEY_MODULES = [
   'todo',
   'quantum',
-  'meditate',
+  'being',
   'money',
   'health',
   'travel',
@@ -31,7 +31,6 @@ const EXPECTED_LEARN_MODULES = [
   'food',
   'analytics',
   'curious',
-  'exercise',
 ];
 
 const errors = [];
@@ -278,7 +277,7 @@ async function validateLayerBoundaries() {
 }
 
 async function validateModalControllerBoundaries() {
-  // After Phase 2, the canonical analytics/exercise implementations live
+  // After Phase 2, the canonical analytics implementation lives
   // in `src/modules/<id>/controller.ts` and the legacy locations are
   // re-export shims. The module-import-boundary check enforces the broader
   // layering rule (modules can use infra/ + domains/ but not components/

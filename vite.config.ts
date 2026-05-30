@@ -96,7 +96,7 @@ export default defineConfig(() => {
             main: path.resolve(__dirname, 'index.html'),
             todo: path.resolve(__dirname, 'todo.html'),
             health: path.resolve(__dirname, 'health.html'),
-            meditate: path.resolve(__dirname, 'meditate.html'),
+            being: path.resolve(__dirname, 'being.html'),
             money: path.resolve(__dirname, 'money.html'),
             quantum: path.resolve(__dirname, 'quantum.html'),
             travel: path.resolve(__dirname, 'travel.html'),

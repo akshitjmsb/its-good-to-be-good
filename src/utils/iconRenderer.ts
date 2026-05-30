@@ -79,15 +79,6 @@ const learnIconSvgs: Record<LearnModuleId, string> = {
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
             <path d="M12 17h.01" />
         </svg>
-    `,
-    exercise: `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="12" r="3" />
-            <path d="M9 12h6" />
-            <path d="M6 9v6" />
-            <path d="M18 9v6" />
-        </svg>
     `
 };
 
@@ -107,12 +98,12 @@ const journeyIconSvgs: Record<JourneyModuleId, string> = {
             <path d="M1 12h6m6 0h6" />
         </svg>
     `,
-    meditate: `
+    being: `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M8 12h8" />
-            <path d="M12 8v8" />
-            <circle cx="12" cy="12" r="3" />
+            <path d="M12 4c1.7 2.4 1.7 5.6 0 8-1.7-2.4-1.7-5.6 0-8z" />
+            <path d="M12 12C9.8 9.4 6.7 8 3.5 8c0 3.3 2.3 6.2 5.5 7" />
+            <path d="M12 12c2.2-2.6 5.3-4 8.5-4 0 3.3-2.3 6.2-5.5 7" />
+            <path d="M4 12.5c1.6 2.7 4.7 4.5 8 4.5s6.4-1.8 8-4.5" />
         </svg>
     `,
     money: `

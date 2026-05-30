@@ -16,7 +16,7 @@ import {
   getDayPlan,
   MUSCLE_FOCUS,
   STRETCH_ROUTINES,
-} from './data';
+} from './exercise-data';
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
 const TYPE_LABELS: Record<WorkoutType, string> = {

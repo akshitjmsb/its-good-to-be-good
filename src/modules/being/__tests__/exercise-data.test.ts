@@ -4,7 +4,7 @@ import {
   getDayPlan,
   getStartOfWeek,
   type Exercise,
-} from '../data';
+} from '../exercise-data';
 
 const { djb2, pickExercises, PUSH_POOL, PULL_POOL, LEGS_POOL, UPPER_POOL } =
   __INTERNAL;

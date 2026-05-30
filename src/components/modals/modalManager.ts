@@ -55,10 +55,6 @@ const LEARN_MODULE_HANDLERS: Record<LearnModuleId, LearnModuleHandler> = {
         const m = await import('./hoodModal');
         return m.showHoodModal(dates.active);
     },
-    exercise: async ({ dates }) => {
-        const m = await import('./exerciseModal');
-        return m.showExerciseModal(dates.active);
-    },
 };
 
 export interface ModalManagerOptions {
