@@ -1,9 +1,0 @@
-{
-  "id": "exercise",
-  "displayName": "Exercise",
-  "category": "learn",
-  "surface": "modal",
-  "icon": "./icon.svg",
-  "version": "0.1.0",
-  "renderer": "dom"
-}

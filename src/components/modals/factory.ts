@@ -101,11 +101,5 @@ export const MODAL_CONFIGS: Record<string, ModalConfig> = {
         modalId: 'analytics-engineer-modal',
         contentId: 'analytics-cards-wrapper',
         loadingMessage: 'Loading analytics topics...'
-    },
-    exercise: {
-        modalId: 'exercise-modal',
-        contentId: 'exercise-content',
-        titleId: 'exercise-modal-title',
-        loadingMessage: 'Loading exercise plan...'
     }
 };

@@ -6,7 +6,7 @@
  *
  * Scope and back-compat:
  *
- *  - Journey modules (todo, quantum, meditate, money, health, travel, tennis,
+ *  - Journey modules (todo, quantum, being, money, health, travel, tennis,
  *    khyaali-bhoot) and any other `surface: 'page'` module keep their own
  *    HTML files. The router never intercepts those links — the existing
  *    multi-page navigation still works.

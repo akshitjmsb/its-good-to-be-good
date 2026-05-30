@@ -8,7 +8,7 @@ import {
 const EXPECTED_JOURNEY_IDS = [
   'todo',
   'quantum',
-  'meditate',
+  'being',
   'money',
   'health',
   'travel',
@@ -25,7 +25,6 @@ const EXPECTED_LEARN_IDS = [
   'food',
   'analytics',
   'curious',
-  'exercise',
 ];
 
 describe('module registry', () => {

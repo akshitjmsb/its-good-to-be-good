@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Being — It's Good To Be King</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/index.css">
+    <link rel="stylesheet" href="src/styles/home-lock.css">
+    <link rel="icon" href="/vitruvian-logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="It's Good To Be King">
+    <meta name="theme-color" content="#111111">
+</head>
+<body class="home-vintage-lock">
+    <div id="app-container" class="app-container being-page">
+        <nav class="page-back-nav">
+            <a href="index.html" class="home-link">← Home</a>
+        </nav>
+
+        <header class="text-center mb-6">
+            <div class="flex justify-center items-center">
+                <h1>Being</h1>
+                <span class="theme-icon" aria-hidden="true">🪷</span>
+            </div>
+        </header>
+
+        <div class="being-tabs" role="tablist" aria-label="Being sections">
+            <button id="being-tab-meditate" type="button" class="being-tab" role="tab"
+                    aria-selected="true" aria-controls="being-panel-meditate"
+                    data-tab="meditate">Meditate</button>
+            <button id="being-tab-exercise" type="button" class="being-tab" role="tab"
+                    aria-selected="false" aria-controls="being-panel-exercise"
+                    data-tab="exercise" tabindex="-1">Exercise</button>
+        </div>
+
+        <section id="being-panel-meditate" class="being-panel meditate-page" role="tabpanel"
+                 aria-labelledby="being-tab-meditate">
+            <div class="meditate-stage">
+                <div id="meditate-display" class="meditate-display" role="timer" aria-live="polite">10:00</div>
+                <p id="meditate-status" class="meditate-status">10 minute session</p>
+                <button id="meditate-toggle" type="button" class="panel-btn meditate-btn" aria-pressed="false">Start</button>
+                <div class="meditate-icon-toggles" aria-label="Audio toggles">
+                    <button id="meditate-breathe-toggle" type="button" class="meditate-icon-toggle" aria-pressed="true" aria-label="Breath chime">
+                        <svg class="meditate-icon-toggle__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.5 -2.5"></path>
+                            <path d="M3 12h15a3 3 0 1 1 -3 3"></path>
+                            <path d="M4 16h6.5a2 2 0 1 1 -2 2"></path>
+                        </svg>
+                    </button>
+                    <button id="meditate-om-toggle" type="button" class="meditate-icon-toggle" aria-pressed="false" aria-label="OM chant">
+                        <span class="meditate-icon-toggle__glyph meditate-icon-toggle__glyph--om" aria-hidden="true">ॐ</span>
+                    </button>
+                    <button id="meditate-sleep-toggle" type="button" class="meditate-icon-toggle" aria-pressed="false" aria-label="Sleep music">
+                        <span class="meditate-icon-toggle__glyph meditate-icon-toggle__glyph--moon" aria-hidden="true">🌙</span>
+                    </button>
+                </div>
+            </div>
+
+            <section id="meditate-breath" class="meditate-breath" aria-hidden="true">
+                <div class="meditate-breath__stage">
+                    <div class="meditate-breath__ring"></div>
+                    <span class="meditate-breath__label meditate-breath__label--inhale">Breathe in</span>
+                    <span class="meditate-breath__label meditate-breath__label--hold-1">Hold</span>
+                    <span class="meditate-breath__label meditate-breath__label--exhale">Breathe out</span>
+                    <span class="meditate-breath__label meditate-breath__label--hold-2">Hold</span>
+                </div>
+            </section>
+
+            <section class="meditate-presets" aria-label="Session length">
+                <button type="button" class="meditate-preset" data-duration="5" aria-pressed="false">5 min</button>
+                <button type="button" class="meditate-preset" data-duration="10" aria-pressed="true">10 min</button>
+                <button type="button" class="meditate-preset" data-duration="20" aria-pressed="false">20 min</button>
+            </section>
+        </section>
+
+        <section id="being-panel-exercise" class="being-panel" role="tabpanel"
+                 aria-labelledby="being-tab-exercise" hidden>
+            <div id="being-exercise-host"></div>
+        </section>
+    </div>
+
+    <script type="module" src="src/pages/being.ts"></script>
+</body>
+</html>

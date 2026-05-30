@@ -29,7 +29,6 @@ const MODULE_ID_TO_MODAL_CONFIG: Record<string, keyof typeof MODAL_CONFIGS> = {
   food: 'food',
   curious: 'hood',
   analytics: 'analytics',
-  exercise: 'exercise',
 };
 
 function modalConfigFor(manifest: ModuleManifest) {
