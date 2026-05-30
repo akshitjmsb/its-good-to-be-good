@@ -1480,28 +1480,46 @@ button.preview-card {
 .being-orbit {
     /* Diameter follows the viewport on a phone, capped on wider screens. */
     --orbit-d: min(86vw, 23rem);
-    --orbit-r: calc(var(--orbit-d) * 0.43);
+    --orbit-r: calc(var(--orbit-d) * 0.45);
     position: relative;
     width: var(--orbit-d);
     height: var(--orbit-d);
-    margin: 0.5rem auto 1rem;
+    margin: 1rem auto 1.25rem;
 }
 
-/* Vitruvian Man — the still centre. Faint so the orbit reads as foreground. */
+/* Faint guide ring through the icon centres — the orbital path made visible.
+   Drawn at the icon radius so the seven launchers sit on a perfect circle. */
+.being-orbit::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(var(--orbit-r) * 2);
+    height: calc(var(--orbit-r) * 2);
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 50%;
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+/* Vitruvian Man — the still centre. Da Vinci's drawing mounted like a plate
+   on the desk, sized as a proper centrepiece (~11rem ≈ 176px on a phone). */
 .being-orbit__figure {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 62%;
     transform: translate(-50%, -50%);
     pointer-events: none;
 }
 
 .being-figure {
     display: block;
-    width: 100%;
-    height: auto;
-    opacity: 0.85;
+    height: 11rem;
+    width: auto;
+    opacity: 0.95;
+    border: 1px solid var(--home-border, #e5e7eb);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .orbit-icon {
