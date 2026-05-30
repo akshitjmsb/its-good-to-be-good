@@ -1471,72 +1471,95 @@ button.preview-card {
 
 /* ── Being page ──────────────────────────────────────────────────────────── */
 
-/* Being dock — one row of small captioned icons. Breathe / OM / Sleep are
-   ambient toggles (subtle grey when on); Stretch / Weights / Tennis / Guided
-   open the inline panel below (ink-filled while their panel is open). Same
-   paper-on-desk language as the meditate presets. */
+/* Being orbit — the resting state. The Vitruvian Man sits dead centre and the
+   seven practices orbit it as quiet captioned icons. Each icon is placed by a
+   per-icon angle (`--a`, set inline) carried out along the orbit radius with
+   the classic rotate → translate → counter-rotate trick so the tokens stay
+   upright. Nothing is "selected" until one is tapped. */
 
-.being-core {
-    margin-bottom: 1rem;
+.being-orbit {
+    /* Diameter follows the viewport on a phone, capped on wider screens. */
+    --orbit-d: min(86vw, 23rem);
+    --orbit-r: calc(var(--orbit-d) * 0.43);
+    position: relative;
+    width: var(--orbit-d);
+    height: var(--orbit-d);
+    margin: 0.5rem auto 1rem;
 }
 
-.being-dock {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
-    max-width: 26rem;
-    margin: 0 auto 0.75rem;
+/* Vitruvian Man — the still centre. Faint so the orbit reads as foreground. */
+.being-orbit__figure {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 62%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
 }
 
-.being-dock__item {
-    flex: 0 0 auto;
+.being-figure {
+    display: block;
+    width: 100%;
+    height: auto;
+    opacity: 0.85;
+}
+
+.orbit-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 4.25rem;
+    height: 4.25rem;
+    margin: -2.125rem 0 0 -2.125rem;
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.5rem 0.25rem;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 0.625rem;
+    border-radius: 999px;
     color: #6b7280;
     font-family: 'Special Elite', monospace;
     cursor: pointer;
-    min-height: 44px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transform:
+        rotate(var(--a))
+        translateY(calc(-1 * var(--orbit-r)))
+        rotate(calc(-1 * var(--a)));
     transition: background-color 0.2s ease, border-color 0.2s ease,
         color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.being-dock__item:hover {
+.orbit-icon:hover {
     background-color: #f8f9fa;
     border-color: #d1d5db;
     color: #374151;
 }
 
-.being-dock__item:focus-visible {
+.orbit-icon:focus-visible {
     outline: 2px solid #374151;
     outline-offset: 2px;
 }
 
-/* Ambient toggles (Breathe / OM / Sleep) settle into a quiet grey when on. */
-.being-dock__item[data-kind='toggle'][aria-pressed='true'] {
+/* Ambient loops (OM / Sleep) settle into a quiet grey while playing. */
+.orbit-icon[aria-pressed='true'] {
     background-color: #f3f4f6;
     border-color: #d1d5db;
     color: #374151;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-/* Panel launchers invert to ink while their panel is open. */
-.being-dock__item[data-panel][aria-expanded='true'] {
+/* The practice currently on the stage inverts to ink. */
+.orbit-icon.is-open {
     background-color: #374151;
     border-color: #374151;
     color: #ffffff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.being-dock__icon {
+.orbit-icon__glyph {
     width: 1.5rem;
     height: 1.5rem;
     display: inline-flex;
@@ -1544,24 +1567,125 @@ button.preview-card {
     justify-content: center;
 }
 
-.being-dock__icon svg {
+.orbit-icon__glyph svg {
     width: 1.4rem;
     height: 1.4rem;
     display: block;
 }
 
-.being-dock__icon--om {
+.orbit-icon__glyph--om {
     font-size: 1.4rem;
     line-height: 1;
 }
 
-.being-dock__label {
-    font-size: 0.7rem;
+.orbit-icon__label {
+    font-size: 0.625rem;
     letter-spacing: 0.04em;
     line-height: 1;
 }
 
-/* Inline practice panel — opens below the dock, paper card. */
+/* Activity stage — appears below the orbit once a practice is tapped. */
+.being-stage {
+    margin-top: 0.5rem;
+}
+
+.being-stage[hidden],
+.being-meditate[hidden] {
+    display: none;
+}
+
+.being-stage__close {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0 auto 0.75rem;
+    padding: 0.35rem 0.6rem 0.35rem 0.35rem;
+    background: none;
+    border: none;
+    border-radius: 0.5rem;
+    color: #6b7280;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.being-stage__close:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+}
+
+.being-stage__close:focus-visible {
+    outline: 2px solid #374151;
+    outline-offset: 2px;
+}
+
+.being-stage__close svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    display: block;
+}
+
+/* Breath-chime toggle — the one ambient control that lives with the timer
+   (OM / Sleep live in the orbit). */
+.being-sounds {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+
+.being-sound-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    color: #6b7280;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    min-height: 44px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+        color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.being-sound-toggle:hover {
+    background-color: #f8f9fa;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+.being-sound-toggle:focus-visible {
+    outline: 2px solid #374151;
+    outline-offset: 2px;
+}
+
+.being-sound-toggle[aria-pressed='true'] {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+    color: #374151;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.being-sound-toggle__glyph {
+    width: 1.2rem;
+    height: 1.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.being-sound-toggle__glyph svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    display: block;
+}
+
+/* Inline practice panel — opens on the stage, paper card. */
 .being-panel {
     background-color: #f8f9fa;
     border: 1px solid #e5e7eb;
