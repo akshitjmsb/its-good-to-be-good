@@ -1,58 +1,127 @@
 /**
  * Being page entry.
  *
- * Being merges two practices behind a two-tab interface:
- *   • Meditate — timer + breath UI (shared from `./meditate`).
- *   • Exercise — deterministic offline schedule (rendered from the being
- *     module's `exercise-view`).
+ * Being is one calm surface. The meditation timer rests at the top; every
+ * practice — Breathe, OM, Sleep, Stretch, Weights, Tennis, Guided — lives in
+ * a single dock of small captioned icons beneath it.
  *
- * Both tabs mount on load. The Meditate timer owns its own intervals and
- * audio lifecycle regardless of which tab is visible; the Exercise view is
- * pure DOM and stays mounted in its (hidden) panel until selected.
+ *   • Breathe / OM / Sleep are ambient toggles owned by `initMeditate()`
+ *     (chime, OM loop, sleep loop). They keep their `meditate-*` ids.
+ *   • Stretch / Weights / Tennis / Guided open an inline panel below the dock.
+ *     One panel at a time; tapping the active icon closes it.
+ *
+ * Link practices (Stretch / Tennis / Guided) open a YouTube routine in a new
+ * tab. Weights mounts the deterministic offline workout calendar inline.
  */
 
 import { initMeditate } from './meditate';
 import { renderExerciseView } from '../modules/being/exercise-view';
+import { STRETCH_ROUTINES } from '../modules/being/exercise-data';
+import {
+  GUIDED_MEDITATIONS,
+  TENNIS_STRETCHES,
+  type PracticeLink,
+} from '../modules/being/practices';
+import { escapeHtml } from '../utils/escapeHtml';
 
-type TabName = 'meditate' | 'exercise';
+type PanelName = 'stretch' | 'weights' | 'tennis' | 'guided';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Meditate tab — wire the timer/breath UI against its `meditate-*` ids.
+  // Timer + breath ring + ambient audio toggles (Breathe / OM / Sleep).
   initMeditate();
 
-  // Exercise tab — render the calendar + cards for the local "today".
-  const exerciseHost = document.getElementById('being-exercise-host');
-  if (exerciseHost) {
-    renderExerciseView(exerciseHost, new Date());
-  }
-
-  // Tabs — show one panel at a time, keeping ARIA state in sync.
-  const tabs = Array.from(
-    document.querySelectorAll<HTMLButtonElement>('.being-tab')
+  const panel = document.getElementById('being-panel');
+  const launchers = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('.being-dock__item[data-panel]')
   );
-  const panels: Record<TabName, HTMLElement | null> = {
-    meditate: document.getElementById('being-panel-meditate'),
-    exercise: document.getElementById('being-panel-exercise'),
-  };
+  if (!panel) return;
 
-  function activate(name: TabName): void {
-    tabs.forEach(tab => {
-      const selected = tab.dataset.tab === name;
-      tab.setAttribute('aria-selected', selected ? 'true' : 'false');
-      tab.tabIndex = selected ? 0 : -1;
-    });
-    (Object.keys(panels) as TabName[]).forEach(key => {
-      const panel = panels[key];
-      if (!panel) return;
-      if (key === name) panel.removeAttribute('hidden');
-      else panel.setAttribute('hidden', '');
-    });
+  let openPanel: PanelName | null = null;
+
+  // Flatten the body-part stretch routines into labelled links (Back → Back 1…).
+  function stretchLinks(): PracticeLink[] {
+    return STRETCH_ROUTINES.flatMap(entry =>
+      entry.urls.length === 1
+        ? [{ label: entry.bodyPart, url: entry.urls[0] }]
+        : entry.urls.map((url, i) => ({ label: `${entry.bodyPart} ${i + 1}`, url }))
+    );
   }
 
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const name = tab.dataset.tab as TabName | undefined;
-      if (name) activate(name);
+  function renderLinks(title: string, links: ReadonlyArray<PracticeLink>): string {
+    const buttons = links
+      .map(
+        link =>
+          `<button type="button" class="stretch-btn" data-link="${escapeHtml(link.url)}">${escapeHtml(link.label)}</button>`
+      )
+      .join('');
+    return (
+      `<p class="being-panel__title">${escapeHtml(title)}</p>` +
+      `<div class="being-links">${buttons}</div>`
+    );
+  }
+
+  function showPanel(name: PanelName): void {
+    if (!panel) return;
+    panel.innerHTML = '';
+
+    if (name === 'weights') {
+      // Render into a fresh host so the exercise view's delegated listener is
+      // dropped with the node on the next panel swap (no listener build-up).
+      const host = document.createElement('div');
+      panel.appendChild(host);
+      renderExerciseView(host, new Date());
+    } else if (name === 'stretch') {
+      panel.innerHTML = renderLinks('Stretch', stretchLinks());
+    } else if (name === 'tennis') {
+      panel.innerHTML = renderLinks('Tennis stretch', TENNIS_STRETCHES);
+    } else if (name === 'guided') {
+      panel.innerHTML = renderLinks('Guided meditation', GUIDED_MEDITATIONS);
+    }
+
+    panel.removeAttribute('hidden');
+  }
+
+  function closePanel(): void {
+    if (!panel) return;
+    panel.setAttribute('hidden', '');
+    panel.innerHTML = '';
+  }
+
+  function syncLaunchers(active: PanelName | null): void {
+    launchers.forEach(btn =>
+      btn.setAttribute(
+        'aria-expanded',
+        btn.dataset.panel === active ? 'true' : 'false'
+      )
+    );
+  }
+
+  launchers.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.panel as PanelName | undefined;
+      if (!name) return;
+
+      if (openPanel === name) {
+        openPanel = null;
+        syncLaunchers(null);
+        closePanel();
+        return;
+      }
+
+      openPanel = name;
+      syncLaunchers(name);
+      showPanel(name);
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
+  });
+
+  // Open practice links in a new tab. Scoped to the link buttons this file
+  // renders (data-link); the exercise view owns its own clicks separately.
+  panel.addEventListener('click', event => {
+    const target = event.target as HTMLElement | null;
+    const link = target?.closest<HTMLButtonElement>('.stretch-btn[data-link]');
+    if (link?.dataset.link) {
+      window.open(link.dataset.link, '_blank', 'noopener');
+    }
   });
 });
