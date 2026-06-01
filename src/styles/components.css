@@ -1720,6 +1720,33 @@ button.preview-card {
     display: block;
 }
 
+/* Contemplation verse — a quiet resting thought below the orbit. Centred,
+   muted, with a hairline quote rule on the left. The closing line is the
+   punchline, so it sits a touch larger and inks darker. */
+.being-verse {
+    max-width: 32rem;
+    margin: 3.5rem auto 2.5rem;
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    border-left: 1px solid var(--home-border, #e5e7eb);
+    text-align: center;
+    font-style: italic;
+}
+
+.being-verse__line {
+    margin: 0.4rem 0;
+    color: var(--home-muted, #6b7280);
+    font-family: 'Special Elite', monospace;
+    font-size: 0.95rem;
+    line-height: 1.85;
+    letter-spacing: 0.02em;
+}
+
+.being-verse__line--punch {
+    margin-top: 1rem;
+    color: var(--home-text, #374151);
+    font-size: 1.1rem;
+}
+
 /* Inline practice panel — opens on the stage, paper card. */
 .being-panel {
     background-color: #f8f9fa;
