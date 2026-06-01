@@ -1775,6 +1775,85 @@ button.preview-card {
     gap: 0.5rem;
 }
 
+/* A second titled block in the same panel (e.g. Watch & learn under the
+   stretch links) gets a quiet hairline divider and breathing room above it. */
+.being-links + .being-panel__title {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Watch & learn — curated channels as a clean vertical list. */
+.channel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.channel-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    text-align: left;
+    font-family: 'Special Elite', monospace;
+    color: #374151;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    min-height: 44px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.channel-link:hover {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.channel-link:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.channel-link:active {
+    transform: scale(0.99);
+}
+
+.channel-link__glyph {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    color: #6b7280;
+}
+
+.channel-link:hover .channel-link__glyph {
+    color: #111111;
+}
+
+.channel-link__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.channel-link__name {
+    font-size: 0.9rem;
+    color: #111111;
+    letter-spacing: 0.02em;
+}
+
+.channel-link__note {
+    font-size: 0.7rem;
+    color: #6b7280;
+    letter-spacing: 0.02em;
+}
+
 /* ── Meditate page ───────────────────────────────────────────────────────── */
 
 .meditate-page .meditate-header {

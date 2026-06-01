@@ -25,7 +25,9 @@ import { STRETCH_ROUTINES } from '../modules/being/exercise-data';
 import {
   GUIDED_MEDITATIONS,
   TENNIS_STRETCHES,
+  TENNIS_CHANNELS,
   type PracticeLink,
+  type ChannelLink,
 } from '../modules/being/practices';
 import { escapeHtml } from '../utils/escapeHtml';
 
@@ -70,6 +72,35 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
+  // Watch & Learn — curated channels. Each row is a single link that opens the
+  // YouTube channel direct: a monoline play glyph, the channel name, its note.
+  function renderChannels(
+    title: string,
+    channels: ReadonlyArray<ChannelLink>
+  ): string {
+    const glyph =
+      '<svg class="channel-link__glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      '<rect x="3" y="5.5" width="18" height="13" rx="3"></rect>' +
+      '<path d="M10.5 9.5l4 2.5-4 2.5z"></path>' +
+      '</svg>';
+    const rows = channels
+      .map(
+        channel =>
+          `<button type="button" class="channel-link" data-link="${escapeHtml(channel.url)}">` +
+          glyph +
+          `<span class="channel-link__text">` +
+          `<span class="channel-link__name">${escapeHtml(channel.name)}</span>` +
+          `<span class="channel-link__note">${escapeHtml(channel.note)}</span>` +
+          `</span>` +
+          `</button>`
+      )
+      .join('');
+    return (
+      `<p class="being-panel__title">${escapeHtml(title)}</p>` +
+      `<div class="channel-list">${rows}</div>`
+    );
+  }
+
   function showPanel(name: PanelName): void {
     if (!panel) return;
     panel.innerHTML = '';
@@ -83,7 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (name === 'stretch') {
       panel.innerHTML = renderLinks('Stretch', stretchLinks());
     } else if (name === 'tennis') {
-      panel.innerHTML = renderLinks('Tennis stretch', TENNIS_STRETCHES);
+      panel.innerHTML =
+        renderLinks('Tennis stretch', TENNIS_STRETCHES) +
+        renderChannels('Watch & learn', TENNIS_CHANNELS);
     } else if (name === 'guided') {
       panel.innerHTML = renderLinks('Guided meditation', GUIDED_MEDITATIONS);
     }
@@ -157,7 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // renders (data-link); the exercise view owns its own clicks separately.
   panel.addEventListener('click', event => {
     const target = event.target as HTMLElement | null;
-    const link = target?.closest<HTMLButtonElement>('.stretch-btn[data-link]');
+    const link = target?.closest<HTMLButtonElement>(
+      '.stretch-btn[data-link], .channel-link[data-link]'
+    );
     if (link?.dataset.link) {
       window.open(link.dataset.link, '_blank', 'noopener');
     }
