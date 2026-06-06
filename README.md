@@ -1,129 +1,92 @@
-# It's Good To Be King
+# It's Good to Be Good
 
-Personal dashboard application with task management, modal-based daily content, and a French translator module.
+> *Inspired by Tom Petty — "It's Good to Be King," Wildflowers, 1994.*
 
-## Problem Statement
+A personal space. Built by me, for me.
 
-This project is a light, fun philosophical space you can step into from time to time to:
+Live → **[its-good-to-be-good.vercel.app](https://its-good-to-be-good.vercel.app)**
 
-- reflect
-- act
-- learn
-- enjoy
+---
 
-Long-term direction: build it in phases so any person can create their own version of this space.
+## What This Is
 
-## Glossary
+A private dashboard I built as my own abstract space — curated entirely around the things that matter to me. Not a product. Not a showcase. A place to be.
 
-- `Module`: a user-facing feature.
-- `Tool`: an internal reusable capability that supports modules.
-- `Journey Module`: route/page feature (`todo`, `quantum`, `meditate`, `money`, `health`, `travel`).
-- `Learn Module`: Learn card feature (`world-order`, `tennis`, `coffee`, `guitar`, `poetry`, `french`, `food`, `analytics`, `curious`, `exercise`).
+Every module reflects something I actually use: daily practices I track, things I want to learn, tasks I'm working through. It's opinionated by design — these are my abstraction layers.
 
-## Home Design Lock
+---
 
-The home page visual language is intentionally locked to:
+## Modules
 
-- `Special Elite` typography
-- vintage black-and-white minimal palette
-- clean, low-noise card layout
+### Journey
+Personal growth tracking built around the things I do daily.
 
-Implementation lock points:
+- **Being** — Seven daily practices visualized as an orbital mandala (Vitruvian Man motif). Practices: Breathe, OM, Sleep, Stretch, Weights, Tennis, Guided. Each practice is toggleable; the mandala reflects your streak.
+- **Todo** — Task management with subtasks, drag-to-reorder, and full persistence. 13 persistence tests cover all core interactions.
 
-- [index.html](./index.html): `body.home-vintage-lock`
-- [home-lock.css](./src/styles/home-lock.css): home-specific style tokens and guardrails
+### Learn
+AI-powered learning modules pulling from live sources. Built with Perplexity AI for real-time knowledge grounding.
 
-Do not change these unless there is an explicit product decision to change the home visual direction.
+---
 
-## Local-Only Setup (Supabase)
+## How It's Built — AI Agents
 
-This repository is configured for local Supabase development.
+This project is built almost entirely with AI coding agents. I act as the Product Owner: I define the spec, own the architecture decisions, and review every change. The agents write the code.
 
-1. Install dependencies:
+**Agent stack:** Claude Code · Codex · Antigravity
+
+The repo ships with a full agent governance layer so any AI agent can safely contribute without breaking the product's invariants:
+
+| File | Purpose |
+|------|---------|
+| `AGENTS.md` | Agent contract — locked invariants, layer map, migration protocol |
+| `docs/agent-architecture.md` | Layer boundaries (app / components / domains / infra), AI content safety, canonical data flow |
+| `docs/agent-playbook.md` | Builder / Reviewer / QA roles, safe change workflow, pre-PR checklist |
+| `docs/architecture.md` | Local-first design, single anonymous user, module taxonomy |
+
+The home page has a **vintage lock** — agents are contractually forbidden from touching its aesthetic (Special Elite font, black-and-white, January 2025 baseline). Everything else is in play.
+
+> Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+---
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Frontend | TypeScript · React · Vite · Tailwind CSS |
+| Backend / DB | Supabase |
+| AI | Perplexity AI |
+| Hosting | Vercel |
+
+---
+
+## Setup
 
 ```bash
+git clone https://github.com/akshitjmsb/its-good-to-be-good
+cd its-good-to-be-good
 npm install
 ```
 
-2. Start local Supabase and apply migrations:
+Create a `.env.local` file:
 
-```bash
-npm run supabase:setup
 ```
-
-3. Create local env file:
-
-```bash
-cp .env.example .env.local
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_PERPLEXITY_API_KEY=your_perplexity_api_key
 ```
-
-4. Set local Supabase values in `.env.local`:
-
-- `VITE_SUPABASE_URL=http://127.0.0.1:54321`
-- `VITE_SUPABASE_ANON_KEY=<value from: supabase status --output json>`
-- `VITE_PERPLEXITY_API_KEY=<optional>`
-
-5. Start the app:
 
 ```bash
 npm run dev
 ```
 
-## Local Supabase Commands
+---
 
-```bash
-npm run supabase:start
-npm run supabase:push
-npm run supabase:stop
-supabase status --output json
-```
+## For AI Agents
 
-## Runtime Behavior
+If you're an AI agent working on this repo, read `AGENTS.md` first. It defines the contract you must operate within — locked invariants, layer boundaries, and the change protocol. Run `npm run agent:prepr` before any PR.
 
-Content generation path is:
+---
 
-1. Supabase cache
-2. Perplexity API (if key is configured)
-3. Local fallback content
-
-No Vercel KV runtime dependency is used by the app.
-
-## Source of Truth Docs
-
-Use these as primary docs:
-
-| Purpose                       | File                                                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Project overview + setup      | [README.md](./README.md) |
-| Fast local setup              | [QUICK_START.md](./QUICK_START.md) |
-| Supabase local workflow       | [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) |
-| Agent contract and guardrails | [AGENTS.md](./AGENTS.md) |
-| Architecture map              | [docs/architecture.md](./docs/architecture.md) |
-| Agent-operable architecture   | [docs/agent-architecture.md](./docs/agent-architecture.md) |
-| Agent workflow playbook       | [docs/agent-playbook.md](./docs/agent-playbook.md) |
-| Agent role playbooks          | [docs/agent-roles](./docs/agent-roles) |
-| Tool/module contract          | [docs/tool-module-contract.md](./docs/tool-module-contract.md) |
-| Archived status/history docs  | [docs/archive](./docs/archive) |
-
-## Scripts
-
-```bash
-npm run dev
-npm run build
-npm run type-check
-npm run test
-npm run verify
-npm run test:changed
-npm run agent:prepr
-```
-
-## Security Notes
-
-- Never commit `.env.local`.
-- Never commit API keys, access tokens, or secret keys.
-- If a key/token has ever been committed, rotate it.
-
-## Notes
-
-- This pass optimizes local development reliability.
-- AI requests are currently made from browser code by design for local quick iteration.
+*This is version 1 of a longer arc. The vision: a platform where anyone can build their own abstract space — their own modules, their own abstraction layers, uniquely theirs.*
