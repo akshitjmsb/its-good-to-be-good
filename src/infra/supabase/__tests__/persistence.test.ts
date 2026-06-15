@@ -111,58 +111,58 @@ describe('replaceAllForUser', () => {
 });
 
 describe('saveTasks', () => {
-  it('upserts every task keyed on id — new and existing alike use one path', async () => {
-    await saveTasks(
-      'u',
-      [
-        { id: 'id-1', text: 'one', completed: false, position: 0, parent_id: null },
-        { id: 'id-2', text: 'two', completed: true, position: 1, parent_id: null },
-      ],
-      { loadedSuccessfully: true }
-    );
+  it('upserts every task keyed on id — new and existing alike use one path, with updated_at', async () => {
+    await saveTasks('u', [
+      { id: 'id-1', text: 'one', completed: false, position: 0, parent_id: null, updated_at: '2026-01-01T00:00:00.000Z' },
+      { id: 'id-2', text: 'two', completed: true, position: 1, parent_id: null, updated_at: '2026-01-02T00:00:00.000Z' },
+    ]);
     expect(recorder.upserted).toEqual([
-      { id: 'id-1', user_id: 'u', text: 'one', completed: false, position: 0, parent_id: null },
-      { id: 'id-2', user_id: 'u', text: 'two', completed: true, position: 1, parent_id: null },
+      { id: 'id-1', user_id: 'u', text: 'one', completed: false, position: 0, parent_id: null, updated_at: '2026-01-01T00:00:00.000Z' },
+      { id: 'id-2', user_id: 'u', text: 'two', completed: true, position: 1, parent_id: null, updated_at: '2026-01-02T00:00:00.000Z' },
     ]);
     // Single upsert path — the legacy insert branch is gone.
     expect(recorder.inserted).toBeUndefined();
+    // created_at is never written, so the server keeps its own.
+    expect((recorder.upserted as Array<Record<string, unknown>>)[0]).not.toHaveProperty('created_at');
   });
 
   it('carries parent_id through for subtasks', async () => {
-    await saveTasks(
-      'u',
-      [
-        { id: 'parent', text: 'p', completed: false, position: 0, parent_id: null },
-        { id: 'child', text: 'c', completed: false, position: 0, parent_id: 'parent' },
-      ],
-      { loadedSuccessfully: true }
-    );
-    expect(recorder.upserted).toEqual([
-      { id: 'parent', user_id: 'u', text: 'p', completed: false, position: 0, parent_id: null },
-      { id: 'child', user_id: 'u', text: 'c', completed: false, position: 0, parent_id: 'parent' },
+    await saveTasks('u', [
+      { id: 'parent', text: 'p', completed: false, position: 0, parent_id: null, updated_at: '2026-01-01T00:00:00.000Z' },
+      { id: 'child', text: 'c', completed: false, position: 0, parent_id: 'parent', updated_at: '2026-01-01T00:00:00.000Z' },
     ]);
+    expect((recorder.upserted as Array<Record<string, unknown>>).map(r => r.parent_id)).toEqual([null, 'parent']);
   });
 
-  it('deletes server rows that are absent from the local list', async () => {
-    recorder.serverRows = [{ id: 'keep' }, { id: 'gone-1' }, { id: 'gone-2' }];
+  it('deletes ONLY the explicit tombstoned ids — never "everything not in my list"', async () => {
+    // The server also has 'other-device-task', which is NOT tombstoned and
+    // NOT in the local list. The old delete-stale would have wiped it; the
+    // tombstone approach must leave it alone.
     await saveTasks(
       'u',
-      [{ id: 'keep', text: 'keep', completed: false, position: 0, parent_id: null }],
-      { loadedSuccessfully: true }
+      [{ id: 'keep', text: 'keep', completed: false, position: 0, parent_id: null, updated_at: '2026-01-01T00:00:00.000Z' }],
+      ['gone-1', 'gone-2']
     );
     expect(recorder.deletedIds).toEqual(['gone-1', 'gone-2']);
   });
 
-  it('does not delete anything when the server matches the local list', async () => {
-    recorder.serverRows = [{ id: 'a' }, { id: 'b' }];
-    await saveTasks(
-      'u',
-      [
-        { id: 'a', text: 'a', completed: false, position: 0, parent_id: null },
-        { id: 'b', text: 'b', completed: false, position: 1, parent_id: null },
-      ],
-      { loadedSuccessfully: true }
-    );
+  it('does not delete anything when there are no tombstones', async () => {
+    await saveTasks('u', [
+      { id: 'a', text: 'a', completed: false, position: 0, parent_id: null, updated_at: '2026-01-01T00:00:00.000Z' },
+    ]);
+    expect(recorder.deletedIds).toBeUndefined();
+  });
+
+  it('can flush a tombstone-only save (delete with nothing to upsert)', async () => {
+    await saveTasks('u', [], ['removed-1']);
+    expect(recorder.upserted).toBeUndefined();
+    expect(recorder.deletedIds).toEqual(['removed-1']);
+  });
+
+  it('is a complete no-op when there is nothing to write and nothing to delete', async () => {
+    await saveTasks('u', [], []);
+    expect(recorder.upserted).toBeUndefined();
+    expect(recorder.inserted).toBeUndefined();
     expect(recorder.deletedIds).toBeUndefined();
   });
 
@@ -170,32 +170,11 @@ describe('saveTasks', () => {
     recorder.upsertError = { message: 'boom' };
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     await expect(
-      saveTasks(
-        'u',
-        [{ id: 'x', text: 'x', completed: false, position: 0, parent_id: null }],
-        { loadedSuccessfully: true }
-      )
+      saveTasks('u', [
+        { id: 'x', text: 'x', completed: false, position: 0, parent_id: null, updated_at: '2026-01-01T00:00:00.000Z' },
+      ])
     ).rejects.toEqual({ message: 'boom' });
     spy.mockRestore();
-  });
-
-  it('skips save when tasks are empty and load was NOT confirmed', async () => {
-    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    await saveTasks('u', []);
-    // Should not have touched the DB at all
-    expect(recorder.upserted).toBeUndefined();
-    expect(recorder.inserted).toBeUndefined();
-    expect(recorder.deletedFor).toBeUndefined();
-    expect(recorder.deletedIds).toBeUndefined();
-    spy.mockRestore();
-  });
-
-  it('clears every server row when saving an empty list with a confirmed load', async () => {
-    recorder.serverRows = [{ id: 'a' }, { id: 'b' }];
-    await saveTasks('u', [], { loadedSuccessfully: true });
-    // No upsert (nothing to write) but the stale rows are swept.
-    expect(recorder.upserted).toBeUndefined();
-    expect(recorder.deletedIds).toEqual(['a', 'b']);
   });
 });
 

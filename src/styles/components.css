@@ -1001,6 +1001,38 @@ button.preview-card {
     letter-spacing: 0.025em;
 }
 
+/* Save-status line — a quiet typewriter aside under the list. Empty when
+   idle (reserves a line so nothing jumps), fades in/out as state changes. */
+.todo-status {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.72rem;
+    text-align: center;
+    color: #9ca3af;
+    margin: 0.85rem 0 0 0;
+    min-height: 1.1em;
+    letter-spacing: 0.03em;
+    opacity: 0.85;
+    transition: color 200ms ease, opacity 200ms ease;
+}
+
+.todo-status[data-state="idle"] {
+    opacity: 0;
+}
+
+.todo-status[data-state="saved"] {
+    color: #6b7280;
+}
+
+.todo-status[data-state="saving"],
+.todo-status[data-state="retrying"] {
+    color: #9a7b4f; /* muted sepia — "working on it" */
+}
+
+.todo-status[data-state="offline"],
+.todo-status[data-state="signed-out"] {
+    color: #a05a4a; /* faded clay/ink-red — needs attention, not alarming */
+}
+
 .todo-list {
     display: flex;
     flex-direction: column;

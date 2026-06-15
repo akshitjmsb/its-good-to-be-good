@@ -33,14 +33,16 @@ export async function replaceAllForUser<TRow extends Record<string, unknown>>(
  *
  * Throws on a real failure (network/query error) rather than swallowing it
  * and returning `[]`. That distinction is load-bearing: the caller uses a
- * successful load to unlock saves, and a failed load that masqueraded as
- * "no tasks" would let the next save's delete-stale step wipe every real
- * row on the server. A genuinely empty list still resolves to `[]`.
+ * successful load to unlock saves, and a failed load must NOT masquerade as
+ * "no tasks". A genuinely empty list still resolves to `[]`.
+ *
+ * `updated_at` is selected so the client can do last-writer-wins merges;
+ * `created_at` is selected only as a deterministic ordering tiebreaker.
  */
 export async function loadTasks(userId: string): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
-    .select('id, text, completed, position, parent_id')
+    .select('id, text, completed, position, parent_id, updated_at, created_at')
     .eq('user_id', userId)
     .order('position', { ascending: true });
 
@@ -55,46 +57,36 @@ export async function loadTasks(userId: string): Promise<Task[]> {
     completed: task.completed,
     position: task.position ?? 0,
     parent_id: task.parent_id ?? null,
+    updated_at: task.updated_at ?? undefined,
+    created_at: task.created_at ?? undefined,
   }));
 }
 
 /**
- * Safely persist the full task list for a user.
+ * Persist the task list for a user.
  *
- * Every task carries a stable `id` — client-generated (a UUID) the moment
- * it is created, never invented by the server. That turns the whole save
- * into two deterministic steps:
+ * Every task carries a stable client-generated `id`, which makes the save two
+ * deterministic, *bounded* steps:
  *
- *   1. Upsert every task keyed on `id`. One statement handles both new
- *      rows and edits; no insert-then-reload dance, no guessing which
- *      server row belongs to which local task by text + position.
- *   2. Delete any server row whose id is no longer present locally. This
- *      runs *after* the upsert so freshly created rows are already on the
- *      server and never get diffed away.
+ *   1. Upsert the given tasks keyed on `id` (new rows and edits share one
+ *      path). `updated_at` is written through; `created_at` is deliberately
+ *      omitted so the server keeps its own creation timestamp on conflict.
+ *   2. Delete exactly the ids in `deletedIds` — the caller's explicit
+ *      tombstones. This replaces the old "select all, delete anything not in
+ *      my local list" step, which deleted a second device's tasks on every
+ *      save. `ON DELETE CASCADE` on `parent_id` clears children server-side.
  *
- * Safety guard: if `tasks` is empty **and** `opts.loadedSuccessfully` is
- * not explicitly `true`, the save is skipped entirely. This prevents an
- * empty initial load (network error, wrong user, etc.) from triggering a
- * wipe on the next auto-save.
+ * Note: there is no "delete everything not present locally" path any more, so
+ * a partial/empty local list can never wipe the server.
  */
 export async function saveTasks(
   userId: string,
   tasks: Task[],
-  opts: { loadedSuccessfully?: boolean } = {}
+  deletedIds: string[] = []
 ): Promise<void> {
-  // ── Guard: never wipe all tasks unless we know the load was clean ──
-  if (tasks.length === 0 && !opts.loadedSuccessfully) {
-    console.warn(
-      'saveTasks: skipped — empty task list without confirmed load. ' +
-        'This prevents accidental data loss.'
-    );
-    return;
-  }
+  if (tasks.length === 0 && deletedIds.length === 0) return;
 
   try {
-    // 1. Upsert every task. Parents and their children can share one
-    //    statement: the self-referencing FK is checked at statement end,
-    //    by which point every parent row is already present.
     if (tasks.length > 0) {
       const rows = tasks.map((task, i) => ({
         id: task.id,
@@ -103,6 +95,7 @@ export async function saveTasks(
         completed: task.completed,
         position: task.position ?? i,
         parent_id: task.parent_id ?? null,
+        updated_at: task.updated_at ?? new Date().toISOString(),
       }));
       const { error } = await supabase
         .from('tasks')
@@ -110,28 +103,12 @@ export async function saveTasks(
       if (error) throw error;
     }
 
-    // 2. Delete rows the user removed locally. ON DELETE CASCADE on
-    //    parent_id means deleting a parent also clears any children, so a
-    //    single `.in()` covers parents and orphaned subtasks alike.
-    const { data: serverRows, error: selectError } = await supabase
-      .from('tasks')
-      .select('id')
-      .eq('user_id', userId);
-    if (selectError) throw selectError;
-
-    if (serverRows) {
-      const localIds = new Set(tasks.map(t => t.id));
-      const toDelete = serverRows
-        .map(r => r.id as string)
-        .filter(id => !localIds.has(id));
-
-      if (toDelete.length > 0) {
-        const { error } = await supabase
-          .from('tasks')
-          .delete()
-          .in('id', toDelete);
-        if (error) throw error;
-      }
+    if (deletedIds.length > 0) {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .in('id', deletedIds);
+      if (error) throw error;
     }
   } catch (error) {
     console.error('Error saving tasks:', error);

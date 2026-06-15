@@ -1,0 +1,61 @@
+import { describe, expect, it } from 'vitest';
+import { createWal, walKeyFor, type StorageLike, type WalSnapshot } from '../wal';
+import type { Task } from '../../../types';
+
+function memoryStorage(seed: Record<string, string> = {}): StorageLike & { dump: Record<string, string> } {
+  const dump: Record<string, string> = { ...seed };
+  return {
+    dump,
+    getItem: (k) => (k in dump ? dump[k] : null),
+    setItem: (k, v) => { dump[k] = v; },
+    removeItem: (k) => { delete dump[k]; },
+  };
+}
+
+const task = (id: string): Task => ({ id, text: id, completed: false, position: 0, parent_id: null });
+
+describe('createWal', () => {
+  it('round-trips a snapshot through storage', () => {
+    const storage = memoryStorage();
+    const wal = createWal(storage, 'k');
+    const snap: WalSnapshot = { tasks: [task('a'), task('b')], deletedIds: ['x'] };
+    wal.write(snap);
+    expect(wal.read()).toEqual(snap);
+  });
+
+  it('clear() removes the entry', () => {
+    const storage = memoryStorage();
+    const wal = createWal(storage, 'k');
+    wal.write({ tasks: [task('a')], deletedIds: [] });
+    wal.clear();
+    expect(wal.read()).toBeNull();
+  });
+
+  it('returns null for a missing or corrupt entry instead of throwing', () => {
+    expect(createWal(memoryStorage(), 'absent').read()).toBeNull();
+    expect(createWal(memoryStorage({ k: 'not json {' }), 'k').read()).toBeNull();
+    expect(createWal(memoryStorage({ k: '{"nope":1}' }), 'k').read()).toBeNull();
+  });
+
+  it('no-ops safely when storage is unavailable (private mode / SSR)', () => {
+    const wal = createWal(null, 'k');
+    expect(() => wal.write({ tasks: [task('a')], deletedIds: [] })).not.toThrow();
+    expect(wal.read()).toBeNull();
+    expect(() => wal.clear()).not.toThrow();
+  });
+
+  it('survives a page close during an outage: a new WAL on the same storage recovers the work', () => {
+    const storage = memoryStorage();
+    const key = walKeyFor('user-1');
+
+    // Session 1: user adds tasks while offline; WAL captures them, then the
+    // page is closed (the WAL instance is discarded, storage persists).
+    const session1 = createWal(storage, key);
+    session1.write({ tasks: [task('draft-1'), task('draft-2')], deletedIds: [] });
+
+    // Session 2: fresh boot, brand-new WAL over the same storage.
+    const session2 = createWal(storage, key);
+    const recovered = session2.read();
+    expect(recovered?.tasks.map(t => t.id)).toEqual(['draft-1', 'draft-2']);
+  });
+});

@@ -4,7 +4,7 @@
   "category": "journey",
   "surface": "page",
   "icon": "./icon.svg",
-  "version": "0.1.0",
-  "renderer": "react",
-  "permissions": ["storage", "cache"]
+  "version": "0.2.0",
+  "renderer": "dom",
+  "permissions": ["storage", "timer"]
 }

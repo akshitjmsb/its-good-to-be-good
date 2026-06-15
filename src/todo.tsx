@@ -1,30 +1,52 @@
 /**
- * Todo page — minimal, Apple-Notes-inspired list with drag-to-reorder
- * and subtask support.
+ * Todo page — minimal, Apple-Notes-inspired list with drag-to-reorder and
+ * subtask support. Vanilla TS/DOM (no framework).
  *
- * Persistence is deterministic: every task gets a stable client-generated
- * UUID the moment it is created, so saves are a plain upsert + delete-stale
- * (see infra/supabase/persistence.ts) with no insert-then-reload guessing.
- * All saves funnel through a single serialized queue so rapid edits never
- * race each other or clobber one another's optimistic state.
+ * Reliability model (the heavy lifting lives in pure modules under
+ * `src/domains/todo/`, which is where the unit tests are):
  *
- * Rendering reconciles the list by id rather than rebuilding it: rows keep
- * their DOM identity across changes, so focus, hover and CSS transitions
- * survive, and reorders (e.g. a completed task sinking to the bottom)
- * animate with a FLIP transition instead of teleporting.
+ *  - Every task carries a client-generated UUID and a client-authoritative
+ *    `updated_at`. Saves are an upsert keyed on id plus explicit delete
+ *    tombstones — never "delete everything not in my local list".
+ *  - All saves funnel through a `SaveController`: one save at a time, dirty is
+ *    only cleared on confirmed success, failures retry with backoff and then
+ *    fall back to an "offline — saved locally" state without losing data.
+ *  - Every mutation is written to a localStorage write-ahead log first, so a
+ *    crash/close/offline never loses work; the next boot merges the WAL with
+ *    the server.
+ *  - The 30s background sync MERGES server state by id (last-writer-wins) and
+ *    is skipped while the user is editing, dragging, or typing a subtask, and
+ *    while there is unsaved/failed local work — so it can never clobber.
+ *  - Auth changes pause saves on sign-out and resume + flush on re-auth.
+ *
+ * Rendering still reconciles the list by id so DOM identity (focus, hover,
+ * CSS transitions) survives, with FLIP animation on reorder.
  */
 
-import {
-  loadTasks as loadTasksFromSupabase,
-  saveTasks as saveTasksToSupabase,
-} from './infra/supabase/persistence';
-import { initAuthStore, getAuthState } from './domains/auth/store';
+import { loadTasks, saveTasks } from './infra/supabase/persistence';
+import { initAuthStore, getAuthState, subscribeAuth } from './domains/auth/store';
 import { sanitizeTaskInput, createSafeHtml } from './utils/escapeHtml';
+import {
+  topLevel,
+  childrenOf,
+  reindex,
+  applyCompletion,
+  mergeTasks,
+} from './domains/todo/model';
+import { SaveController, type SaveStatus } from './domains/todo/save-controller';
+import {
+  createWal,
+  getBrowserStorage,
+  walKeyFor,
+  type Wal,
+  type WalSnapshot,
+} from './domains/todo/wal';
 import type { Task } from './types';
 
 const LIST_ID = 'tasks-list-todo';
 const SYNC_INTERVAL_MS = 30_000;
 const FLIP_MS = 220;
+const SAVED_FLASH_MS = 1_500;
 
 /* ── helpers ─────────────────────────────────────────────────────── */
 
@@ -40,38 +62,7 @@ function makeId(): string {
   });
 }
 
-/** Get top-level tasks sorted by position, completed sinking to bottom */
-function topLevel(tasks: Task[]): Task[] {
-  return tasks
-    .filter(t => !t.parent_id)
-    .sort((a, b) => {
-      if (a.completed !== b.completed) return a.completed ? 1 : -1;
-      return a.position - b.position;
-    });
-}
-
-/** Get subtasks for a given parent, sorted by position */
-function childrenOf(tasks: Task[], parentId: string | undefined): Task[] {
-  if (!parentId) return [];
-  return tasks
-    .filter(t => t.parent_id === parentId)
-    .sort((a, b) => {
-      if (a.completed !== b.completed) return a.completed ? 1 : -1;
-      return a.position - b.position;
-    });
-}
-
-/** Reassign positions sequentially for top-level tasks and each parent's kids */
-function reindex(tasks: Task[]): void {
-  const roots = tasks.filter(t => !t.parent_id).sort((a, b) => a.position - b.position);
-  roots.forEach((t, i) => { t.position = i; });
-
-  const parents = new Set(tasks.filter(t => t.parent_id).map(t => t.parent_id!));
-  parents.forEach(pid => {
-    const kids = tasks.filter(t => t.parent_id === pid).sort((a, b) => a.position - b.position);
-    kids.forEach((t, i) => { t.position = i; });
-  });
-}
+const nowIso = (): string => new Date().toISOString();
 
 const prefersReducedMotion = (): boolean =>
   typeof matchMedia === 'function' &&
@@ -87,8 +78,8 @@ function rowClassName(task: Task, isSubtask: boolean): string {
 }
 
 /**
- * Cheap fingerprint of everything that affects a row's inner markup. When
- * it is unchanged the row's DOM is left untouched on re-render.
+ * Cheap fingerprint of everything that affects a row's inner markup. When it
+ * is unchanged the row's DOM is left untouched on re-render.
  */
 function rowSignature(task: Task, tasks: Task[], isSubtask: boolean): string {
   const kids = childrenOf(tasks, task.id);
@@ -230,8 +221,8 @@ function flipAnimate(listEl: HTMLElement, prevRects: Map<string, DOMRect>): void
 }
 
 /**
- * Reconcile the list DOM to match `tasks`, reusing existing row elements by
- * id so DOM identity (and thus focus/transitions) is preserved.
+ * Reconcile the list DOM to match `tasks`, reusing existing row elements by id
+ * so DOM identity (and thus focus/transitions) is preserved.
  */
 function renderList(tasks: Task[]): void {
   const listEl = document.getElementById(LIST_ID);
@@ -302,13 +293,48 @@ function renderCounter(tasks: Task[]): void {
   counterEl.textContent = `${done} of ${roots.length} done`;
 }
 
+/* ── save-status indicator ───────────────────────────────────────── */
+
+const STATUS_TEXT: Record<SaveStatus, string> = {
+  idle: '',
+  saving: 'Saving…',
+  saved: 'Saved',
+  retrying: 'Couldn’t save — retrying…',
+  offline: 'Offline — changes saved locally',
+  'signed-out': 'Signed out — changes saved locally',
+};
+
+let savedFlashTimer: ReturnType<typeof setTimeout> | null = null;
+
+function renderStatus(status: SaveStatus): void {
+  const el = document.getElementById('todo-status');
+  if (!el) return;
+  el.textContent = STATUS_TEXT[status] ?? '';
+  el.dataset.state = status;
+
+  // "Saved" is a brief confirmation flash, then fades back to nothing.
+  if (savedFlashTimer) {
+    clearTimeout(savedFlashTimer);
+    savedFlashTimer = null;
+  }
+  if (status === 'saved') {
+    savedFlashTimer = setTimeout(() => {
+      if (el.dataset.state === 'saved') {
+        el.textContent = '';
+        el.dataset.state = 'idle';
+      }
+    }, SAVED_FLASH_MS);
+  }
+}
+
 /* ── drag-to-reorder (touch + mouse) ────────────────────────────── */
 
 function setupDragReorder(
   listEl: HTMLElement,
   getTasks: () => Task[],
   setTasks: (t: Task[]) => void,
-  onPersist: () => void
+  onPersist: () => void,
+  onDragStateChange: (dragging: boolean) => void
 ) {
   let draggedEl: HTMLElement | null = null;
   let placeholder: HTMLElement | null = null;
@@ -326,6 +352,7 @@ function setupDragReorder(
 
   function startDrag(row: HTMLElement, clientY: number) {
     isDragging = true;
+    onDragStateChange(true);
     draggedEl = row;
     const rect = row.getBoundingClientRect();
     offsetY = clientY - rect.top;
@@ -380,16 +407,21 @@ function setupDragReorder(
     draggedEl.style.top = '';
     draggedEl.style.zIndex = '';
 
-    // Read the new top-level order from the DOM and rewrite positions.
+    // Read the new top-level order from the DOM and rewrite positions. Only
+    // tasks whose position actually moved get their updated_at bumped.
     const allTasks = getTasks();
     const newOrder = getRowElements().map(r => r.dataset.taskId);
     const roots = allTasks.filter(t => !t.parent_id);
+    const ts = nowIso();
     const reordered: Task[] = [];
 
     newOrder.forEach((tid, i) => {
       const task = roots.find(t => t.id === tid);
       if (task) {
-        task.position = i;
+        if (task.position !== i) {
+          task.position = i;
+          task.updated_at = ts;
+        }
         reordered.push(task);
       }
     });
@@ -402,6 +434,7 @@ function setupDragReorder(
   }
 
   function cleanup() {
+    const wasDragging = isDragging;
     isDragging = false;
     draggedEl = null;
     if (placeholder) {
@@ -412,6 +445,7 @@ function setupDragReorder(
       clearTimeout(longPressTimer);
       longPressTimer = null;
     }
+    if (wasDragging) onDragStateChange(false);
   }
 
   listEl.addEventListener('mousedown', (e) => {
@@ -479,7 +513,8 @@ function setupDragReorder(
 function showSubtaskInput(
   listEl: HTMLElement,
   parentTaskId: string,
-  onAdd: (text: string, parentId: string) => void
+  onAdd: (text: string, parentId: string) => void,
+  onActiveChange: (active: boolean) => void
 ) {
   listEl.querySelectorAll('.todo-subtask-input-row').forEach(el => el.remove());
 
@@ -512,6 +547,9 @@ function showSubtaskInput(
   insertAfter.parentNode?.insertBefore(inputRow, insertAfter.nextSibling);
 
   const input = inputRow.querySelector('.todo-subtask-input') as HTMLInputElement;
+  // Mark interaction active so the auto-sync / re-render can't yank the input
+  // out from under the user while they're typing a subtask.
+  onActiveChange(true);
   input.focus();
 
   let settled = false;
@@ -520,6 +558,7 @@ function showSubtaskInput(
     settled = true;
     const text = sanitizeTaskInput(input.value.trim());
     inputRow.remove();
+    onActiveChange(false);
     if (commit && text) onAdd(text, parentTaskId);
   };
 
@@ -546,68 +585,166 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  let loadedSuccessfully = false;
+  /* ── shared mutable state ─────────────────────────────────────── */
   let tasks: Task[] = [];
-  try {
-    tasks = await loadTasksFromSupabase(userId);
-    loadedSuccessfully = true;
-  } catch {
-    console.error('Initial task load failed — saves are blocked until a successful load.');
-  }
-  reindex(tasks);
+  const deletedIds = new Set<string>();
+  let loadedSuccessfully = false;
 
+  // Interaction guards — the sync must never run while any of these is active.
   let editingId: string | null = null;
+  let subtaskInputActive = false;
+  let isDragging = false;
+  let signedOut = false;
+  let syncPending = false;
+
+  const wal: Wal = createWal(getBrowserStorage(), walKeyFor(userId));
+
+  /* ── save controller ──────────────────────────────────────────── */
+  const saveController = new SaveController({
+    save: (snapshot: WalSnapshot) =>
+      saveTasks(userId, snapshot.tasks, snapshot.deletedIds),
+    getSnapshot: (): WalSnapshot => ({
+      tasks: tasks.map(t => ({ ...t })),
+      deletedIds: [...deletedIds],
+    }),
+    onPersisted: (snapshot) => {
+      // Drop the tombstones we just flushed (re-deletes during the save stay).
+      snapshot.deletedIds.forEach(id => deletedIds.delete(id));
+    },
+    onStatus: (status) => {
+      renderStatus(status);
+      // Once everything is confirmed saved, the WAL has done its job.
+      if (status === 'saved' && !saveController.dirty) wal.clear();
+    },
+  });
 
   const refresh = () => {
-    if (editingId === null) renderList(tasks);
+    // Don't repaint the list out from under an in-progress interaction.
+    if (!editingId && !subtaskInputActive && !isDragging) renderList(tasks);
     renderCounter(tasks);
   };
 
-  /* ── serialized save queue ───────────────────────────────────────
-     Only one save runs at a time. Mutations that land while a save is
-     in flight set `dirty`, and the queue loops to flush the latest state
-     once. This makes overlapping edits converge instead of racing, and
-     removes the old save→reload→re-render round-trip that clobbered
-     optimistic updates. */
-  let saving = false;
-  let dirty = false;
-
-  const flushSave = async () => {
-    // Never diff against a server we failed to read — that would let
-    // delete-stale wipe real rows. Saves unlock once a load succeeds.
-    if (!loadedSuccessfully) return;
-    if (saving) { dirty = true; return; }
-    saving = true;
-    try {
-      do {
-        dirty = false;
-        await saveTasksToSupabase(userId, tasks, { loadedSuccessfully: true });
-      } while (dirty);
-    } catch (error) {
-      console.error('Error saving tasks:', error);
-    } finally {
-      saving = false;
-    }
-  };
-
-  const scheduleSave = () => { void flushSave(); };
-
-  // Optimistic, immediate render + a queued background save.
+  /** Optimistic: normalise + WAL + render immediately, queue the save. */
   const persist = () => {
-    reindex(tasks);
+    tasks = reindex(tasks);
+    wal.write({ tasks, deletedIds: [...deletedIds] });
     refresh();
-    scheduleSave();
+    saveController.notifyMutation();
   };
+
+  /* ── boot: WAL + server load, merged (never clobbered) ───────────
+     A WAL present at boot means the previous session had unsaved work (a
+     crash/close/offline). We merge it with whatever the server returns so
+     nothing is lost. */
+  const walSnap = wal.read();
+  if (walSnap) walSnap.deletedIds.forEach(id => deletedIds.add(id));
+
+  let server: Task[] | null = null;
+  try {
+    server = await loadTasks(userId);
+    loadedSuccessfully = true;
+  } catch {
+    console.error('Initial task load failed — running on the local WAL; saves stay locked until a load succeeds.');
+  }
+
+  if (server) {
+    tasks = walSnap ? mergeTasks(walSnap.tasks, server, deletedIds) : reindex(server);
+    saveController.setLoaded(true);
+    // If the WAL carried unsaved work, flush it now that we're unlocked.
+    if (walSnap && (walSnap.tasks.length > 0 || walSnap.deletedIds.length > 0)) {
+      wal.write({ tasks, deletedIds: [...deletedIds] });
+      saveController.notifyMutation();
+    }
+  } else {
+    // Load failed — keep the WAL's optimistic state on screen, saves locked.
+    tasks = walSnap ? reindex(walSnap.tasks) : [];
+    renderStatus('offline');
+  }
 
   refresh();
 
+  /* ── background sync (merge, never replace) ─────────────────────── */
+  const interactionBusy = () => !!editingId || subtaskInputActive || isDragging;
+
+  const runSync = async () => {
+    if (signedOut) return;
+    if (interactionBusy()) { syncPending = true; return; }
+    // In normal operation, never race a pending/failed/in-flight save. While
+    // still recovering from a failed initial load we DO sync (the merge is
+    // non-destructive) — that's how saves get unlocked again.
+    if (loadedSuccessfully &&
+        (saveController.dirty || saveController.saveError || saveController.inFlight)) {
+      return;
+    }
+
+    let fresh: Task[];
+    try {
+      fresh = await loadTasks(userId);
+    } catch {
+      return; // offline — keep local state, try again next tick
+    }
+    // Re-check guards after the await; an interaction may have started.
+    if (signedOut || interactionBusy()) { syncPending = true; return; }
+
+    tasks = mergeTasks(tasks, fresh, deletedIds);
+    refresh();
+
+    if (!loadedSuccessfully) {
+      loadedSuccessfully = true;
+      saveController.setLoaded(true); // unlocks + flushes any pending local work
+    }
+    if (saveController.dirty) {
+      wal.write({ tasks, deletedIds: [...deletedIds] });
+    }
+  };
+
+  /** When an interaction ends, run a sync that was deferred during it. */
+  const flushDeferredSync = () => {
+    if (syncPending && !interactionBusy() && !signedOut) {
+      syncPending = false;
+      void runSync();
+    }
+  };
+
+  setInterval(() => void runSync(), SYNC_INTERVAL_MS);
+
+  // Recover saves the moment connectivity returns.
+  window.addEventListener('online', () => {
+    saveController.retry();
+    void runSync();
+  });
+
+  /* ── auth awareness ───────────────────────────────────────────── */
+  subscribeAuth((state) => {
+    if (state.status === 'anon') {
+      signedOut = true;
+      saveController.setAuthed(false); // pauses saves; status → signed-out
+    } else if (state.status === 'authed') {
+      if (state.user?.id && state.user.id !== userId) {
+        // Switched accounts — reload to re-init under the new identity.
+        window.location.reload();
+        return;
+      }
+      if (signedOut) {
+        signedOut = false;
+        saveController.setAuthed(true); // resumes + flushes pending work
+        void runSync();
+      }
+    }
+  });
+
+  /* ── input + mutations ────────────────────────────────────────── */
   const listEl = document.getElementById(LIST_ID);
   if (listEl) {
     setupDragReorder(
       listEl,
       () => tasks,
       (newTasks) => { tasks = newTasks; },
-      () => persist()
+      () => persist(),
+      (dragging) => {
+        isDragging = dragging;
+        if (!dragging) flushDeferredSync();
+      }
     );
   }
 
@@ -622,7 +759,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
     const maxPos = tasks.filter(t => !t.parent_id).reduce((m, t) => Math.max(m, t.position), -1);
-    tasks = [...tasks, { id: makeId(), text: sanitized, completed: false, position: maxPos + 1, parent_id: null }];
+    const ts = nowIso();
+    tasks = [...tasks, {
+      id: makeId(),
+      text: sanitized,
+      completed: false,
+      position: maxPos + 1,
+      parent_id: null,
+      updated_at: ts,
+      created_at: ts,
+    }];
     input.value = '';
     persist();
   };
@@ -680,14 +826,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const sanitized = commit ? sanitizeTaskInput(editInput.value.trim()) : '';
       editingId = null;
       if (commit && sanitized && sanitized !== original && editIdx !== -1) {
+        const ts = nowIso();
         tasks = tasks.map((task, i) =>
-          i === editIdx ? { ...task, text: sanitized } : task
+          i === editIdx ? { ...task, text: sanitized, updated_at: ts } : task
         );
         persist();
       } else {
         // Restore the label (updateRow rebuilds the row with the stray edit input gone).
         refresh();
       }
+      flushDeferredSync();
     };
 
     editInput.addEventListener('keydown', event => {
@@ -729,20 +877,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       collapsedParents.delete(parentTaskId);
       refresh();
 
-      showSubtaskInput(listEl, parentTaskId, (text, parentId) => {
-        const parent = findTask(parentId);
-        if (!parent) return;
-        const siblings = childrenOf(tasks, parent.id);
-        const maxPos = siblings.reduce((m, t) => Math.max(m, t.position), -1);
-        tasks = [...tasks, {
-          id: makeId(),
-          text,
-          completed: false,
-          position: maxPos + 1,
-          parent_id: parent.id,
-        }];
-        persist();
-      });
+      showSubtaskInput(
+        listEl,
+        parentTaskId,
+        (text, parentId) => {
+          const parent = findTask(parentId);
+          if (!parent) return;
+          const siblings = childrenOf(tasks, parent.id);
+          const maxPos = siblings.reduce((m, t) => Math.max(m, t.position), -1);
+          const ts = nowIso();
+          tasks = [...tasks, {
+            id: makeId(),
+            text,
+            completed: false,
+            position: maxPos + 1,
+            parent_id: parent.id,
+            updated_at: ts,
+            created_at: ts,
+          }];
+          persist();
+        },
+        (active) => {
+          subtaskInputActive = active;
+          if (!active) flushDeferredSync();
+        }
+      );
       return;
     }
 
@@ -753,7 +912,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!taskId) return;
       const task = findTask(taskId);
       if (!task) return;
-      // Drop the task and any of its children.
+      // Drop the task and any of its children, and tombstone them so the next
+      // save deletes exactly these ids on the server (never "delete the rest").
+      for (const t of tasks) {
+        if (t.id === task.id || t.parent_id === task.id) deletedIds.add(t.id);
+      }
       tasks = tasks.filter(t => t.id !== task.id && t.parent_id !== task.id);
       persist();
       return;
@@ -782,42 +945,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!target || target.type !== 'checkbox') return;
     const taskId = getTaskId(target);
     if (!taskId) return;
-    const idx = findTaskIdx(taskId);
-    if (idx === -1) return;
-
-    const checked = target.checked;
-    tasks = tasks.map((task, i) =>
-      i === idx ? { ...task, completed: checked } : task
-    );
-
-    // Completing a parent cascades to its children.
-    const task = tasks[idx];
-    if (!task.parent_id && checked) {
-      tasks = tasks.map(t =>
-        t.parent_id === task.id ? { ...t, completed: true } : t
-      );
-    }
-
+    if (findTaskIdx(taskId) === -1) return;
+    // Bidirectional parent/child completion cascade lives in the pure model.
+    tasks = applyCompletion(tasks, taskId, target.checked, nowIso());
     persist();
   });
-
-  /* ── periodic sync ───────────────────────────────────────────────
-     Pull server state on an interval, but never while the user is
-     editing or while a local save is pending/in-flight — otherwise a
-     stale read would clobber unsaved work. */
-  setInterval(async () => {
-    if (editingId !== null || saving || dirty) return;
-    let fresh: Task[];
-    try {
-      fresh = await loadTasksFromSupabase(userId);
-    } catch (error) {
-      console.warn('Failed to sync tasks:', error);
-      return;
-    }
-    if (editingId !== null || saving || dirty) return; // re-check after the await
-    tasks = fresh;
-    loadedSuccessfully = true;
-    reindex(tasks);
-    refresh();
-  }, SYNC_INTERVAL_MS);
 });
