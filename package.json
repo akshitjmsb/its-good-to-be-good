@@ -4,6 +4,9 @@
   "type": "module",
   "description": "A personal dashboard application.",
   "main": "src/index.tsx",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "serve .",
     "build": "vite build",
