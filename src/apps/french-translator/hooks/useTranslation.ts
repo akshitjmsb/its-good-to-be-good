@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { translateText, generateRandomPhrase } from '../lib/perplexity';
+import { translateText, generatePhraseWithTranslation } from '../lib/perplexity';
 import { TranslationResponse, TranslationMode } from '../types';
 
 export function useTranslation() {
@@ -31,13 +31,10 @@ export function useTranslation() {
     setError(null);
 
     try {
-      const phrase = await generateRandomPhrase(mode);
-      if (phrase) {
-        const response = await translateText(phrase, mode);
-        setResult(response);
-        return { phrase, response };
-      }
-      return null;
+      // Single AI call returns both the invented phrase and its breakdown.
+      const { phrase, response } = await generatePhraseWithTranslation(mode);
+      setResult(response);
+      return { phrase, response };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to generate phrase';
       setError(message);
@@ -45,6 +42,12 @@ export function useTranslation() {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  // Show a past translation without re-calling the API.
+  const showResult = useCallback((response: TranslationResponse) => {
+    setError(null);
+    setResult(response);
   }, []);
 
   const clearResult = useCallback(() => {
@@ -58,6 +61,7 @@ export function useTranslation() {
     result,
     translate,
     generatePhrase,
+    showResult,
     clearResult
   };
 }

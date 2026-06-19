@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { getAuthState } from '../../../domains/auth/store';
+import { getAuthState, subscribeAuth } from '../../../domains/auth/store';
 import { HistoryEntry, TranslationResponse, TranslationMode } from '../types';
 
 export function useHistory() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // A quiet line shown when a save can't be persisted (e.g. auth not ready).
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Load history from Supabase
   const loadHistory = useCallback(async () => {
@@ -38,8 +40,18 @@ export function useHistory() {
     sourceText: string,
     result: TranslationResponse
   ) => {
-    const userId = getAuthState().user?.id;
-    if (!userId) return null;
+    const { status, user } = getAuthState();
+    const userId = user?.id;
+    if (!userId) {
+      // Surface the reason instead of dropping the save on the floor.
+      setNotice(
+        status === 'loading'
+          ? 'Signing you in… not saved yet. Try again in a moment.'
+          : 'Sign in to save your French history.'
+      );
+      return null;
+    }
+    setNotice(null);
     try {
       const { data, error } = await supabase
         .from('french_history')
@@ -85,14 +97,26 @@ export function useHistory() {
     }
   }, []);
 
-  // Load history on mount
+  // Load on mount, and again whenever the signed-in user changes — auth may
+  // still be hydrating at first render, which would otherwise leave history
+  // permanently empty.
   useEffect(() => {
     loadHistory();
+    let lastUserId = getAuthState().user?.id;
+    const unsub = subscribeAuth((state) => {
+      if (state.user?.id !== lastUserId) {
+        lastUserId = state.user?.id;
+        setNotice(null);
+        loadHistory();
+      }
+    });
+    return unsub;
   }, [loadHistory]);
 
   return {
     history,
     isLoading,
+    notice,
     saveToHistory,
     clearHistory,
     refreshHistory: loadHistory

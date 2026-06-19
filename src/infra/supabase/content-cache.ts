@@ -4,7 +4,8 @@ export type CachedContentType =
   | 'archive'
   | 'analytics'
   | 'transportation-physics'
-  | 'quote-deep-dive';
+  | 'quote-deep-dive'
+  | 'french-word-of-day';
 
 export async function getCachedContent<T>(
   userId: string,

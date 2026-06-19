@@ -1,58 +1,71 @@
-import { Volume2 } from 'lucide-react';
+import { Volume2, Trash2 } from 'lucide-react';
 import { HistoryEntry } from '../types';
 
 interface HistoryListProps {
   history: HistoryEntry[];
   onSelectEntry: (entry: HistoryEntry) => void;
   onPlayAudio: (text: string) => void;
+  onClearHistory: () => void;
 }
 
-export function HistoryList({ history, onSelectEntry, onPlayAudio }: HistoryListProps) {
-  if (history.length === 0) {
-    return (
-      <section className="w-full max-w-xl flex-1">
-        <h3 className="text-[10px] font-black uppercase tracking-widest opacity-20 mb-4">
+export function HistoryList({
+  history,
+  onSelectEntry,
+  onPlayAudio,
+  onClearHistory,
+}: HistoryListProps) {
+  return (
+    <section className="flex-1">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-[10px] uppercase tracking-[0.12em] text-[#9ca3af]">
           History
         </h3>
-        <p className="text-center text-gray-300 text-sm">
+        {history.length > 0 && (
+          <button
+            onClick={onClearHistory}
+            aria-label="Clear history"
+            className="p-1.5 text-[#9ca3af] transition-colors duration-200 hover:text-[#ef4444] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/40 rounded-full"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+      </div>
+
+      {history.length === 0 ? (
+        <p className="text-center text-sm text-[#9ca3af]">
           No translations yet. Start translating!
         </p>
-      </section>
-    );
-  }
-
-  return (
-    <section className="w-full max-w-xl flex-1">
-      <h3 className="text-[10px] font-black uppercase tracking-widest opacity-20 mb-4">
-        History
-      </h3>
-      <div className="space-y-2">
-        {history.map((item) => (
-          <div
-            key={item.id}
-            className="border-2 border-black p-3 flex items-center gap-4 bg-white hover:bg-gray-50 transition-colors"
-          >
+      ) : (
+        <div className="space-y-2">
+          {history.map((item) => (
             <div
-              className="flex-1 cursor-pointer"
-              onClick={() => onSelectEntry(item)}
+              key={item.id}
+              className="flex items-center gap-3 rounded-lg border border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)]"
             >
-              <p className="font-bold text-sm">{item.translation}</p>
-              <p className="text-[10px] opacity-40 uppercase truncate tracking-tight">
-                "{item.meaning}"
-              </p>
+              <button
+                type="button"
+                className="flex-1 cursor-pointer text-left"
+                onClick={() => onSelectEntry(item)}
+              >
+                <p className="text-sm text-[#374151]">{item.translation}</p>
+                <p className="truncate text-[11px] text-[#9ca3af]">
+                  {item.meaning}
+                </p>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlayAudio(item.translation);
+                }}
+                aria-label="Play"
+                className="rounded-full p-2 text-[#9ca3af] transition-colors duration-200 hover:text-[#374151]"
+              >
+                <Volume2 size={16} />
+              </button>
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPlayAudio(item.translation);
-              }}
-              className="p-2 border-2 border-transparent hover:border-black rounded-full transition-all"
-            >
-              <Volume2 size={16} />
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

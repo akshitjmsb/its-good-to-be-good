@@ -1,4 +1,4 @@
-import { Volume2, Loader2, ArrowRight, Info } from 'lucide-react';
+import { Volume2, Loader2, ArrowRight } from 'lucide-react';
 import { TranslationResponse, TranslationMode } from '../types';
 import { WordBreakdown } from './WordBreakdown';
 
@@ -13,50 +13,44 @@ export function TranslationResult({
   result,
   mode,
   isAudioPlaying,
-  onPlayAudio
+  onPlayAudio,
 }: TranslationResultProps) {
   return (
-    <section className="w-full max-w-xl mb-12 animate-in">
-      <div className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-        <div className="flex justify-between items-start mb-4">
-          <span className="text-[10px] font-black uppercase bg-black text-white px-2 py-1">
-            {mode === 'en-to-fr' ? 'Translation' : 'French Analysis'}
+    <section className="mb-10">
+      <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <span className="text-[10px] uppercase tracking-[0.12em] text-[#9ca3af]">
+            {mode === 'en-to-fr' ? 'Translation' : 'French analysis'}
           </span>
           <button
             onClick={() => onPlayAudio(result.full_translation)}
-            className={`p-4 rounded-full border-4 border-black transition-all ${
-              isAudioPlaying
-                ? 'bg-gray-100'
-                : 'bg-white hover:bg-black hover:text-white active:scale-95'
-            }`}
+            aria-label="Play translation"
             disabled={isAudioPlaying}
+            className="inline-flex shrink-0 items-center justify-center rounded-full border border-[#e5e7eb] bg-white p-2.5 text-[#374151] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/40 disabled:opacity-50"
           >
             {isAudioPlaying ? (
-              <Loader2 className="animate-spin" size={24} />
+              <Loader2 className="animate-spin" size={20} />
             ) : (
-              <Volume2 size={24} />
+              <Volume2 size={20} />
             )}
           </button>
         </div>
 
         <div className="mb-6">
-          <h2 className="text-3xl md:text-4xl font-black leading-tight mb-2">
+          <h2 className="mb-2 text-2xl md:text-3xl leading-tight text-[#111111]">
             {result.full_translation}
           </h2>
-          <div className="opacity-40 text-sm font-bold flex items-center gap-2">
+          <div className="flex items-center gap-2 text-sm text-[#6b7280]">
             <ArrowRight size={14} />
             <span>{result.english_meaning}</span>
           </div>
         </div>
 
         {result.breakdown && result.breakdown.length > 0 && (
-          <div className="border-t-2 border-black pt-6 mt-6">
-            <div className="flex items-center gap-2 mb-4 opacity-30">
-              <Info size={14} />
-              <h3 className="text-[10px] font-black uppercase tracking-widest">
-                Word Breakdown
-              </h3>
-            </div>
+          <div className="border-t border-[#e5e7eb] pt-5">
+            <p className="mb-4 text-[10px] uppercase tracking-[0.12em] text-[#9ca3af]">
+              Word breakdown
+            </p>
             <WordBreakdown
               breakdown={result.breakdown}
               onPlayWord={(word) => onPlayAudio(word)}
