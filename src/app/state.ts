@@ -1,4 +1,4 @@
-import { MultilingualQuote } from '../components/reflection';
+import type { MultilingualQuote } from '../components/reflection';
 import { createStore, type Store } from '../core/store';
 
 export interface AppRuntimeState {

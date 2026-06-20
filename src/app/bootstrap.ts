@@ -1,5 +1,5 @@
 import { getCanonicalTime } from '../core/time';
-import { getPhilosophicalQuoteInstant } from '../components/reflection';
+import type { MultilingualQuote } from '../components/reflection';
 import {
   attachQuoteDeepDive,
   setActiveQuote,
@@ -25,6 +25,21 @@ import { onAuthStateChange } from '../domains/auth/session';
 import { mountLoginGate } from '../auth/loginGate';
 import { mountUserChip } from '../auth/userChip';
 import { claimLegacyDataIfNeeded } from '../domains/auth/migrate-anon';
+
+// The quote-of-the-day dataset (~150 multilingual quotes) is the single
+// largest contributor to the home bundle, yet only one quote shows per day.
+// Code-split it: the home shell paints from the static markup + icons, then
+// this chunk loads and the quote fills in. Cached after first resolve so the
+// periodic re-render doesn't re-fetch it.
+let getQuote: ((date: Date) => MultilingualQuote) | null = null;
+async function loadQuoteFor(date: Date): Promise<MultilingualQuote> {
+  if (!getQuote) {
+    ({ getPhilosophicalQuoteInstant: getQuote } = await import(
+      '../components/reflection'
+    ));
+  }
+  return getQuote(date);
+}
 
 function showSyncStatus(message: string, isFinal = false): void {
   const statusEl = document.getElementById('sync-status');
@@ -94,8 +109,7 @@ export async function bootstrapApp(): Promise<void> {
     const { now } = getCanonicalTime();
     const activeContentDate = new Date(now);
     const todayKey = activeContentDate.toISOString().split('T')[0];
-    const todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
-    store.setState({ activeContentDate, todayKey, todaysQuote });
+    store.setState({ activeContentDate, todayKey });
   }
 
   async function mainRender() {
@@ -112,12 +126,15 @@ export async function bootstrapApp(): Promise<void> {
     // initializeCustomModules() guards against duplicate tile injection,
     // so calling it on every render is safe.
     initializeCustomModules();
-    const { todaysQuote } = store.getState();
+
+    // Quote dataset is code-split — the shell + icons above paint without it,
+    // then the quote-of-the-day fills in once the chunk resolves.
+    const { activeContentDate } = store.getState();
+    const todaysQuote = await loadQuoteFor(activeContentDate);
+    store.setState({ todaysQuote });
     renderDayModule(todaysQuote);
-    if (todaysQuote) {
-      setActiveQuote(userId, todaysQuote);
-      attachQuoteDeepDive();
-    }
+    setActiveQuote(userId, todaysQuote);
+    attachQuoteDeepDive();
   }
 
   async function initializeApp() {

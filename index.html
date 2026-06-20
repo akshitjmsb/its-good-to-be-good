@@ -6,7 +6,10 @@
     <title>It's Good To Be King</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Nastaliq+Urdu&family=Noto+Sans+Gurmukhi:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Only the core UI face (Special Elite) is render-blocking. The Indic
+         script faces (Devanagari/Nastaliq/Gurmukhi) are loaded on demand by
+         src/utils/scriptFonts.ts the first time a quote in that script shows. -->
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="src/styles/index.css">
     <link rel="stylesheet" href="src/styles/home-lock.css">
     

@@ -1,6 +1,7 @@
-import { MultilingualQuote } from '../components/reflection';
+import type { MultilingualQuote } from '../components/reflection';
 import { renderDeepDiveScaffold } from '../components/quoteDeepDive';
 import { escapeHtml } from '../utils/escapeHtml';
+import { ensureScriptFont } from '../utils/scriptFonts';
 
 export function renderQuoteHTML(quote: MultilingualQuote): string {
   const isMultilingual =
@@ -8,6 +9,8 @@ export function renderQuoteHTML(quote: MultilingualQuote): string {
   const language = ['en', 'hi', 'ur', 'pa', 'fa'].includes(quote.language)
     ? quote.language
     : 'en';
+  // Pull the matching non-Latin font only when a quote in that script renders.
+  if (language !== 'en') ensureScriptFont(language);
   const safeQuote = escapeHtml(quote.quote).replace(/\n/g, '<br>');
   const safeTransliteration = quote.transliteration
     ? escapeHtml(quote.transliteration).replace(/\n/g, '<br>')
