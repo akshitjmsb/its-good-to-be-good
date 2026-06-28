@@ -99,7 +99,16 @@ function arm(): void {
 }
 
 function ensureConfigured(): void {
-  if (!configured) arm();
+  if (configured) return;
+  try {
+    arm();
+  } catch (error) {
+    // The Convex client couldn't be constructed (e.g. VITE_CONVEX_URL not set
+    // on this build). Don't let that reject the boot — leave `configured`
+    // false so callers fall through to the "no session" path and the app
+    // still renders (login gate / offline shell) instead of a dead page.
+    console.error('[auth] Convex client unavailable:', error);
+  }
 }
 
 async function fetchSession(): Promise<AuthSession | null> {
