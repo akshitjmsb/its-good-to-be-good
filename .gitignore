@@ -18,6 +18,9 @@ vite.config.ts.timestamp-*.mjs
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+
+# Claude Code local agent config (machine-specific; may contain local secrets)
+.claude/
 .idea
 .DS_Store
 *.suo
