@@ -16,7 +16,7 @@ import {
   loadPoetryRecents,
   recordPoetrySelection,
   savePoetryRecents,
-} from '../../infra/supabase/persistence';
+} from '../../infra/convex/persistence';
 import { getAuthState } from '../../domains/auth/store';
 import {
   MODAL_CONFIGS,

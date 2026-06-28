@@ -1,5 +1,5 @@
 /**
- * Cache adapter — wraps the Supabase `content_cache` table.
+ * Cache adapter — wraps the Convex `contentCache` table.
  *
  * The cache is keyed by (user_id, content_type, date_key). The SDK
  * automatically scopes the content_type with the module id so two modules
@@ -10,7 +10,7 @@ import {
   getCachedContent,
   saveCachedContent,
   type CachedContentType,
-} from '../infra/supabase/content-cache';
+} from '../infra/convex/content-cache';
 import type { CacheAdapter, UserAdapter } from './types';
 
 export function createCacheAdapter(

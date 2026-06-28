@@ -1,7 +1,7 @@
 import {
   getCachedContent,
   saveCachedContent,
-} from '../supabase/content-cache';
+} from '../convex/content-cache';
 import { callAI, hasProviderReady, parseJsonResponse } from './client';
 import { ErrorHandler } from '../../utils/errorHandling';
 import {
@@ -138,7 +138,7 @@ export async function getOrGenerateDynamicContent<T extends ContentType>(
   try {
     await saveCachedContent(userId, contentType, dateKey, generated);
   } catch (error) {
-    console.error('Error saving content to Supabase cache', error);
+    console.error('Error saving content to Convex cache', error);
   }
   return generated;
 }

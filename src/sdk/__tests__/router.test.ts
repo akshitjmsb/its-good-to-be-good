@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The router pulls in the SDK factory which transitively imports
-// `lib/supabase` (DB adapter). Mock the client so the tests stay hermetic.
-vi.mock('../../lib/supabase', () => ({
-  supabase: { from: vi.fn() },
+// The router pulls in the SDK factory which transitively imports the Convex
+// client (via the cache adapter). Mock it so the tests stay hermetic.
+vi.mock('../../lib/convex', () => ({
+  convex: { query: vi.fn(), mutation: vi.fn(), action: vi.fn() },
 }));
 
 // Same for the auth store: pretend there is a signed-in user so the SDK

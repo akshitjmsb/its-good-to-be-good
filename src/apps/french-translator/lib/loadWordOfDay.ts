@@ -2,7 +2,7 @@ import { WordOfDay } from '../types';
 
 /**
  * Injected dependencies for {@link loadWordOfDay}. Keeping the orchestration
- * pure (no Supabase / auth imports) lets the cache-first logic be unit-tested
+ * pure (no Convex / auth imports) lets the cache-first logic be unit-tested
  * without a DOM or network.
  */
 export interface WordOfDayDeps {

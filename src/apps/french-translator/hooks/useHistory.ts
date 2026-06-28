@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { convex } from '../../../lib/convex';
+import { api } from '../../../../convex/_generated/api';
 import { getAuthState, subscribeAuth } from '../../../domains/auth/store';
 import { HistoryEntry, TranslationResponse, TranslationMode } from '../types';
 
@@ -9,7 +10,7 @@ export function useHistory() {
   // A quiet line shown when a save can't be persisted (e.g. auth not ready).
   const [notice, setNotice] = useState<string | null>(null);
 
-  // Load history from Supabase
+  // Load history from Convex.
   const loadHistory = useCallback(async () => {
     const userId = getAuthState().user?.id;
     if (!userId) {
@@ -18,14 +19,7 @@ export function useHistory() {
       return;
     }
     try {
-      const { data, error } = await supabase
-        .from('french_history')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
+      const data = (await convex.query(api.frenchHistory.list, {})) as HistoryEntry[];
       setHistory(data || []);
     } catch (err) {
       console.error('Failed to load history:', err);
@@ -34,7 +28,7 @@ export function useHistory() {
     }
   }, []);
 
-  // Save to history
+  // Save to history.
   const saveToHistory = useCallback(async (
     mode: TranslationMode,
     sourceText: string,
@@ -53,22 +47,15 @@ export function useHistory() {
     }
     setNotice(null);
     try {
-      const { data, error } = await supabase
-        .from('french_history')
-        .insert({
-          user_id: userId,
-          mode,
-          source_text: sourceText,
-          translation: result.full_translation,
-          meaning: result.english_meaning,
-          breakdown: result.breakdown
-        })
-        .select()
-        .single();
+      const data = (await convex.mutation(api.frenchHistory.add, {
+        mode,
+        sourceText,
+        translation: result.full_translation,
+        meaning: result.english_meaning,
+        breakdown: result.breakdown,
+      })) as HistoryEntry | null;
 
-      if (error) throw error;
-
-      // Add to local state
+      // Add to local state.
       if (data) {
         setHistory(prev => [data, ...prev]);
       }
@@ -80,17 +67,12 @@ export function useHistory() {
     }
   }, []);
 
-  // Clear all history
+  // Clear all history.
   const clearHistory = useCallback(async () => {
     const userId = getAuthState().user?.id;
     if (!userId) return;
     try {
-      const { error } = await supabase
-        .from('french_history')
-        .delete()
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      await convex.mutation(api.frenchHistory.clear, {});
       setHistory([]);
     } catch (err) {
       console.error('Failed to clear history:', err);

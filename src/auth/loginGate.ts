@@ -1,6 +1,6 @@
 /**
  * Login gate — single-overlay sign-in / sign-up / magic-link UI mounted
- * when no Supabase session is present.
+ * when no Convex session is present.
  *
  * The shell reloads on successful sign-in (`detectSessionInUrl` for magic
  * links, explicit reload for password) so we don't need to coordinate a

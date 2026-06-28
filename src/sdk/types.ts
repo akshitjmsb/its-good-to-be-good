@@ -10,7 +10,6 @@
  * runtime, so missing permissions surface in dev rather than at deploy.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CallOptions } from '../infra/ai/providers/types';
 
 export type ModuleCategory = 'journey' | 'learn';
@@ -68,7 +67,6 @@ export interface KingSDK {
   cache: CacheAdapter;
   storage: StorageAdapter;
   timer: TimerAdapter;
-  db: DBAdapter;
   events: EventBus;
   ui: UIAdapter;
   user: UserAdapter;
@@ -85,7 +83,7 @@ export interface AIAdapter {
   parseJsonResponse(text: string): unknown;
 }
 
-/* ── Cache (Supabase content cache) ───────────────────────────────────── */
+/* ── Cache (Convex content cache) ───────────────────────────────────── */
 
 export interface CacheAdapter {
   get<T>(contentType: string, dateKey: string): Promise<T | null>;
@@ -137,13 +135,6 @@ export interface TimerAdapter {
    * across modules.
    */
   create(opts: { name: string; defaultDurationMs: number }): TimerHandle;
-}
-
-/* ── DB (raw Supabase client) ─────────────────────────────────────────── */
-
-export interface DBAdapter {
-  /** The raw Supabase client. Modules should namespace their own tables. */
-  client(): SupabaseClient;
 }
 
 /* ── Events (pub/sub) ─────────────────────────────────────────────────── */

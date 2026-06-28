@@ -24,7 +24,6 @@ import { initAuthStore, getAuthState } from '../domains/auth/store';
 import { onAuthStateChange } from '../domains/auth/session';
 import { mountLoginGate } from '../auth/loginGate';
 import { mountUserChip } from '../auth/userChip';
-import { claimLegacyDataIfNeeded } from '../domains/auth/migrate-anon';
 
 // The quote-of-the-day dataset (~150 multilingual quotes) is the single
 // largest contributor to the home bundle, yet only one quote shows per day.
@@ -82,16 +81,13 @@ export async function bootstrapApp(): Promise<void> {
   if (!authedUser) {
     const host = document.getElementById('app-container');
     if (host) mountLoginGate(host);
-    // Once the user signs in, supabase fires SIGNED_IN — reload so the
+    // Once the user signs in, Convex Auth fires SIGNED_IN — reload so the
     // full app boots cleanly with the new session.
     onAuthStateChange((_event, session) => {
       if (session) window.location.reload();
     });
     return;
   }
-
-  // Reattribute legacy anon data the first time we see a real session.
-  void claimLegacyDataIfNeeded();
 
   // After sign-out, reload to drop module state cleanly and re-mount the gate.
   onAuthStateChange((_event, session) => {
@@ -141,7 +137,7 @@ export async function bootstrapApp(): Promise<void> {
     try {
       renderModuleIcons();
       // Cache-first: initModuleStore hydrates from localStorage synchronously
-      // so we can paint tiles immediately, then refreshes from Supabase in the
+      // so we can paint tiles immediately, then refreshes from Convex in the
       // background. When fresh data lands, re-inject tiles and re-render the
       // day module so any remote name/emoji/archive changes appear without
       // a reload. Both callees are idempotent.

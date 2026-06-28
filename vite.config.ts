@@ -40,22 +40,10 @@ export default defineConfig(() => {
             ],
             cleanupOutdatedCaches: true,
             runtimeCaching: [
-              {
-                // Supabase REST queries — stale-while-revalidate keeps the
-                // UI instant on reopen and refreshes in the background.
-                urlPattern: ({ url }) =>
-                  url.hostname.endsWith('.supabase.co') &&
-                  url.pathname.startsWith('/rest/v1/'),
-                handler: 'StaleWhileRevalidate',
-                options: {
-                  cacheName: 'supabase-rest',
-                  expiration: {
-                    maxEntries: 60,
-                    maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-                  },
-                  cacheableResponse: { statuses: [0, 200] },
-                },
-              },
+              // Note: Convex talks to the backend over a WebSocket and keeps
+              // data fresh via live subscriptions, so there's no REST endpoint
+              // to runtime-cache here (the old Supabase rule is gone). The
+              // localStorage WAL still provides offline/crash resilience.
               {
                 // Google Fonts CSS — small, changes rarely.
                 urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',

@@ -34,10 +34,8 @@ vite.config.ts.timestamp-*.mjs
 .env.*.local
 .vercel
 
-# Supabase
-.branches
-.temp
-supabase/.branches
-supabase/.temp
+# Convex
+# `convex/_generated` IS committed (hand-written stubs let the app build before
+# `npx convex dev` runs; that command regenerates them in place).
 .env*.local
 .env.temp

@@ -1,20 +1,24 @@
 /**
- * Reactive auth store. Hydrates from supabase.auth.getSession() and stays
+ * Reactive auth store. Hydrates from getSession() (Convex Auth) and stays
  * in sync via onAuthStateChange. The SDK user adapter reads from here, so
  * every module sees the same identity without each one wiring its own
  * subscription.
  */
 
-import type { Session, User } from '@supabase/supabase-js';
 import { createStore, type Store } from '../../core/store';
-import { getSession, onAuthStateChange } from './session';
+import {
+  getSession,
+  onAuthStateChange,
+  type AuthSession,
+  type AuthUser,
+} from './session';
 
 export type AuthStatus = 'loading' | 'authed' | 'anon';
 
 export interface AuthState {
   status: AuthStatus;
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
+  session: AuthSession | null;
 }
 
 const store: Store<AuthState> = createStore<AuthState>({
@@ -26,7 +30,7 @@ const store: Store<AuthState> = createStore<AuthState>({
 let initialized = false;
 let unsubscribe: (() => void) | null = null;
 
-function applySession(session: Session | null): void {
+function applySession(session: AuthSession | null): void {
   store.setState({
     status: session ? 'authed' : 'anon',
     session,

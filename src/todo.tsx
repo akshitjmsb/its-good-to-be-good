@@ -23,7 +23,7 @@
  * CSS transitions) survives, with FLIP animation on reorder.
  */
 
-import { loadTasks, saveTasks } from './infra/supabase/persistence';
+import { loadTasks, saveTasks } from './infra/convex/persistence';
 import { initAuthStore, getAuthState, subscribeAuth } from './domains/auth/store';
 import { sanitizeTaskInput, createSafeHtml } from './utils/escapeHtml';
 import {

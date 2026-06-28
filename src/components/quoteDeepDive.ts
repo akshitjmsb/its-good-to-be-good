@@ -3,7 +3,7 @@
  *
  * - Pure DOM, delegated click handler so it survives `innerHTML` re-renders
  *   from `renderDayModule`.
- * - Per-quote content cached in Supabase (`content_cache`, content_type
+ * - Per-quote content cached in Convex (`content_cache`, content_type
  *   `quote-deep-dive`, date_key = djb2 hash of "author|quote"). Cache
  *   read/write failures degrade gracefully — the panel still renders the
  *   freshly-fetched content even if persistence is unavailable (e.g. the
@@ -20,7 +20,7 @@ import {
 import {
   getCachedContent,
   saveCachedContent,
-} from '../infra/supabase/content-cache';
+} from '../infra/convex/content-cache';
 import { escapeHtml } from '../utils/escapeHtml';
 import type { MultilingualQuote } from './reflection';
 

@@ -1,4 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// The controller transitively imports the Convex client (via persistence),
+// which opens a WebSocket on construction. Mock it to keep the test hermetic.
+vi.mock('../../../lib/convex', () => ({
+  convex: {
+    query: vi.fn(),
+    mutation: vi.fn(),
+    action: vi.fn(),
+    onUpdate: vi.fn(),
+    setAuth: vi.fn(),
+    close: vi.fn(),
+  },
+}));
+
 import {
   PoetryModule,
   destroy,

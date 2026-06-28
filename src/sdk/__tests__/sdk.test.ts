@@ -1,19 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// The DB adapter pulls in `lib/supabase` which throws at import time when
-// VITE_SUPABASE_* env vars are missing. Mock the client to keep the test
-// hermetic. The auth store also reaches into supabase.auth; we stub it so
-// every test in this file runs without touching the network.
-vi.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: vi.fn(),
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      onAuthStateChange: vi.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: vi.fn() } },
-      }),
-    },
-  },
+// The cache adapter pulls in the Convex client, which throws at import time
+// when VITE_CONVEX_URL is missing. Mock it to keep the test hermetic.
+vi.mock('../../lib/convex', () => ({
+  convex: { query: vi.fn(), mutation: vi.fn(), action: vi.fn() },
 }));
 
 import { createModuleSDK } from '../index';
@@ -32,14 +22,13 @@ function manifest(overrides: Partial<ModuleManifest> = {}): ModuleManifest {
 }
 
 describe('createModuleSDK', () => {
-  it('always provides db, events, ui, and user regardless of permissions', () => {
+  it('always provides events, ui, and user regardless of permissions', () => {
     const sdk = createModuleSDK(manifest());
 
     expect(typeof sdk.events.emit).toBe('function');
     expect(typeof sdk.events.on).toBe('function');
     expect(typeof sdk.ui.showToast).toBe('function');
     expect(typeof sdk.user.id).toBe('function');
-    expect(typeof sdk.db.client).toBe('function');
   });
 
   it('throws from user.id() when no authenticated session is present', () => {

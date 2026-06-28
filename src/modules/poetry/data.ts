@@ -1,6 +1,6 @@
 /**
  * Poetry data helpers — prompt construction and JSON-shape narrowing.
- * The actual recents persistence stays in `infra/supabase/persistence`;
+ * The actual recents persistence stays in `infra/convex/persistence`;
  * this file just owns the prompt + parse contract.
  */
 

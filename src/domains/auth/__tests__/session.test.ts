@@ -1,19 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AuthSession } from '../session';
 
-type AuthChangeCallback = (event: string, session: unknown) => void;
+type AuthChangeCallback = (event: string, session: AuthSession | null) => void;
 
+// The store hydrates from the session helpers; mock those directly so the test
+// never touches the Convex client.
 const { getSessionMock, onAuthStateChangeMock } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   onAuthStateChangeMock: vi.fn(),
 }));
 
-vi.mock('../../../lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: getSessionMock,
-      onAuthStateChange: onAuthStateChangeMock,
-    },
-  },
+vi.mock('../session', () => ({
+  getSession: getSessionMock,
+  onAuthStateChange: onAuthStateChangeMock,
 }));
 
 import {
@@ -23,15 +22,8 @@ import {
   subscribeAuth,
 } from '../store';
 
-function makeSession(userId: string) {
-  return {
-    access_token: 'token',
-    refresh_token: 'refresh',
-    expires_at: 0,
-    expires_in: 3600,
-    token_type: 'bearer',
-    user: { id: userId, email: `${userId}@example.com` },
-  };
+function makeSession(userId: string): AuthSession {
+  return { user: { id: userId, email: `${userId}@example.com` } };
 }
 
 describe('auth store', () => {
@@ -39,23 +31,18 @@ describe('auth store', () => {
     __resetAuthStoreForTests();
     getSessionMock.mockReset();
     onAuthStateChangeMock.mockReset();
-    onAuthStateChangeMock.mockReturnValue({
-      data: { subscription: { unsubscribe: vi.fn() } },
-    });
+    onAuthStateChangeMock.mockReturnValue(vi.fn());
   });
 
   it('hydrates to "anon" when no session is present', async () => {
-    getSessionMock.mockResolvedValue({ data: { session: null }, error: null });
+    getSessionMock.mockResolvedValue(null);
     await initAuthStore();
     expect(getAuthState().status).toBe('anon');
     expect(getAuthState().user).toBeNull();
   });
 
   it('hydrates to "authed" when getSession returns a session', async () => {
-    getSessionMock.mockResolvedValue({
-      data: { session: makeSession('abc') },
-      error: null,
-    });
+    getSessionMock.mockResolvedValue(makeSession('abc'));
     await initAuthStore();
     const state = getAuthState();
     expect(state.status).toBe('authed');
@@ -66,9 +53,9 @@ describe('auth store', () => {
     let storedCb: AuthChangeCallback | undefined;
     onAuthStateChangeMock.mockImplementation((cb: AuthChangeCallback) => {
       storedCb = cb;
-      return { data: { subscription: { unsubscribe: vi.fn() } } };
+      return vi.fn();
     });
-    getSessionMock.mockResolvedValue({ data: { session: null }, error: null });
+    getSessionMock.mockResolvedValue(null);
     await initAuthStore();
     expect(getAuthState().status).toBe('anon');
 
@@ -84,9 +71,9 @@ describe('auth store', () => {
     let storedCb: AuthChangeCallback | undefined;
     onAuthStateChangeMock.mockImplementation((cb: AuthChangeCallback) => {
       storedCb = cb;
-      return { data: { subscription: { unsubscribe: vi.fn() } } };
+      return vi.fn();
     });
-    getSessionMock.mockResolvedValue({ data: { session: null }, error: null });
+    getSessionMock.mockResolvedValue(null);
     await initAuthStore();
 
     const listener = vi.fn();

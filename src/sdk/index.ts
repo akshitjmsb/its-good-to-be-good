@@ -8,7 +8,6 @@
 
 import { createAIAdapter } from './ai';
 import { createCacheAdapter } from './cache';
-import { createDBAdapter } from './db';
 import { sharedEventBus } from './events';
 import { createStorageAdapter } from './storage';
 import { createTimerAdapter } from './timer';
@@ -87,9 +86,8 @@ export function createModuleSDK(
     cache,
     storage,
     timer,
-    // db, events, ui, user are always available — they don't gate
+    // events, ui, user are always available — they don't gate
     // capabilities the way the permissioned adapters do.
-    db: createDBAdapter(),
     events: sharedEventBus,
     ui: createUIAdapter(),
     user,

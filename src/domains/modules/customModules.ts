@@ -8,26 +8,26 @@
  *      gets its own generated id (`custom-…`).
  *
  * Storage strategy:
- *   • Primary: Supabase `user_modules` table (persists across devices).
+ *   • Primary: Convex `user_modules` table (persists across devices).
  *   • Cache: localStorage (write-through — immediate reads, offline resilience).
- *   • On boot `initModuleStore()` loads from Supabase, backfills localStorage,
- *     and auto-migrates any localStorage-only data to Supabase.
+ *   • On boot `initModuleStore()` loads from Convex, backfills localStorage,
+ *     and auto-migrates any localStorage-only data to Convex.
  *
  * Both stores degrade silently to empty values on parse/quota errors so
  * the home keeps rendering even if storage is corrupt.
  */
 import type { ModuleCategory, ModuleId } from './types';
 import {
-  loadCustomModulesFromSupabase,
-  loadOverridesFromSupabase,
-  loadArchivedFromSupabase,
-  saveCustomModuleToSupabase,
-  deleteCustomModuleFromSupabase,
-  updateCustomModuleInSupabase,
-  saveOverrideToSupabase,
-  setArchivedInSupabase,
-  migrateLocalStorageToSupabase,
-} from '../../infra/supabase/module-persistence';
+  loadCustomModulesFromConvex,
+  loadOverridesFromConvex,
+  loadArchivedFromConvex,
+  saveCustomModuleToConvex,
+  deleteCustomModuleFromConvex,
+  updateCustomModuleInConvex,
+  saveOverrideToConvex,
+  setArchivedInConvex,
+  migrateLocalStorageToConvex,
+} from '../../infra/convex/module-persistence';
 
 const OVERRIDES_KEY = 'module.overrides';
 const CUSTOM_LIST_KEY = 'module.custom.list';
@@ -152,9 +152,9 @@ function cacheOverrides(overrides: ModuleOverrides): void {
 
 export interface InitModuleStoreOptions {
   /**
-   * Fires after a successful background Supabase refresh, so the caller
+   * Fires after a successful background Convex refresh, so the caller
    * can re-render tiles/overrides with the fresh remote state. Not called
-   * if Supabase is unreachable — the localStorage cache stays authoritative.
+   * if Convex is unreachable — the localStorage cache stays authoritative.
    */
   onRefresh?: () => void;
 }
@@ -162,7 +162,7 @@ export interface InitModuleStoreOptions {
 /**
  * Boot the module store. Cache-first: populates the in-memory cache from
  * localStorage synchronously so the home can paint immediately, then
- * kicks off a Supabase refresh in the background. When fresh data lands,
+ * kicks off a Convex refresh in the background. When fresh data lands,
  * `options.onRefresh` is invoked so the caller can re-render.
  *
  * The returned Promise resolves as soon as the synchronous paint is
@@ -181,25 +181,25 @@ export function initModuleStore(
     _initialized = true;
   }
 
-  void refreshFromSupabase(userId, options.onRefresh);
+  void refreshFromConvex(userId, options.onRefresh);
 
   return Promise.resolve();
 }
 
-async function refreshFromSupabase(
+async function refreshFromConvex(
   userId: string,
   onRefresh: (() => void) | undefined
 ): Promise<void> {
   try {
     const [remoteCustoms, remoteOverrides, remoteArchived] = await Promise.all([
-      loadCustomModulesFromSupabase(userId),
-      loadOverridesFromSupabase(userId),
-      loadArchivedFromSupabase(userId),
+      loadCustomModulesFromConvex(userId),
+      loadOverridesFromConvex(userId),
+      loadArchivedFromConvex(userId),
     ]);
 
-    const supabaseWorked = remoteCustoms !== null && remoteOverrides !== null;
-    if (!supabaseWorked) {
-      // Supabase unavailable — localStorage cache from sync init stays authoritative.
+    const convexWorked = remoteCustoms !== null && remoteOverrides !== null;
+    if (!convexWorked) {
+      // Convex unavailable — localStorage cache from sync init stays authoritative.
       return;
     }
 
@@ -213,7 +213,7 @@ async function refreshFromSupabase(
     cacheOverrides(_cachedOverrides);
     if (_cachedArchived) cacheArchived(_cachedArchived);
 
-    // First-time migration: push any localStorage-only entries to Supabase.
+    // First-time migration: push any localStorage-only entries to Convex.
     const alreadyMigrated = readJson<boolean>(MIGRATED_KEY, false);
     if (!alreadyMigrated) {
       const localCustoms = loadCustomModulesFromLocalStorage();
@@ -229,7 +229,7 @@ async function refreshFromSupabase(
       }
 
       if (newCustoms.length > 0 || Object.keys(newOverrides).length > 0) {
-        await migrateLocalStorageToSupabase(userId, newCustoms, newOverrides);
+        await migrateLocalStorageToConvex(userId, newCustoms, newOverrides);
         _cachedCustoms = [..._cachedCustoms, ...newCustoms];
         for (const [id, override] of Object.entries(newOverrides)) {
           _cachedOverrides[id] = override;
@@ -276,9 +276,9 @@ export function saveOverride(id: ModuleId | string, patch: ModuleOverride): void
   _cachedOverrides = current;
   cacheOverrides(current);
 
-  // Fire-and-forget to Supabase.
+  // Fire-and-forget to Convex.
   if (_userId) {
-    saveOverrideToSupabase(_userId, String(id), merged).catch(() => {});
+    saveOverrideToConvex(_userId, String(id), merged).catch(() => {});
   }
 }
 
@@ -313,9 +313,9 @@ export function addCustomModule(input: {
   list.push(created);
   saveCustomModules(list);
 
-  // Fire-and-forget to Supabase.
+  // Fire-and-forget to Convex.
   if (_userId) {
-    saveCustomModuleToSupabase(_userId, created).catch(() => {});
+    saveCustomModuleToConvex(_userId, created).catch(() => {});
   }
 
   return created;
@@ -331,7 +331,7 @@ export function deleteCustomModule(id: string): void {
     _cachedOverrides = overrides;
     cacheOverrides(overrides);
   }
-  // Drop the archive flag too — Supabase row is gone, local state must agree.
+  // Drop the archive flag too — Convex row is gone, local state must agree.
   const archived = readArchivedSet();
   if (archived.has(id)) {
     archived.delete(id);
@@ -339,14 +339,14 @@ export function deleteCustomModule(id: string): void {
     cacheArchived(archived);
   }
 
-  // Fire-and-forget to Supabase.
+  // Fire-and-forget to Convex.
   if (_userId) {
-    deleteCustomModuleFromSupabase(_userId, id).catch(() => {});
+    deleteCustomModuleFromConvex(_userId, id).catch(() => {});
   }
 }
 
 /**
- * Update an existing custom module's name/emoji in both caches and Supabase.
+ * Update an existing custom module's name/emoji in both caches and Convex.
  */
 export function updateCustomModule(id: string, patch: { name?: string; emoji?: string }): void {
   const list = loadCustomModules();
@@ -357,9 +357,9 @@ export function updateCustomModule(id: string, patch: { name?: string; emoji?: s
   if (patch.emoji !== undefined) target.emoji = patch.emoji;
   saveCustomModules(list);
 
-  // Fire-and-forget to Supabase.
+  // Fire-and-forget to Convex.
   if (_userId) {
-    updateCustomModuleInSupabase(_userId, target).catch(() => {});
+    updateCustomModuleInConvex(_userId, target).catch(() => {});
   }
 }
 
@@ -393,7 +393,7 @@ export function isModuleArchived(id: string): boolean {
  * already exists with `is_custom=true`.
  *
  * Updates the in-memory cache + localStorage synchronously so the
- * caller can re-render immediately, then fires the Supabase write
+ * caller can re-render immediately, then fires the Convex write
  * fire-and-forget. No read-modify-write — the diff against the desired
  * state lives on the row itself.
  */
@@ -408,7 +408,7 @@ export function archiveModule(
   cacheArchived(set);
 
   if (_userId) {
-    setArchivedInSupabase(_userId, String(id), true, {
+    setArchivedInConvex(_userId, String(id), true, {
       category,
       isCustom: isCustomId(String(id)),
     }).catch(() => {});
@@ -423,6 +423,6 @@ export function unarchiveModule(id: ModuleId | string): void {
   cacheArchived(set);
 
   if (_userId) {
-    setArchivedInSupabase(_userId, String(id), false).catch(() => {});
+    setArchivedInConvex(_userId, String(id), false).catch(() => {});
   }
 }

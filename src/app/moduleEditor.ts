@@ -167,7 +167,7 @@ function handleEditSave(meta: TileMeta, values: Record<string, string>): boolean
   if (meta.isCustom && !emoji) return false;
 
   if (meta.isCustom) {
-    // Update in both localStorage cache and Supabase.
+    // Update in both localStorage cache and Convex.
     updateCustomModule(meta.id, { name, emoji });
   } else {
     saveOverride(meta.id, {

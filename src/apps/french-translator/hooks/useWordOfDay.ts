@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { convex } from '../../../lib/convex';
+import { api } from '../../../../convex/_generated/api';
 import { getAuthState, subscribeAuth } from '../../../domains/auth/store';
 import {
   getCachedContent,
   saveCachedContent,
-} from '../../../infra/supabase/content-cache';
+} from '../../../infra/convex/content-cache';
 import { getTodayKey } from '../../../core/time';
 import { generateWordOfDay } from '../lib/wordOfDay';
 import { loadWordOfDay } from '../lib/loadWordOfDay';
@@ -17,19 +18,9 @@ const CONTENT_TYPE = 'french-word-of-day';
  * `french_history` so the generator never repeats and can scale difficulty.
  */
 async function fetchLearnedWords(
-  userId: string
+  _userId: string
 ): Promise<{ words: string[]; count: number }> {
-  const { data, error } = await supabase
-    .from('french_history')
-    .select('source_text')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(200);
-
-  if (error) throw error;
-  const words = (data ?? [])
-    .map((row) => (row.source_text as string | null)?.trim())
-    .filter((w): w is string => !!w);
+  const words = (await convex.query(api.frenchHistory.learnedWords, {})) as string[];
   return { words, count: words.length };
 }
 
