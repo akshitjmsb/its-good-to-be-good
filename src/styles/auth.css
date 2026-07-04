@@ -39,9 +39,10 @@ body.home-vintage-lock.auth-gate-open {
     margin-bottom: 1.75rem;
 }
 
-.auth-gate__brand svg {
+.auth-gate__brand svg,
+.auth-gate__brand img {
     width: 72px;
-    height: 72px;
+    height: auto;
     stroke: var(--home-ink);
     color: var(--home-ink);
     margin: 0 auto 0.75rem;

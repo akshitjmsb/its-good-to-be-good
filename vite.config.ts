@@ -21,6 +21,7 @@ export default defineConfig(() => {
           includeAssets: [
             'manifest.json',
             'vitruvian-logo.svg',
+            'vitruvian-man-mono.png',
             'apple-touch-icon.png',
             'icon-192.png',
             'icon-512.png',
