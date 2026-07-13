@@ -5,9 +5,7 @@ import {
   getModulesByCategory,
 } from '../registry';
 
-const EXPECTED_JOURNEY_IDS = ['todo', 'being', 'tennis', 'khyaali-bhoot'];
-
-const EXPECTED_LEARN_IDS = ['food'];
+const EXPECTED_TOOL_IDS = ['todo', 'khyaali-bhoot', 'tennis', 'food'];
 
 describe('module registry', () => {
   it('has unique module ids', () => {
@@ -16,12 +14,9 @@ describe('module registry', () => {
     expect(uniqueIds.size).toBe(ids.length);
   });
 
-  it('returns exact journey and learn module sets', () => {
+  it('returns the exact purpose-tool set', () => {
     const journeyIds = getModulesByCategory('journey').map(module => module.id);
-    const learnIds = getModulesByCategory('learn').map(module => module.id);
-
-    expect(journeyIds.sort()).toEqual(EXPECTED_JOURNEY_IDS.sort());
-    expect(learnIds.sort()).toEqual(EXPECTED_LEARN_IDS.sort());
+    expect(journeyIds.sort()).toEqual([...EXPECTED_TOOL_IDS].sort());
   });
 
   it('contains complete metadata for every module', () => {
@@ -30,16 +25,15 @@ describe('module registry', () => {
       expect(module.entrySelector.trim().length).toBeGreaterThan(0);
       expect(module.handlerName.trim().length).toBeGreaterThan(0);
       expect(module.ownerPath.trim().length).toBeGreaterThan(0);
-      expect(['journey', 'learn']).toContain(module.category);
-      expect(['page', 'modal']).toContain(module.surface);
+      expect(module.category).toBe('journey');
+      expect(module.surface).toBe('page');
     });
   });
 
-  it('keeps Food as a Learn module with modal surface', () => {
-    const food = getModuleById('food');
-    expect(food).toBeDefined();
-    expect(food?.category).toBe('learn');
-    expect(food?.surface).toBe('modal');
-    expect(food?.modalId).toBe('food-modal');
+  it('gives every tool a page of its own (square tools always navigate)', () => {
+    MODULE_REGISTRY.forEach(module => {
+      expect(module.routeHref).toMatch(/\.html$/);
+    });
+    expect(getModuleById('food')?.routeHref).toBe('food.html');
   });
 });

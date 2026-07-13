@@ -6,14 +6,9 @@
     <title>It's Good To Be King</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Only the core UI face (Special Elite) is render-blocking. The Indic
-         script faces (Devanagari/Nastaliq/Gurmukhi) are loaded on demand by
-         src/utils/scriptFonts.ts the first time a quote in that script shows. -->
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="src/styles/index.css">
     <link rel="stylesheet" href="src/styles/home-lock.css">
-    
-    <!-- All styles moved to external CSS files -->
     <link rel="icon" href="/vitruvian-logo.svg" type="image/svg+xml">
     <!-- Apple / PWA home-screen -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -25,10 +20,8 @@
 </head>
 <body class="home-vintage-lock">
 
-    <div id="app-container" class="app-container">
-        <!-- Slim top bar: refresh on the left, quantum timer on the right.
-             Sits flush against the top of the app-container so the hero area
-             (logo + title + chip + date) gets its own clean stack. -->
+    <div id="app-container" class="app-container home-page being-page meditate-page">
+        <!-- Slim top bar: refresh on the left, quantum timer on the right. -->
         <div class="app-header-bar">
             <button id="header-refresh-btn" type="button" class="header-refresh" aria-label="Reload">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -42,118 +35,185 @@
             </div>
         </div>
 
-        <!-- Main App Header -->
         <header class="text-center mb-6">
-            <div class="logo-container flex justify-center">
-                <img class="logo-svg" src="/vitruvian-man-mono.png"
-                     alt="It's Good To Be King — Vitruvian Man logo"
-                     width="398" height="366" decoding="async" />
-            </div>
             <h1>It's Good To Be King</h1>
-            <!-- User chip — populated by src/auth/userChip.ts when signed in.
-                 Tucks under the title as quiet journal metadata. -->
+            <!-- User chip — populated by src/auth/userChip.ts when signed in. -->
             <div id="user-chip" class="user-chip" hidden></div>
             <p id="current-datetime" class="text-xs mt-2"></p>
         </header>
 
-        <!-- Sync Status -->
-        <div id="sync-status" class="hidden text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-md mb-4 transition-opacity duration-300"></div>
+        <!-- The orbit — the circle holds the soul, the square holds the work.
+             The Vitruvian Man sits at the centre (da Vinci's own circle and
+             square). Soul practices ride the circle and act in place; purpose
+             tools sit at the corners of the square and open their own page. -->
+        <section class="being-orbit" role="group" aria-label="Practices and tools">
+            <div class="being-orbit__figure" aria-hidden="true">
+                <img class="being-figure" src="/vitruvian-man-mono.png"
+                     alt="" width="398" height="366" decoding="async" />
+            </div>
 
-        <!-- DYNAMIC MODULE (Always visible, content adapts based on time) -->
-        <div id="day-module" class="module active">
-            <!-- REFLECT SECTION -->
-            <section>
-                <div id="life-pointer-display-day" class="life-pointer"></div>
-            </section>
-            
-            <!-- NAVIGATION BUTTONS SECTION -->
-            <section class="mobile-section">
-                <div class="nav-carousel-wrap">
-                    <!-- Icons are inlined statically so they paint with the document
-                         (no JS/auth wait). They mirror src/utils/iconRenderer.ts, which
-                         re-injects the same SVGs and layers any user emoji overrides on top. -->
-                    <div class="nav-carousel" role="list">
-                        <a href="todo.html"
-                           class="nav-item"
-                           role="listitem"
-                           data-module="todo"
-                           aria-label="Navigate to To do page"
-                           title="View and manage your tasks">
-                            <div class="nav-icon" id="todo-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4" /><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg></div>
-                            <h2>To do</h2>
-                        </a>
+            <!-- Circle — soul practices. Breathe / OM / Sleep reveal the
+                 meditation timer (OM & Sleep also toggle their ambient loop
+                 via meditate ids). Stretch / Weights open the practice panel. -->
+            <button type="button" class="orbit-icon" data-mode="breathe" style="--a:0deg" aria-label="Breathe — guided session">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.5 -2.5"></path>
+                        <path d="M3 12h15a3 3 0 1 1 -3 3"></path>
+                        <path d="M4 16h6.5a2 2 0 1 1 -2 2"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">Breathe</span>
+            </button>
 
-                        <a href="tennis.html"
-                           class="nav-item"
-                           role="listitem"
-                           data-module="tennis"
-                           aria-label="Navigate to Tennis page"
-                           title="A roadmap from cradle to centre court">
-                            <div class="nav-icon" id="tennis-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M3.5 6.5c4 2.5 13 2.5 17 0" /><path d="M3.5 17.5c4-2.5 13-2.5 17 0" /></svg></div>
-                            <h2>Tennis</h2>
-                        </a>
+            <button id="meditate-om-toggle" type="button" class="orbit-icon" data-mode="om" style="--a:72deg" aria-pressed="false" aria-label="OM chant">
+                <span class="orbit-icon__glyph orbit-icon__glyph--om" aria-hidden="true">ॐ</span>
+                <span class="orbit-icon__label">OM</span>
+            </button>
 
-                        <a href="khyaali-bhoot.html"
-                           class="nav-item"
-                           role="listitem"
-                           data-module="khyaali-bhoot"
-                           aria-label="Navigate to Khyaali Bhoot page"
-                           title="Talk to your imaginary ghosts">
-                            <div class="nav-icon" id="khyaali-bhoot-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 2 5 5.6 5 10v7c0 1 .5 2 1.5 2s1.5-1 2-2c.5 1 1.5 2 2.5 2s2-1 2.5-2c.5 1 1 2 2 2s1.5-1 1.5-2v-7c0-4.4-3-8-7-8z" /><circle cx="9.5" cy="10" r="0.5" /><circle cx="14.5" cy="10" r="0.5" /></svg></div>
-                            <h2>Khyaali Bhoot</h2>
-                        </a>
+            <button id="meditate-sleep-toggle" type="button" class="orbit-icon" data-mode="sleep" style="--a:144deg" aria-pressed="false" aria-label="Sleep music">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">Sleep</span>
+            </button>
 
-                        <a href="being.html"
-                           class="nav-item"
-                           role="listitem"
-                           data-module="being"
-                           aria-label="Navigate to Being page"
-                           title="Meditate and exercise — stillness and movement">
-                            <div class="nav-icon" id="being-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c1.7 2.4 1.7 5.6 0 8-1.7-2.4-1.7-5.6 0-8z" /><path d="M12 12C9.8 9.4 6.7 8 3.5 8c0 3.3 2.3 6.2 5.5 7" /><path d="M12 12c2.2-2.6 5.3-4 8.5-4 0 3.3-2.3 6.2-5.5 7" /><path d="M4 12.5c1.6 2.7 4.7 4.5 8 4.5s6.4-1.8 8-4.5" /></svg></div>
-                            <h2>Being</h2>
-                        </a>
-                    </div>
+            <button type="button" class="orbit-icon" data-panel="stretch" style="--a:216deg" aria-expanded="false" aria-controls="being-panel" aria-label="Stretch routines">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <circle cx="9" cy="4.5" r="1.8"></circle>
+                        <path d="M9 6.5c0 4 3 5.5 6.5 5.5"></path>
+                        <path d="M9 8.5l-2.5 6"></path>
+                        <path d="M15 12l2 5"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">Stretch</span>
+            </button>
+
+            <button type="button" class="orbit-icon" data-panel="weights" style="--a:288deg" aria-expanded="false" aria-controls="being-panel" aria-label="Weight training plan">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="12" r="3"></circle>
+                        <path d="M9 12h6"></path>
+                        <path d="M6 9v6"></path>
+                        <path d="M18 9v6"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">Weights</span>
+            </button>
+
+            <!-- Square — purpose tools. Plain links; each opens its own page
+                 and accumulates a record. -->
+            <a class="orbit-tool orbit-tool--tl" href="todo.html" data-module="todo" aria-label="To do — the day's task list">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M9 12l2 2 4-4"></path>
+                        <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">To do</span>
+            </a>
+
+            <a class="orbit-tool orbit-tool--tr" href="khyaali-bhoot.html" data-module="khyaali-bhoot" aria-label="Khyaali Bhoot — talk to your imaginary ghosts">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M12 2C8 2 5 5.6 5 10v7c0 1 .5 2 1.5 2s1.5-1 2-2c.5 1 1.5 2 2.5 2s2-1 2.5-2c.5 1 1 2 2 2s1.5-1 1.5-2v-7c0-4.4-3-8-7-8z"></path>
+                        <circle cx="9.5" cy="10" r="0.5"></circle>
+                        <circle cx="14.5" cy="10" r="0.5"></circle>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">Khyaali</span>
+            </a>
+
+            <a class="orbit-tool orbit-tool--bl" href="tennis.html" data-module="tennis" aria-label="Tennis — practice log">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M4 7c4 2.5 12 2.5 16 0"></path>
+                        <path d="M4 17c4-2.5 12-2.5 16 0"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">Tennis</span>
+            </a>
+
+            <a class="orbit-tool orbit-tool--br" href="food.html" data-module="food" aria-label="Food — meal calendar">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <circle cx="12" cy="12" r="8"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M8 4l1 1 1-1"></path>
+                        <path d="M16 4l-1 1-1-1"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">Food</span>
+            </a>
+        </section>
+
+        <!-- Activity stage — hidden until a practice is tapped. Holds either the
+             meditation timer (Breathe / OM / Sleep) or the practice panel
+             (Stretch / Weights). One at a time. -->
+        <section id="being-stage" class="being-stage" aria-live="polite" hidden>
+            <button type="button" id="being-stage-close" class="being-stage__close" aria-label="Return to stillness">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M15 6l-6 6 6 6"></path>
+                </svg>
+                <span>Stillness</span>
+            </button>
+
+            <!-- Meditation timer — revealed by Breathe / OM / Sleep. -->
+            <div id="being-meditate" class="being-meditate" hidden>
+                <div class="meditate-stage">
+                    <div id="meditate-display" class="meditate-display" role="timer" aria-live="polite">10:00</div>
+                    <p id="meditate-status" class="meditate-status">10 minute session</p>
+                    <button id="meditate-toggle" type="button" class="panel-btn meditate-btn" aria-pressed="false">Start</button>
+                    <section class="meditate-presets" aria-label="Session length">
+                        <button type="button" class="meditate-preset" data-duration="5" aria-pressed="false">5 min</button>
+                        <button type="button" class="meditate-preset" data-duration="10" aria-pressed="true">10 min</button>
+                        <button type="button" class="meditate-preset" data-duration="20" aria-pressed="false">20 min</button>
+                    </section>
                 </div>
-                <!-- Today's lift — a quiet glance at the PPL+Upper rotation.
-                     Schedule mirrors src/modules/being/exercise-data.ts; it's a
-                     fixed weekly rotation so the day map is inlined here rather
-                     than imported, keeping this paint with the document. -->
-                <p id="today-workout" class="workout-indicator" aria-live="polite"></p>
-                <script>
-                    (function () {
-                        var schedule = ['Rest', 'Push', 'Rest', 'Pull', 'Rest', 'Legs', 'Upper'];
-                        var el = document.getElementById('today-workout');
-                        if (el) el.textContent = schedule[new Date().getDay()] + ' Day';
-                    })();
-                </script>
-            </section>
 
-            <!-- LEARN SECTION -->
-            <section class="mobile-section">
-                <h2>Learn</h2>
-                <div class="category-grid grid grid-cols-3 gap-3 sm:gap-2 mt-3">
-                    <button id="food-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="food" aria-label="Open Food module" title="Open Food module">
-                        <div class="module-icon" id="food-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" /><path d="M8 4l1 1 1-1" /><path d="M8 6v8" /><path d="M7 6h2" /><path d="M7 8h2" /><path d="M16 4l-1 1-1-1" /><path d="M16 6v8" /><path d="M15 6h2" /><path d="M15 8h2" /><circle cx="12" cy="12" r="3" /></svg></div>
-                        <h3 class="font-bold text-sm sm:text-xs">Food</h3>
+                <section id="meditate-breath" class="meditate-breath" aria-hidden="true">
+                    <div class="meditate-breath__stage">
+                        <div class="meditate-breath__ring"></div>
+                        <span class="meditate-breath__label meditate-breath__label--inhale">Breathe in</span>
+                        <span class="meditate-breath__label meditate-breath__label--hold-1">Hold</span>
+                        <span class="meditate-breath__label meditate-breath__label--exhale">Breathe out</span>
+                        <span class="meditate-breath__label meditate-breath__label--hold-2">Hold</span>
+                    </div>
+                </section>
+
+                <!-- Breath-chime toggle. OM & Sleep live in the orbit; the chime
+                     is the one ambient control that belongs with the timer. -->
+                <div class="being-sounds" role="group" aria-label="Ambient sound">
+                    <button id="meditate-breathe-toggle" type="button" class="being-sound-toggle" aria-pressed="true" aria-label="Breath chime">
+                        <span class="being-sound-toggle__glyph">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <path d="M11 5 6 9H2v6h4l5 4z"></path>
+                                <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+                                <path d="M19 5a9 9 0 0 1 0 14"></path>
+                            </svg>
+                        </span>
+                        <span>Chime</span>
                     </button>
                 </div>
-            </section>
-        </div>
-
-        <footer class="text-center mt-8 py-4 border-t">
-            <!-- Footer content removed for simplicity -->
-        </footer>
-    
-        <!-- MODALS -->
-        <div id="food-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-4xl w-full mx-auto max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 id="food-modal-title" class="text-lg font-bold">Food</h3>
-                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="food-content" class="overflow-y-auto flex-grow"></div>
             </div>
-        </div>
+
+            <!-- Practice panel — Stretch / Weights. -->
+            <div id="being-panel" class="being-panel" hidden></div>
+        </section>
+
+        <!-- A quiet contemplation verse — the resting thought below the orbit. -->
+        <section class="being-verse" aria-label="Contemplation verse" lang="hi">
+            <p class="being-verse__line">ज़िंदगी भर किया इंतज़ार,</p>
+            <p class="being-verse__line">होगा मेरे साथ भी कुछ चमत्कार।</p>
+            <p class="being-verse__line">पर ज़िंदगी का मेरी कुछ ना बना,</p>
+            <p class="being-verse__line">मैं खटखटाता रहा किस्मत मुझे करती रही मना।</p>
+            <p class="being-verse__line being-verse__line--punch">पर चमत्कार हुआ तब, जादूगर जब मैं खुद बना।</p>
+        </section>
     </div>
 
     <script type="module" src="src/index.tsx"></script>

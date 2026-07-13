@@ -8,113 +8,71 @@ import { MODULE_REGISTRY } from '../registry';
 const repoRoot = process.cwd();
 const scriptPath = path.join(repoRoot, 'scripts/check-architecture.mjs');
 
+const SOUL_PRACTICE_HOOKS = [
+  'data-mode="breathe"',
+  'data-mode="om"',
+  'data-mode="sleep"',
+  'data-panel="stretch"',
+  'data-panel="weights"',
+];
+
 function writeFixtureFile(root: string, relativePath: string, content: string) {
   const fullPath = path.join(root, relativePath);
   mkdirSync(path.dirname(fullPath), { recursive: true });
   writeFileSync(fullPath, content, 'utf8');
 }
 
-function entryIdFromSelector(selector: string): string {
-  if (!selector.startsWith('#')) {
-    throw new Error(`Only id selectors are supported in this fixture: ${selector}`);
-  }
-  return selector.slice(1);
+function homeHtml(): string {
+  const toolLinks = MODULE_REGISTRY.map(
+    module =>
+      `<a href="${module.routeHref}" data-module="${module.dataModule ?? module.id}">${module.displayName}</a>`
+  ).join('\n');
+  const soulHooks = SOUL_PRACTICE_HOOKS.map(
+    hook => `<button ${hook}></button>`
+  ).join('\n');
+  return `<html><body>${toolLinks}${soulHooks}</body></html>`;
 }
 
 function createFixture(root: string) {
-  const learnModules = MODULE_REGISTRY.filter(module => module.category === 'learn');
-  const modalLearnModules = learnModules.filter(module => module.surface === 'modal');
-
-  const cardHtml = learnModules
-    .map(module => {
-      const id = entryIdFromSelector(module.entrySelector);
-      const dataModule = module.dataModule ?? module.id;
-      return `<button id="${id}" data-module="${dataModule}">${module.displayName}</button>`;
-    })
-    .join('\n');
-
-  const modalHtml = modalLearnModules
-    .map(module => `<div id="${module.modalId}"></div>`)
-    .join('\n');
-
-  writeFixtureFile(
-    root,
-    'index.html',
-    `<html><body>${cardHtml}${modalHtml}</body></html>`
-  );
-
-  const modalManagerContent = [
-    'export function mapHandlers() {',
-    ...learnModules.map(module => `  // ${module.handlerName}`),
-    ...learnModules
-      .filter(module => module.surface === 'page' && module.routeHref)
-      .map(module => `  // route: ${module.routeHref}`),
-    '}',
-  ].join('\n');
-  writeFixtureFile(
-    root,
-    'src/components/modals/modalManager.ts',
-    modalManagerContent
-  );
-
-  const factoryContent = [
-    'export const MODAL_CONFIGS = {',
-    ...modalLearnModules.map(module => `  ${module.id}: { modalId: '${module.modalId}' },`),
-    '};',
-  ].join('\n');
-  writeFixtureFile(root, 'src/components/modals/factory.ts', factoryContent);
+  writeFixtureFile(root, 'index.html', homeHtml());
 
   MODULE_REGISTRY.forEach(module => {
-    // Modules whose ownerPath is a shared file (already populated above with
-    // real fixture content) must not be clobbered by the bare 'export {};'
-    // stub below.
-    if (module.ownerPath === 'src/components/modals/modalManager.ts') return;
-    if (module.ownerPath === 'src/components/modals/factory.ts') return;
+    // Each tool's page must exist on disk.
+    writeFixtureFile(root, module.routeHref, '<html><body></body></html>');
 
-    if (module.surface === 'page' && module.routeHref) {
-      // Page-surface controllers carry their routeHref so the wiring
-      // check (now also looking at ownerPath) can find it.
-      writeFixtureFile(
-        root,
-        module.ownerPath,
-        `export const route = '${module.routeHref}';\nexport function init(){}\nexport function destroy(){}\n`
-      );
-    } else {
-      writeFixtureFile(
-        root,
-        module.ownerPath,
-        'export function init(){}\nexport function destroy(){}\n'
-      );
-    }
+    // Controllers export the required lifecycle.
+    writeFixtureFile(
+      root,
+      module.ownerPath,
+      `export const route = '${module.routeHref}';\nexport function init(){}\nexport function destroy(){}\n`
+    );
 
-    // When the ownerPath lives inside src/modules/<id>/, the manifest
-    // module check also needs the required sidecar files for that folder.
+    // Manifest + sidecars for the src/modules/<id>/ folder checks.
     const modulesMatch = module.ownerPath.match(/^src\/modules\/([^/]+)\//);
-    if (modulesMatch) {
-      const dirName = modulesMatch[1];
-      const baseDir = `src/modules/${dirName}`;
-      const manifest: Record<string, unknown> = {
-        id: dirName,
-        displayName: module.displayName,
-        category: module.category,
-        surface: module.surface,
-        icon: './icon.svg',
-        version: '0.1.0',
-        renderer: 'dom',
-      };
-      writeFixtureFile(
-        root,
-        `${baseDir}/manifest.json`,
-        JSON.stringify(manifest, null, 2) + '\n'
-      );
-      writeFixtureFile(root, `${baseDir}/icon.svg`, '<svg></svg>\n');
-      writeFixtureFile(root, `${baseDir}/AGENT.md`, `# ${module.displayName}\n`);
-      writeFixtureFile(
-        root,
-        `${baseDir}/__tests__/sentinel.test.ts`,
-        "import { it } from 'vitest'; it('exists', () => {});\n"
-      );
-    }
+    if (!modulesMatch) return;
+    const dirName = modulesMatch[1];
+    const baseDir = `src/modules/${dirName}`;
+    const manifest = {
+      id: dirName,
+      displayName: module.displayName,
+      category: module.category,
+      surface: module.surface,
+      icon: './icon.svg',
+      version: '0.1.0',
+      renderer: 'dom',
+    };
+    writeFixtureFile(
+      root,
+      `${baseDir}/manifest.json`,
+      JSON.stringify(manifest, null, 2) + '\n'
+    );
+    writeFixtureFile(root, `${baseDir}/icon.svg`, '<svg></svg>\n');
+    writeFixtureFile(root, `${baseDir}/AGENT.md`, `# ${module.displayName}\n`);
+    writeFixtureFile(
+      root,
+      `${baseDir}/__tests__/sentinel.test.ts`,
+      "import { it } from 'vitest'; it('exists', () => {});\n"
+    );
   });
 
   writeFixtureFile(root, 'src/domains/safe.ts', 'export const safe = true;');
@@ -163,18 +121,18 @@ describe('architecture check script', () => {
     }
   });
 
-  it('fails when a learn module card selector is missing', () => {
-    const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'arch-check-selector-fail-'));
+  it('fails when a tool link or soul practice hook is missing from the home', () => {
+    const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'arch-check-orbit-fail-'));
     try {
       createFixture(fixtureRoot);
 
-      // Remove the canonical learn card selector on purpose.
+      // A home without tool links or practice hooks must fail both checks.
       writeFixtureFile(fixtureRoot, 'index.html', '<html><body></body></html>');
 
       const result = runArchitectureCheck(fixtureRoot);
       expect(result.status).toBe(1);
-      expect(result.stderr).toContain('food');
-      expect(result.stderr).toContain('missing card selector');
+      expect(result.stderr).toContain('not linked from the home orbit');
+      expect(result.stderr).toContain('Soul practice hook');
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }

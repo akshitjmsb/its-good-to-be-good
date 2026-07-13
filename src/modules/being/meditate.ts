@@ -8,7 +8,7 @@
  * duration row.
  *
  * `initMeditate()` wires the UI against the `meditate-*` DOM ids. It is
- * called by the Being page entry (`src/pages/being.ts`) for the Meditate
+ * called by the Being page entry (the orbit home) for the Meditate
  * tab; it returns early if those elements aren't present.
  *
  * All audio uses HTMLAudioElement, not Web Audio. iOS Safari's
@@ -18,8 +18,8 @@
 import {
   type CountdownState,
   formatCountdownTime,
-} from '../core/countdownTimer';
-import { getMeditateTimer } from '../core/meditateTimer';
+} from '../../core/countdownTimer';
+import { getMeditateTimer } from '../../core/meditateTimer';
 
 const STATUS_RUNNING = 'Stay with the breath.';
 const STATUS_COMPLETE = 'Session complete.';

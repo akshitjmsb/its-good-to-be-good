@@ -11,9 +11,7 @@ const repoRoot = process.env.ARCH_CHECK_ROOT
   ? path.resolve(process.env.ARCH_CHECK_ROOT)
   : path.resolve(__dirname, '..');
 
-const EXPECTED_JOURNEY_MODULES = ['todo', 'being', 'tennis', 'khyaali-bhoot'];
-
-const EXPECTED_LEARN_MODULES = ['food'];
+const EXPECTED_JOURNEY_MODULES = ['todo', 'khyaali-bhoot', 'tennis', 'food'];
 
 const errors = [];
 
@@ -45,11 +43,6 @@ function assertExactSet(name, actualValues, expectedValues) {
   if (actual !== expected) {
     fail(`${name} mismatch. expected=[${expected}] actual=[${actual}]`);
   }
-}
-
-function extractElementAttributesById(htmlText, id) {
-  const pattern = new RegExp(`<[^>]*\\sid="${id}"[^>]*>`, 'm');
-  return htmlText.match(pattern)?.[0] ?? null;
 }
 
 function isForbiddenLayerImport(specifier) {
@@ -104,8 +97,8 @@ function validateRegistryBasics() {
     'handlerName',
     'ownerPath',
   ];
-  const validCategories = new Set(['journey', 'learn']);
-  const validSurfaces = new Set(['page', 'modal']);
+  const validCategories = new Set(['journey']);
+  const validSurfaces = new Set(['page']);
 
   const seenIds = new Set();
   for (const module of MODULE_REGISTRY_DATA) {
@@ -134,18 +127,23 @@ function validateRegistryBasics() {
     module => module.category === 'journey'
   ).map(module => module.id);
 
-  const learnIds = MODULE_REGISTRY_DATA.filter(
-    module => module.category === 'learn'
-  ).map(module => module.id);
-
   assertExactSet('Journey module IDs', journeyIds, EXPECTED_JOURNEY_MODULES);
-  assertExactSet('Learn module IDs', learnIds, EXPECTED_LEARN_MODULES);
 }
 
-async function validateLearnModuleWiring() {
+// The orbit-home ring contract: every registered module is a purpose tool —
+// it has its own page and a square tile on the home that links to it. The
+// soul practices act in place on the home and are NOT registry entries;
+// their markup hooks are asserted directly.
+const EXPECTED_SOUL_PRACTICES = [
+  'data-mode="breathe"',
+  'data-mode="om"',
+  'data-mode="sleep"',
+  'data-panel="stretch"',
+  'data-panel="weights"',
+];
+
+async function validateToolWiring() {
   const indexHtml = await readText('index.html');
-  const modalManager = await readText('src/components/modals/modalManager.ts');
-  const modalFactory = await readText('src/components/modals/factory.ts');
 
   for (const module of MODULE_REGISTRY_DATA) {
     const ownerExists = await fileExists(module.ownerPath);
@@ -153,73 +151,25 @@ async function validateLearnModuleWiring() {
       fail(`Owner path is missing for "${module.id}": ${module.ownerPath}`);
     }
 
-    if (module.category !== 'learn') continue;
-
-    if (!module.entrySelector.startsWith('#')) {
-      fail(`Learn module "${module.id}" must use an id selector entrySelector.`);
+    if (!module.routeHref) {
+      fail(`Tool "${module.id}" must have a routeHref page (square tools always navigate).`);
       continue;
     }
 
-    const entryId = module.entrySelector.slice(1);
-    const elementAttributes = extractElementAttributesById(indexHtml, entryId);
-    if (!elementAttributes) {
-      fail(`Learn module "${module.id}" is missing card selector "${module.entrySelector}" in index.html.`);
-      continue;
+    if (!(await fileExists(module.routeHref))) {
+      fail(`Tool "${module.id}" page "${module.routeHref}" does not exist.`);
     }
 
-    if (module.dataModule) {
-      const expectedDataModule = `data-module="${module.dataModule}"`;
-      if (!elementAttributes.includes(expectedDataModule)) {
-        fail(
-          `Learn module "${module.id}" has non-canonical data-module on #${entryId}. expected ${expectedDataModule}.`
-        );
-      }
-    }
-
-    if (!modalManager.includes(module.handlerName)) {
+    if (!indexHtml.includes(`href="${module.routeHref}"`)) {
       fail(
-        `Learn module "${module.id}" handler "${module.handlerName}" is not mapped in modalManager.ts.`
+        `Tool "${module.id}" is not linked from the home orbit (missing href="${module.routeHref}" in index.html).`
       );
     }
+  }
 
-    if (module.surface === 'modal') {
-      if (!module.modalId) {
-        fail(`Learn module "${module.id}" is modal-surface but missing modalId.`);
-        continue;
-      }
-
-      if (!indexHtml.includes(`id="${module.modalId}"`)) {
-        fail(`Learn module "${module.id}" modal "${module.modalId}" is missing in index.html.`);
-      }
-
-      const modalIdSingle = `modalId: '${module.modalId}'`;
-      const modalIdDouble = `modalId: "${module.modalId}"`;
-      if (!modalFactory.includes(modalIdSingle) && !modalFactory.includes(modalIdDouble)) {
-        fail(
-          `Learn module "${module.id}" modalId "${module.modalId}" is not declared in MODAL_CONFIGS.`
-        );
-      }
-    }
-
-    if (module.surface === 'page') {
-      if (!module.routeHref) {
-        fail(`Learn module "${module.id}" is page-surface but missing routeHref.`);
-        continue;
-      }
-      // Phase 2: the route can now live inside the module's controller
-      // as well — that's where navigation is owned in the v2 architecture.
-      let ownerSource = '';
-      if (await fileExists(module.ownerPath)) {
-        ownerSource = await readText(module.ownerPath);
-      }
-      const wiredInModalManager = modalManager.includes(module.routeHref);
-      const wiredInIndex = indexHtml.includes(`href="${module.routeHref}"`);
-      const wiredInOwner = ownerSource.includes(module.routeHref);
-      if (!wiredInModalManager && !wiredInIndex && !wiredInOwner) {
-        fail(
-          `Learn module "${module.id}" route "${module.routeHref}" is not wired in modalManager.ts, index.html, or the module's ownerPath.`
-        );
-      }
+  for (const hook of EXPECTED_SOUL_PRACTICES) {
+    if (!indexHtml.includes(hook)) {
+      fail(`Soul practice hook ${hook} is missing from the home orbit.`);
     }
   }
 }
@@ -516,7 +466,7 @@ async function validateModuleImportBoundaries() {
 
 async function main() {
   validateRegistryBasics();
-  await validateLearnModuleWiring();
+  await validateToolWiring();
   await validateLayerBoundaries();
   await validateUnsafeAiHtmlInjection();
   await validateNoExperimentalImports();

@@ -1527,9 +1527,11 @@ button.preview-card {
    upright. Nothing is "selected" until one is tapped. */
 
 .being-orbit {
-    /* Diameter follows the viewport on a phone, capped on wider screens. */
-    --orbit-d: min(86vw, 23rem);
-    --orbit-r: calc(var(--orbit-d) * 0.45);
+    /* Diameter follows the viewport on a phone, capped on wider screens.
+       The circle rides well inside the square so the five practices on the
+       ring clear the four tool tiles in the corners at every width. */
+    --orbit-d: min(92vw, 26rem);
+    --orbit-r: calc(var(--orbit-d) * 0.34);
     position: relative;
     width: var(--orbit-d);
     height: var(--orbit-d);
@@ -1564,7 +1566,7 @@ button.preview-card {
 
 .being-figure {
     display: block;
-    height: 11rem;
+    height: 9.5rem;
     width: auto;
     opacity: 0.95;
     border: 1px solid var(--home-border, #e5e7eb);
@@ -1650,6 +1652,61 @@ button.preview-card {
     letter-spacing: 0.04em;
     line-height: 1;
 }
+
+/* Square guide — the earthly frame. Drawn at the container edge so the four
+   purpose tools sit on its corners, echoing the square of da Vinci's drawing
+   (the circle holds the soul, the square holds the work). */
+.being-orbit::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.75rem;
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* Purpose tools — square tiles anchored in the corners of the frame. Same
+   quiet ingredients as the orbit icons, but square, and they navigate to
+   their own page instead of acting in place. */
+.orbit-tool {
+    position: absolute;
+    width: 4rem;
+    height: 4rem;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    color: #6b7280;
+    font-family: 'Special Elite', monospace;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+        color 0.2s ease, box-shadow 0.2s ease;
+    z-index: 1;
+}
+
+.orbit-tool:hover {
+    background-color: #f8f9fa;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+.orbit-tool:focus-visible {
+    outline: 2px solid #374151;
+    outline-offset: 2px;
+}
+
+.orbit-tool--tl { top: 0; left: 0; }
+.orbit-tool--tr { top: 0; right: 0; }
+.orbit-tool--bl { bottom: 0; left: 0; }
+.orbit-tool--br { bottom: 0; right: 0; }
 
 /* Activity stage — appears below the orbit once a practice is tapped. */
 .being-stage {

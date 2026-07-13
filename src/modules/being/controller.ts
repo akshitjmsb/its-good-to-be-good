@@ -1,15 +1,15 @@
 /**
  * Being module controller.
  *
- * Being is a standalone Vite entry at `src/pages/being.ts` with its own
- * `being.html`. It merges the former Meditate and Exercise modules behind
- * a two-tab interface (Meditate / Exercise). From the home this controller
- * navigates to the route; the page entry mounts both tabs.
+ * Being IS the home page since the orbit reorg: the Vitruvian Man at the
+ * centre, soul practices on the circle, purpose tools on the square. The
+ * runtime lives in `orbit.ts` / `meditate.ts` and is mounted by the home
+ * bootstrap. `being.html` is a redirect stub kept for old bookmarks.
  */
 
 import type { ModuleContext, ModuleController } from '../../sdk/types';
 
-export const BEING_ROUTE = 'being.html';
+export const BEING_ROUTE = 'index.html';
 
 export function navigateBeingPage(): void {
   if (typeof window === 'undefined') return;

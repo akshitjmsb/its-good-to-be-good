@@ -7,7 +7,6 @@ import type {
 
 export type {
   JourneyModuleId,
-  LearnModuleId,
   ModuleCategory,
   ModuleDefinition,
   ModuleId,

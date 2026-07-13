@@ -1,16 +1,19 @@
-export type JourneyModuleId =
-  | 'todo'
-  | 'being'
-  | 'tennis'
-  | 'khyaali-bhoot';
+/**
+ * Module registry types.
+ *
+ * Since the orbit-home reorg every registered module is a "purpose tool":
+ * a page of its own, reached from a square tile on the home. (The soul
+ * practices — Breathe / OM / Sleep / Stretch / Weights — belong to the
+ * home itself and are not registry entries.)
+ */
 
-export type LearnModuleId = 'food';
+export type JourneyModuleId = 'todo' | 'khyaali-bhoot' | 'tennis' | 'food';
 
-export type ModuleId = JourneyModuleId | LearnModuleId;
+export type ModuleId = JourneyModuleId;
 
-export type ModuleCategory = 'journey' | 'learn';
+export type ModuleCategory = 'journey';
 
-export type ModuleSurface = 'page' | 'modal';
+export type ModuleSurface = 'page';
 
 export interface BaseModuleDefinition {
   displayName: string;
@@ -18,9 +21,7 @@ export interface BaseModuleDefinition {
   entrySelector: string;
   handlerName: string;
   ownerPath: string;
-  iconElementId?: string;
-  modalId?: string;
-  routeHref?: string;
+  routeHref: string;
   dataModule?: string;
 }
 
@@ -29,9 +30,4 @@ export interface JourneyModuleDefinition extends BaseModuleDefinition {
   category: 'journey';
 }
 
-export interface LearnModuleDefinition extends BaseModuleDefinition {
-  id: LearnModuleId;
-  category: 'learn';
-}
-
-export type ModuleDefinition = JourneyModuleDefinition | LearnModuleDefinition;
+export type ModuleDefinition = JourneyModuleDefinition;

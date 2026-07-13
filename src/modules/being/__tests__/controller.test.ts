@@ -16,7 +16,7 @@ describe('Being module controller', () => {
     expect(BeingModule.destroy).toBe(destroy);
   });
 
-  it('routes to being.html', () => {
-    expect(BEING_ROUTE).toBe('being.html');
+  it('routes to the home page (Being IS the home)', () => {
+    expect(BEING_ROUTE).toBe('index.html');
   });
 });

@@ -1,41 +1,39 @@
 /**
- * Being page entry.
+ * The orbit — the home page's resting state.
  *
- * Being rests on stillness: the Vitruvian Man sits at the centre of the page
- * and every practice orbits it as a quiet captioned icon. Nothing else is on
- * screen until a practice is tapped.
+ * The Vitruvian Man sits at the centre of the page. The soul practices
+ * orbit it on the circle as quiet captioned icons; the purpose tools sit
+ * at the corners of the square as plain links to their own pages.
  *
- * Tapping an orbit icon enters that practice on the activity stage below:
+ * Tapping a circle icon enters that practice on the activity stage below:
  *
  *   • Breathe / OM / Sleep reveal the meditation timer (`#being-meditate`).
  *     OM and Sleep additionally toggle their ambient loop — they keep the
  *     `meditate-om-toggle` / `meditate-sleep-toggle` ids that `initMeditate()`
  *     binds. The breath-chime toggle lives inside the timer panel.
- *   • Stretch / Weights / Tennis / Guided open the practice panel
- *     (`#being-panel`). Link practices open a YouTube routine in a new tab;
- *     Weights mounts the deterministic offline workout calendar inline.
+ *   • Stretch / Weights open the practice panel (`#being-panel`). Stretch
+ *     opens a YouTube routine in a new tab; Weights mounts the
+ *     deterministic offline workout calendar inline.
  *
- * One thing is on the stage at a time. The "Stillness" control (or re-tapping
- * the open icon) closes the stage and returns to the orbit.
+ * One thing is on the stage at a time. The "Stillness" control (or
+ * re-tapping the open icon) closes the stage and returns to the orbit.
  */
 
 import { initMeditate } from './meditate';
-import { renderExerciseView } from '../modules/being/exercise-view';
-import { STRETCH_ROUTINES } from '../modules/being/exercise-data';
-import {
-  GUIDED_MEDITATIONS,
-  TENNIS_STRETCHES,
-  TENNIS_CHANNELS,
-  type PracticeLink,
-  type ChannelLink,
-} from '../modules/being/practices';
-import { escapeHtml } from '../utils/escapeHtml';
+import { renderExerciseView } from './exercise-view';
+import { STRETCH_ROUTINES } from './exercise-data';
+import { escapeHtml } from '../../utils/escapeHtml';
 
-type PanelName = 'stretch' | 'weights' | 'tennis' | 'guided';
+interface PracticeLink {
+  label: string;
+  url: string;
+}
+
+type PanelName = 'stretch' | 'weights';
 type MeditateMode = 'breathe' | 'om' | 'sleep';
 type Mode = PanelName | MeditateMode;
 
-document.addEventListener('DOMContentLoaded', () => {
+export function initBeingOrbit(): void {
   // Timer + breath ring + ambient audio toggles (chime / OM / Sleep).
   initMeditate();
 
@@ -72,35 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
-  // Watch & Learn — curated channels. Each row is a single link that opens the
-  // YouTube channel direct: a monoline play glyph, the channel name, its note.
-  function renderChannels(
-    title: string,
-    channels: ReadonlyArray<ChannelLink>
-  ): string {
-    const glyph =
-      '<svg class="channel-link__glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
-      '<rect x="3" y="5.5" width="18" height="13" rx="3"></rect>' +
-      '<path d="M10.5 9.5l4 2.5-4 2.5z"></path>' +
-      '</svg>';
-    const rows = channels
-      .map(
-        channel =>
-          `<button type="button" class="channel-link" data-link="${escapeHtml(channel.url)}">` +
-          glyph +
-          `<span class="channel-link__text">` +
-          `<span class="channel-link__name">${escapeHtml(channel.name)}</span>` +
-          `<span class="channel-link__note">${escapeHtml(channel.note)}</span>` +
-          `</span>` +
-          `</button>`
-      )
-      .join('');
-    return (
-      `<p class="being-panel__title">${escapeHtml(title)}</p>` +
-      `<div class="channel-list">${rows}</div>`
-    );
-  }
-
   function showPanel(name: PanelName): void {
     if (!panel) return;
     panel.innerHTML = '';
@@ -113,12 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
       renderExerciseView(host, new Date());
     } else if (name === 'stretch') {
       panel.innerHTML = renderLinks('Stretch', stretchLinks());
-    } else if (name === 'tennis') {
-      panel.innerHTML =
-        renderLinks('Tennis stretch', TENNIS_STRETCHES) +
-        renderChannels('Watch & learn', TENNIS_CHANNELS);
-    } else if (name === 'guided') {
-      panel.innerHTML = renderLinks('Guided meditation', GUIDED_MEDITATIONS);
     }
   }
 
@@ -190,11 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // renders (data-link); the exercise view owns its own clicks separately.
   panel.addEventListener('click', event => {
     const target = event.target as HTMLElement | null;
-    const link = target?.closest<HTMLButtonElement>(
-      '.stretch-btn[data-link], .channel-link[data-link]'
-    );
+    const link = target?.closest<HTMLButtonElement>('.stretch-btn[data-link]');
     if (link?.dataset.link) {
       window.open(link.dataset.link, '_blank', 'noopener');
     }
   });
-});
+}

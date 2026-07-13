@@ -1,56 +1,18 @@
-import { getCanonicalTime } from '../core/time';
-import type { MultilingualQuote } from '../components/reflection';
+/**
+ * Home bootstrap — the orbit page.
+ *
+ * The home is mostly static markup (the orbit paints with the document).
+ * This file owns the thin runtime around it: the auth gate, the user chip,
+ * the header clock, the quantum timer widget, and the orbit interactions
+ * (meditation timer + practice panels) via `initBeingOrbit()`.
+ */
+
 import { initializeQuantumTimer } from '../components/quantumTimer';
-import { initializeModalManager } from '../components/modals/modalManager';
-import {
-  renderModuleIcons,
-  renderNavigationIcons,
-} from '../utils/iconRenderer';
-import { createAppRuntimeStore } from './state';
-import { renderDayModule } from './render';
-import { initializeSchedulers } from './scheduler';
-import { createAppRouter } from './moduleRouter';
+import { initBeingOrbit } from '../modules/being/orbit';
 import { initAuthStore, getAuthState } from '../domains/auth/store';
 import { onAuthStateChange } from '../domains/auth/session';
 import { mountLoginGate } from '../auth/loginGate';
 import { mountUserChip } from '../auth/userChip';
-
-// The quote-of-the-day dataset (~150 multilingual quotes) is the single
-// largest contributor to the home bundle, yet only one quote shows per day.
-// Code-split it: the home shell paints from the static markup + icons, then
-// this chunk loads and the quote fills in. Cached after first resolve so the
-// periodic re-render doesn't re-fetch it.
-let getQuote: ((date: Date) => MultilingualQuote) | null = null;
-async function loadQuoteFor(date: Date): Promise<MultilingualQuote> {
-  if (!getQuote) {
-    ({ getPhilosophicalQuoteInstant: getQuote } = await import(
-      '../components/reflection'
-    ));
-  }
-  return getQuote(date);
-}
-
-function showSyncStatus(message: string, isFinal = false): void {
-  const statusEl = document.getElementById('sync-status');
-  if (!statusEl) return;
-
-  statusEl.textContent = message;
-  statusEl.classList.remove('hidden');
-  if (!isFinal) return;
-
-  setTimeout(() => {
-    statusEl.classList.add('hidden');
-  }, 2500);
-}
-
-function handleGlobalError(error: Error, context: string): void {
-  console.error(`Error in ${context}:`, error);
-  showSyncStatus(`⚠️ Error in ${context}. Please refresh the page.`);
-  setTimeout(() => {
-    const statusEl = document.getElementById('sync-status');
-    statusEl?.classList.add('hidden');
-  }, 5000);
-}
 
 function updateTimeDisplay(): void {
   const options: Intl.DateTimeFormatOptions = {
@@ -87,77 +49,14 @@ export async function bootstrapApp(): Promise<void> {
   const chipHost = document.getElementById('user-chip');
   if (chipHost) mountUserChip(chipHost);
 
-  const store = createAppRuntimeStore();
-  const userId = authedUser.id;
-  store.setState({ currentUserId: userId });
+  // PWA users on the home screen have no browser refresh button.
+  document
+    .getElementById('header-refresh-btn')
+    ?.addEventListener('click', () => window.location.reload());
 
-  function updateDateDerivedData() {
-    const { now } = getCanonicalTime();
-    const activeContentDate = new Date(now);
-    const todayKey = activeContentDate.toISOString().split('T')[0];
-    store.setState({ activeContentDate, todayKey });
-  }
+  updateTimeDisplay();
+  setInterval(updateTimeDisplay, 1000);
 
-  async function mainRender() {
-    updateDateDerivedData();
-
-    const dayModule = document.getElementById(
-      'day-module'
-    ) as HTMLElement | null;
-    dayModule?.classList.add('active');
-
-    renderNavigationIcons();
-
-    // Quote dataset is code-split — the shell + icons above paint without it,
-    // then the quote-of-the-day fills in once the chunk resolves.
-    const { activeContentDate } = store.getState();
-    const todaysQuote = await loadQuoteFor(activeContentDate);
-    store.setState({ todaysQuote });
-    renderDayModule(todaysQuote);
-  }
-
-  async function initializeApp() {
-    try {
-      renderModuleIcons();
-      updateDateDerivedData();
-      initializeQuantumTimer();
-
-      // PWA users on the home screen have no browser refresh button.
-      document
-        .getElementById('header-refresh-btn')
-        ?.addEventListener('click', () => window.location.reload());
-
-      const appContainer = document.getElementById('app-container');
-      if (appContainer) {
-        const { activeContentDate, todayKey } = store.getState();
-        const router = createAppRouter({
-          today: () => store.getState().todayKey,
-        });
-        initializeModalManager(
-          appContainer,
-          {
-            dates: { active: activeContentDate },
-            keys: { today: todayKey },
-          },
-          { router }
-        );
-        // start() applies the current hash — so a deep link like
-        // `index.html#/m/coffee` opens Coffee on cold-start.
-        void router.start();
-      }
-
-      updateTimeDisplay();
-      await mainRender();
-
-      initializeSchedulers({
-        updateTime: updateTimeDisplay,
-        periodicRender: mainRender,
-        onError: handleGlobalError,
-      });
-    } catch (error) {
-      handleGlobalError(error as Error, 'app initialization');
-    }
-  }
-
-  await initializeApp();
+  initializeQuantumTimer();
+  initBeingOrbit();
 }

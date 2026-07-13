@@ -3,16 +3,11 @@
  *
  * Curated meal calendar — fully offline, deterministic per (week-start,
  * day-of-week, meal). The `init` lifecycle renders into the host
- * container; `showFoodModal(date, todayKey)` is the legacy surface that
- * `modalManager.ts` still calls.
+ * container; the page entry at `src/pages/food.ts` mounts the view for
+ * `food.html`.
  */
 
 import type { ModuleContext, ModuleController } from '../../sdk/types';
-import {
-  MODAL_CONFIGS,
-  getModalElements,
-  setModalTitle,
-} from '../../core/modal-factory';
 import { renderFoodView } from './view';
 
 let teardownHost: (() => void) | null = null;
@@ -35,17 +30,3 @@ export const destroy: ModuleController['destroy'] = () => {
 
 export const FoodModule: ModuleController = { init, destroy };
 export default FoodModule;
-
-/* ── Legacy surface used by src/components/modals/modalManager.ts ─────── */
-
-export function showFoodModal(date: Date, _todayKey: string): void {
-  const elements = getModalElements(MODAL_CONFIGS.food);
-  if (!elements) return;
-
-  // Curated pool is fully local — no API call, no loading state needed.
-  elements.modal.classList.remove('hidden');
-  elements.modal.classList.add('flex');
-  elements.content.innerHTML = '';
-  setModalTitle(elements, 'Food');
-  renderFoodView(elements.content, date);
-}

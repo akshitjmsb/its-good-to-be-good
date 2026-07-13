@@ -82,9 +82,11 @@ export default defineConfig(() => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             todo: path.resolve(__dirname, 'todo.html'),
+            // being.html is a redirect stub — Being was promoted to the home.
             being: path.resolve(__dirname, 'being.html'),
             tennis: path.resolve(__dirname, 'tennis.html'),
             'khyaali-bhoot': path.resolve(__dirname, 'khyaali-bhoot.html'),
+            food: path.resolve(__dirname, 'food.html'),
           }
         }
       }
