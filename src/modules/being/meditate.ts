@@ -18,8 +18,8 @@
 import {
   type CountdownState,
   formatCountdownTime,
-} from '../../core/countdownTimer';
-import { getMeditateTimer } from '../../core/meditateTimer';
+} from '../../platform/countdownTimer';
+import { getMeditateTimer } from '../../platform/meditateTimer';
 
 const STATUS_RUNNING = 'Stay with the breath.';
 const STATUS_COMPLETE = 'Session complete.';

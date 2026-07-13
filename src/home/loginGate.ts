@@ -12,7 +12,7 @@ import {
   signInWithMagicLink,
   signInWithPassword,
   signUpWithPassword,
-} from '../domains/auth/session';
+} from '../platform/auth/session';
 
 type Mode = 'sign-in' | 'sign-up' | 'magic-link';
 

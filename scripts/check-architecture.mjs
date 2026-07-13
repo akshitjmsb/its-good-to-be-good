@@ -1,9 +1,23 @@
 #!/usr/bin/env node
 
+/**
+ * Architecture guard — enforces the orbit contract.
+ *
+ * The manifest IS the registry: every folder under `src/modules/` carries a
+ * manifest.json whose `ring` encodes the home's geometry.
+ *
+ *   • circle — a soul practice. Acts in place on the home, never navigates.
+ *     No routeHref, no page, no entry.
+ *   • square — a purpose tool. Has its own page (routeHref) mounted by the
+ *     module's entry.ts and linked from a corner tile on the home.
+ *
+ * Layering: modules sit on sdk/platform/utils; platform and sdk never
+ * reach up into home/ or modules/.
+ */
+
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MODULE_REGISTRY_DATA } from '../src/domains/modules/registry.data.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,7 +25,29 @@ const repoRoot = process.env.ARCH_CHECK_ROOT
   ? path.resolve(process.env.ARCH_CHECK_ROOT)
   : path.resolve(__dirname, '..');
 
-const EXPECTED_JOURNEY_MODULES = ['todo', 'khyaali-bhoot', 'tennis', 'food'];
+// The exact module set. Adding a module means updating this map on purpose.
+const EXPECTED_MODULES = {
+  being: 'circle',
+  todo: 'square',
+  'khyaali-bhoot': 'square',
+  tennis: 'square',
+  food: 'square',
+};
+
+// The soul practices act in place on the home; these markup hooks are their
+// only registration.
+const EXPECTED_SOUL_HOOKS = [
+  'data-mode="breathe"',
+  'data-mode="om"',
+  'data-mode="sleep"',
+  'data-panel="stretch"',
+  'data-panel="weights"',
+];
+
+const ALLOWED_RINGS = new Set(['circle', 'square']);
+const ALLOWED_RENDERERS = new Set(['dom']);
+const ALLOWED_PERMISSIONS = new Set(['storage', 'timer']);
+const SEMVER_REGEX = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 const errors = [];
 
@@ -20,8 +56,7 @@ function fail(message) {
 }
 
 async function readText(relativePath) {
-  const fullPath = path.join(repoRoot, relativePath);
-  return fs.readFile(fullPath, 'utf8');
+  return fs.readFile(path.join(repoRoot, relativePath), 'utf8');
 }
 
 async function fileExists(relativePath) {
@@ -33,42 +68,17 @@ async function fileExists(relativePath) {
   }
 }
 
-function sorted(values) {
-  return [...values].sort();
-}
-
-function assertExactSet(name, actualValues, expectedValues) {
-  const actual = sorted(actualValues).join(',');
-  const expected = sorted(expectedValues).join(',');
-  if (actual !== expected) {
-    fail(`${name} mismatch. expected=[${expected}] actual=[${actual}]`);
-  }
-}
-
-function isForbiddenLayerImport(specifier) {
-  return /(^|\/)(components|app)(\/|$)/.test(specifier);
-}
-
-const ALLOWED_PERMISSIONS = new Set(['storage', 'timer']);
-const ALLOWED_CATEGORIES = new Set(['journey', 'learn']);
-const ALLOWED_SURFACES = new Set(['page', 'modal', 'external']);
-const ALLOWED_RENDERERS = new Set(['dom']);
-const SEMVER_REGEX = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
-
 async function listSubdirectories(relativeDir) {
-  const startPath = path.join(repoRoot, relativeDir);
   if (!(await fileExists(relativeDir))) return [];
-  const entries = await fs.readdir(startPath, { withFileTypes: true });
-  return entries
-    .filter(entry => entry.isDirectory())
-    .map(entry => entry.name);
+  const entries = await fs.readdir(path.join(repoRoot, relativeDir), {
+    withFileTypes: true,
+  });
+  return entries.filter(e => e.isDirectory()).map(e => e.name);
 }
 
 async function collectCodeFiles(relativeDir) {
-  const startPath = path.join(repoRoot, relativeDir);
   if (!(await fileExists(relativeDir))) return [];
   const files = [];
-
   async function walk(dirPath) {
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {
@@ -82,211 +92,41 @@ async function collectCodeFiles(relativeDir) {
       }
     }
   }
-
-  await walk(startPath);
+  await walk(path.join(repoRoot, relativeDir));
   return files;
 }
 
-function validateRegistryBasics() {
-  const requiredFields = [
-    'id',
-    'displayName',
-    'category',
-    'surface',
-    'entrySelector',
-    'handlerName',
-    'ownerPath',
-  ];
-  const validCategories = new Set(['journey']);
-  const validSurfaces = new Set(['page']);
-
-  const seenIds = new Set();
-  for (const module of MODULE_REGISTRY_DATA) {
-    for (const field of requiredFields) {
-      const value = module[field];
-      if (typeof value !== 'string' || value.trim().length === 0) {
-        fail(`Registry entry "${module.id}" is missing required field "${field}".`);
-      }
-    }
-
-    if (!validCategories.has(module.category)) {
-      fail(`Registry entry "${module.id}" has invalid category "${module.category}".`);
-    }
-
-    if (!validSurfaces.has(module.surface)) {
-      fail(`Registry entry "${module.id}" has invalid surface "${module.surface}".`);
-    }
-
-    if (seenIds.has(module.id)) {
-      fail(`Duplicate module id "${module.id}" found in registry.`);
-    }
-    seenIds.add(module.id);
+function collectImportSpecifiers(line) {
+  const specifiers = [];
+  for (const match of line.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
+    specifiers.push(match[1]);
   }
-
-  const journeyIds = MODULE_REGISTRY_DATA.filter(
-    module => module.category === 'journey'
-  ).map(module => module.id);
-
-  assertExactSet('Journey module IDs', journeyIds, EXPECTED_JOURNEY_MODULES);
+  const sideEffect = /^\s*import\s+['"]([^'"]+)['"]/.exec(line);
+  if (sideEffect) specifiers.push(sideEffect[1]);
+  return specifiers;
 }
 
-// The orbit-home ring contract: every registered module is a purpose tool —
-// it has its own page and a square tile on the home that links to it. The
-// soul practices act in place on the home and are NOT registry entries;
-// their markup hooks are asserted directly.
-const EXPECTED_SOUL_PRACTICES = [
-  'data-mode="breathe"',
-  'data-mode="om"',
-  'data-mode="sleep"',
-  'data-panel="stretch"',
-  'data-panel="weights"',
-];
+/* ── Manifest + ring contract ─────────────────────────────────────────── */
 
-async function validateToolWiring() {
-  const indexHtml = await readText('index.html');
-
-  for (const module of MODULE_REGISTRY_DATA) {
-    const ownerExists = await fileExists(module.ownerPath);
-    if (!ownerExists) {
-      fail(`Owner path is missing for "${module.id}": ${module.ownerPath}`);
-    }
-
-    if (!module.routeHref) {
-      fail(`Tool "${module.id}" must have a routeHref page (square tools always navigate).`);
-      continue;
-    }
-
-    if (!(await fileExists(module.routeHref))) {
-      fail(`Tool "${module.id}" page "${module.routeHref}" does not exist.`);
-    }
-
-    if (!indexHtml.includes(`href="${module.routeHref}"`)) {
-      fail(
-        `Tool "${module.id}" is not linked from the home orbit (missing href="${module.routeHref}" in index.html).`
-      );
-    }
-  }
-
-  for (const hook of EXPECTED_SOUL_PRACTICES) {
-    if (!indexHtml.includes(hook)) {
-      fail(`Soul practice hook ${hook} is missing from the home orbit.`);
-    }
-  }
-}
-
-async function validateLayerBoundaries() {
-  const files = [
-    ...(await collectCodeFiles('src/domains')),
-    ...(await collectCodeFiles('src/infra')),
-  ];
-  const fromImportRegex = /from\s+['"]([^'"]+)['"]/g;
-  const sideEffectImportRegex = /^\s*import\s+['"]([^'"]+)['"]/;
-
-  for (const relativeFile of files) {
-    const source = await readText(relativeFile);
-    const lines = source.split('\n');
-    lines.forEach((line, lineIndex) => {
-      const specifiers = [];
-
-      for (const match of line.matchAll(fromImportRegex)) {
-        specifiers.push(match[1]);
-      }
-
-      const sideEffectMatch = sideEffectImportRegex.exec(line);
-      if (sideEffectMatch) {
-        specifiers.push(sideEffectMatch[1]);
-      }
-
-      specifiers.forEach(specifier => {
-        if (isForbiddenLayerImport(specifier)) {
-          fail(
-            `Forbidden import in ${relativeFile}:${lineIndex + 1} -> "${specifier}" (domains/infra cannot import app/components).`
-          );
-        }
-      });
-    });
-  }
-}
-
-async function validateUnsafeAiHtmlInjection() {
-  const files = [
-    ...(await collectCodeFiles('src/app')),
-    ...(await collectCodeFiles('src/components')),
-    ...(await collectCodeFiles('src/pages')),
-    ...(await collectCodeFiles('src/apps')),
-  ];
-
-  const dangerousPatterns = [
-    {
-      regex: /innerHTML\s*=\s*.*response\.text/,
-      label: 'innerHTML with response.text',
-    },
-    {
-      regex: /setModalContent\([^)]*response\.text/,
-      label: 'setModalContent with response.text',
-    },
-  ];
-
-  for (const relativeFile of files) {
-    const source = await readText(relativeFile);
-    const lines = source.split('\n');
-    lines.forEach((line, lineIndex) => {
-      dangerousPatterns.forEach(pattern => {
-        if (pattern.regex.test(line)) {
-          fail(
-            `Unsafe AI HTML injection in ${relativeFile}:${lineIndex + 1} -> ${pattern.label}. Escape content before rendering.`
-          );
-        }
-      });
-    });
-  }
-}
-
-async function validateNoExperimentalImports() {
-  const files = await collectCodeFiles('src');
-  const fromImportRegex = /from\s+['"]([^'"]+)['"]/g;
-  const sideEffectImportRegex = /^\s*import\s+['"]([^'"]+)['"]/;
-
-  for (const relativeFile of files) {
-    const source = await readText(relativeFile);
-    const lines = source.split('\n');
-    lines.forEach((line, lineIndex) => {
-      const specifiers = [];
-
-      for (const match of line.matchAll(fromImportRegex)) {
-        specifiers.push(match[1]);
-      }
-
-      const sideEffectMatch = sideEffectImportRegex.exec(line);
-      if (sideEffectMatch) {
-        specifiers.push(sideEffectMatch[1]);
-      }
-
-      specifiers.forEach(specifier => {
-        if (specifier.includes('archive/experimental-src')) {
-          fail(
-            `Forbidden experimental import in ${relativeFile}:${lineIndex + 1} -> "${specifier}".`
-          );
-        }
-      });
-    });
-  }
-}
-
-async function validateManifestModules() {
+async function validateModules() {
   const moduleDirs = await listSubdirectories('src/modules');
-  if (moduleDirs.length === 0) return [];
 
-  const manifests = [];
-  const seenIds = new Set();
+  const expectedIds = Object.keys(EXPECTED_MODULES).sort().join(',');
+  const actualIds = [...moduleDirs].sort().join(',');
+  if (expectedIds !== actualIds) {
+    fail(`Module set mismatch. expected=[${expectedIds}] actual=[${actualIds}]`);
+  }
+
+  let indexHtml = '';
+  try {
+    indexHtml = await readText('index.html');
+  } catch {
+    fail('index.html is missing.');
+  }
 
   for (const dirName of moduleDirs) {
-    const baseRel = path.join('src/modules', dirName);
-    const manifestRel = path.join(baseRel, 'manifest.json');
-    const controllerRel = path.join(baseRel, 'controller.ts');
-    const iconRel = path.join(baseRel, 'icon.svg');
-    const agentRel = path.join(baseRel, 'AGENT.md');
-    const testsRel = path.join(baseRel, '__tests__');
+    const baseDir = `src/modules/${dirName}`;
+    const manifestRel = `${baseDir}/manifest.json`;
 
     if (!(await fileExists(manifestRel))) {
       fail(`Module "${dirName}" is missing manifest.json.`);
@@ -302,27 +142,18 @@ async function validateManifestModules() {
     }
 
     if (manifest.id !== dirName) {
-      fail(
-        `Module "${dirName}" manifest.id "${manifest.id}" does not match its folder name.`
-      );
+      fail(`Module "${dirName}" manifest.id "${manifest.id}" does not match its folder name.`);
     }
-
-    if (seenIds.has(manifest.id)) {
-      fail(`Duplicate module id "${manifest.id}" in src/modules/.`);
-    }
-    seenIds.add(manifest.id);
-
     if (typeof manifest.displayName !== 'string' || manifest.displayName.trim() === '') {
       fail(`Module "${dirName}" manifest is missing displayName.`);
     }
-    if (!ALLOWED_CATEGORIES.has(manifest.category)) {
-      fail(`Module "${dirName}" manifest has invalid category "${manifest.category}".`);
+    if (!ALLOWED_RINGS.has(manifest.ring)) {
+      fail(`Module "${dirName}" manifest has invalid ring "${manifest.ring}".`);
     }
-    if (!ALLOWED_SURFACES.has(manifest.surface)) {
-      fail(`Module "${dirName}" manifest has invalid surface "${manifest.surface}".`);
-    }
-    if (manifest.renderer !== undefined && !ALLOWED_RENDERERS.has(manifest.renderer)) {
-      fail(`Module "${dirName}" manifest has invalid renderer "${manifest.renderer}".`);
+    if (EXPECTED_MODULES[dirName] && manifest.ring !== EXPECTED_MODULES[dirName]) {
+      fail(
+        `Module "${dirName}" ring "${manifest.ring}" does not match the expected "${EXPECTED_MODULES[dirName]}".`
+      );
     }
     if (typeof manifest.icon !== 'string' || !manifest.icon.endsWith('.svg')) {
       fail(`Module "${dirName}" manifest.icon must be a relative .svg path.`);
@@ -330,8 +161,8 @@ async function validateManifestModules() {
     if (typeof manifest.version !== 'string' || !SEMVER_REGEX.test(manifest.version)) {
       fail(`Module "${dirName}" manifest.version must be valid semver (was "${manifest.version}").`);
     }
-    if (manifest.surface === 'external' && (typeof manifest.externalUrl !== 'string' || manifest.externalUrl.trim() === '')) {
-      fail(`Module "${dirName}" has surface=external but no externalUrl.`);
+    if (manifest.renderer !== undefined && !ALLOWED_RENDERERS.has(manifest.renderer)) {
+      fail(`Module "${dirName}" manifest has invalid renderer "${manifest.renderer}".`);
     }
     if (manifest.permissions !== undefined) {
       if (!Array.isArray(manifest.permissions)) {
@@ -344,119 +175,132 @@ async function validateManifestModules() {
         }
       }
     }
-    if (manifest.dependencies !== undefined) {
-      if (!Array.isArray(manifest.dependencies)) {
-        fail(`Module "${dirName}" manifest.dependencies must be an array of module ids.`);
+
+    // The ring contract.
+    if (manifest.ring === 'circle') {
+      if (manifest.routeHref !== undefined) {
+        fail(
+          `Circle module "${dirName}" must not have a routeHref — circle practices act in place and never navigate.`
+        );
+      }
+    }
+
+    if (manifest.ring === 'square') {
+      if (typeof manifest.routeHref !== 'string' || !manifest.routeHref.endsWith('.html')) {
+        fail(`Square module "${dirName}" must have an .html routeHref — square tools always navigate.`);
       } else {
-        for (const dep of manifest.dependencies) {
-          if (typeof dep !== 'string' || dep.trim() === '') {
-            fail(`Module "${dirName}" has an invalid dependency entry "${dep}".`);
+        if (!(await fileExists(manifest.routeHref))) {
+          fail(`Square module "${dirName}" page "${manifest.routeHref}" does not exist.`);
+        }
+        if (!indexHtml.includes(`href="${manifest.routeHref}"`)) {
+          fail(
+            `Square module "${dirName}" is not linked from the home orbit (missing href="${manifest.routeHref}" in index.html).`
+          );
+        }
+        if (!(await fileExists(`${baseDir}/entry.ts`))) {
+          fail(`Square module "${dirName}" is missing entry.ts (the page's script entry).`);
+        } else if (await fileExists(manifest.routeHref)) {
+          const pageHtml = await readText(manifest.routeHref);
+          if (!pageHtml.includes(`${baseDir}/entry.ts`)) {
+            fail(
+              `Page "${manifest.routeHref}" does not load ${baseDir}/entry.ts.`
+            );
           }
         }
       }
     }
 
-    if (!(await fileExists(controllerRel))) {
-      fail(`Module "${dirName}" is missing controller.ts.`);
-    } else {
-      const controllerSrc = await readText(controllerRel);
-      // Accept either named exports (export const init / export function init)
-      // or a default export bundling init/destroy.
-      const exportsInit = /export\s+(?:const|function|async\s+function|let)\s+init\b/.test(controllerSrc)
-        || /\binit\b\s*:/.test(controllerSrc);
-      const exportsDestroy = /export\s+(?:const|function|let)\s+destroy\b/.test(controllerSrc)
-        || /\bdestroy\b\s*:/.test(controllerSrc);
-      if (!exportsInit) {
-        fail(`Module "${dirName}" controller.ts must export an "init" function.`);
-      }
-      if (!exportsDestroy) {
-        fail(`Module "${dirName}" controller.ts must export a "destroy" function.`);
-      }
-    }
-
-    if (!(await fileExists(iconRel))) {
+    // Folder contract: icon + AGENT.md always; tests whenever the module has
+    // logic beyond its entry file.
+    if (!(await fileExists(`${baseDir}/icon.svg`))) {
       fail(`Module "${dirName}" is missing icon.svg.`);
     }
-    if (!(await fileExists(agentRel))) {
+    if (!(await fileExists(`${baseDir}/AGENT.md`))) {
       fail(`Module "${dirName}" is missing AGENT.md.`);
     }
-    if (!(await fileExists(testsRel))) {
-      fail(`Module "${dirName}" is missing __tests__/ directory.`);
-    } else {
-      const testFiles = await collectCodeFiles(testsRel);
-      const hasTest = testFiles.some(file => /\.test\.(t|j)sx?$/.test(file));
-      if (!hasTest) {
-        fail(`Module "${dirName}" __tests__/ has no *.test.ts file.`);
+
+    const codeFiles = await collectCodeFiles(baseDir);
+    const logicFiles = codeFiles.filter(
+      file =>
+        !file.endsWith(`${path.sep}entry.ts`) &&
+        !file.includes(`${path.sep}__tests__${path.sep}`)
+    );
+    if (logicFiles.length > 0) {
+      const testFiles = codeFiles.filter(file => /\.test\.tsx?$/.test(file));
+      if (testFiles.length === 0) {
+        fail(`Module "${dirName}" has logic files but no tests in __tests__/.`);
       }
     }
-
-    manifests.push({ ...manifest, dirName });
   }
 
-  return manifests;
+  for (const hook of EXPECTED_SOUL_HOOKS) {
+    if (indexHtml && !indexHtml.includes(hook)) {
+      fail(`Soul practice hook ${hook} is missing from the home orbit.`);
+    }
+  }
 }
 
+/* ── Layering ─────────────────────────────────────────────────────────── */
+
+// platform/, sdk/, and utils/ are the foundation — they must never reach up
+// into home/ or modules/.
+async function validateFoundationBoundaries() {
+  const files = [
+    ...(await collectCodeFiles('src/platform')),
+    ...(await collectCodeFiles('src/sdk')),
+    ...(await collectCodeFiles('src/utils')),
+  ];
+
+  for (const relativeFile of files) {
+    const source = await readText(relativeFile);
+    source.split('\n').forEach((line, lineIndex) => {
+      for (const specifier of collectImportSpecifiers(line)) {
+        if (!specifier.startsWith('.')) continue;
+        const resolved = path.relative(
+          repoRoot,
+          path.resolve(path.dirname(path.join(repoRoot, relativeFile)), specifier)
+        );
+        if (resolved.startsWith('src/home') || resolved.startsWith('src/modules')) {
+          fail(
+            `Forbidden import in ${relativeFile}:${lineIndex + 1} -> "${specifier}" (platform/sdk/utils cannot import home/ or modules/).`
+          );
+        }
+      }
+    });
+  }
+}
+
+// Modules import only their own folder + the foundation. Never home/, never
+// each other.
 async function validateModuleImportBoundaries() {
   const moduleDirs = await listSubdirectories('src/modules');
-  if (moduleDirs.length === 0) return;
-
-  const fromImportRegex = /from\s+['"]([^'"]+)['"]/g;
-  const sideEffectImportRegex = /^\s*import\s+['"]([^'"]+)['"]/;
 
   for (const dirName of moduleDirs) {
-    const baseRel = path.join('src/modules', dirName);
-    const files = await collectCodeFiles(baseRel);
+    const baseDir = `src/modules/${dirName}`;
+    const files = await collectCodeFiles(baseDir);
 
     for (const relativeFile of files) {
       const source = await readText(relativeFile);
-      const lines = source.split('\n');
+      source.split('\n').forEach((line, lineIndex) => {
+        for (const specifier of collectImportSpecifiers(line)) {
+          if (!specifier.startsWith('.') && !specifier.startsWith('/')) continue;
 
-      lines.forEach((line, lineIndex) => {
-        const specifiers = [];
-        for (const match of line.matchAll(fromImportRegex)) {
-          specifiers.push(match[1]);
-        }
-        const sideEffectMatch = sideEffectImportRegex.exec(line);
-        if (sideEffectMatch) specifiers.push(sideEffectMatch[1]);
-
-        for (const specifier of specifiers) {
-          // Bare module specifiers (node_modules) and relative imports.
-          if (!specifier.startsWith('.') && !specifier.startsWith('/')) {
-            // node_modules — fine.
-            continue;
-          }
-          // Resolve relative to the file's directory.
           const fileDir = path.dirname(path.join(repoRoot, relativeFile));
-          const resolved = path.resolve(fileDir, specifier);
-          const relativeFromRoot = path.relative(repoRoot, resolved);
+          const resolved = path.relative(repoRoot, path.resolve(fileDir, specifier));
 
-          // Allow imports that stay within the module's own folder.
-          if (relativeFromRoot.startsWith(baseRel + path.sep) || relativeFromRoot === baseRel) {
+          if (resolved.startsWith(baseDir + path.sep) || resolved === baseDir) {
             continue;
           }
-          // Allow imports from sdk/, core/, utils/, lib/, types/, infra/,
-          // and domains/. infra/ and domains/ stay reachable so modules can
-          // continue calling AI providers and domain services directly while
-          // the SDK adapters fill in over Phase 3. Modules can never reach
-          // into app/, components/, pages/, apps/, or other modules — those
-          // are higher-level UI organisation.
-          const allowedPrefixes = [
-            'src/sdk',
-            'src/core',
-            'src/utils',
-            'src/lib',
-            'src/types',
-            'src/infra',
-            'src/domains',
-          ];
+
+          const allowedPrefixes = ['src/sdk', 'src/platform', 'src/utils', 'src/types'];
           const isAllowed = allowedPrefixes.some(
-            prefix => relativeFromRoot === prefix || relativeFromRoot.startsWith(prefix + path.sep)
+            prefix => resolved === prefix || resolved.startsWith(prefix + path.sep) || resolved === `${prefix}.ts`
           );
           if (isAllowed) continue;
 
           fail(
             `Module import boundary violated in ${relativeFile}:${lineIndex + 1} -> "${specifier}". ` +
-              `Modules can only import from sdk/, core/, utils/, lib/, types/, infra/, domains/, their own folder, or node_modules.`
+              `Modules can only import from sdk/, platform/, utils/, types, their own folder, or node_modules.`
           );
         }
       });
@@ -464,14 +308,42 @@ async function validateModuleImportBoundaries() {
   }
 }
 
+/* ── Unsafe HTML injection ────────────────────────────────────────────── */
+
+async function validateUnsafeHtmlInjection() {
+  const files = [
+    ...(await collectCodeFiles('src/home')),
+    ...(await collectCodeFiles('src/modules')),
+  ];
+
+  const dangerousPatterns = [
+    {
+      regex: /innerHTML\s*=\s*.*response\.text/,
+      label: 'innerHTML with response.text',
+    },
+  ];
+
+  for (const relativeFile of files) {
+    const source = await readText(relativeFile);
+    source.split('\n').forEach((line, lineIndex) => {
+      dangerousPatterns.forEach(pattern => {
+        if (pattern.regex.test(line)) {
+          fail(
+            `Unsafe HTML injection in ${relativeFile}:${lineIndex + 1} -> ${pattern.label}. Escape content before rendering.`
+          );
+        }
+      });
+    });
+  }
+}
+
+/* ── Main ─────────────────────────────────────────────────────────────── */
+
 async function main() {
-  validateRegistryBasics();
-  await validateToolWiring();
-  await validateLayerBoundaries();
-  await validateUnsafeAiHtmlInjection();
-  await validateNoExperimentalImports();
-  await validateManifestModules();
+  await validateModules();
+  await validateFoundationBoundaries();
   await validateModuleImportBoundaries();
+  await validateUnsafeHtmlInjection();
 
   if (errors.length > 0) {
     console.error('Architecture guard check failed:\n');

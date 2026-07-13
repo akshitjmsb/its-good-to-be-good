@@ -5,7 +5,7 @@
  * subscription.
  */
 
-import { createStore, type Store } from '../../core/store';
+import { createStore, type Store } from '../store';
 import {
   getSession,
   onAuthStateChange,

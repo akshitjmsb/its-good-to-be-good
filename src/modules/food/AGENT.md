@@ -1,8 +1,8 @@
 # Food module
 
 - **id:** `food`
-- **category:** learn
-- **surface:** modal
+- **ring:** square (purpose tool — opens its own page)
+- **page:** `food.html`, mounted by `entry.ts`
 - **renderer:** dom
 - **permissions:** storage (per-meal check-off in localStorage)
 
@@ -15,19 +15,14 @@ persisted in localStorage by ISO date.
 
 ## Files
 
-- `manifest.json` — module metadata.
-- `controller.ts` — `init`/`destroy` plus the legacy `showFoodModal(date, todayKey)`
-  surface used by `modalManager.ts`.
+- `manifest.json` — module metadata (the manifest IS the registry).
+- `entry.ts` — page entry; mounts `renderFoodView` into `#food-view-host`.
 - `view.ts` — calendar grid, day panel, meal cards, click handling.
 - `data.ts` — meal pool and the deterministic per-week shuffle.
 - `types.ts` — re-exports the public types from `data.ts`.
+- `food.css` — page styles (imported by entry.ts).
 - `icon.svg` — module icon.
-- `__tests__/` — data pool integrity + controller surface.
-
-## Back-compat
-
-`src/components/modals/foodModal.ts` and the per-folder
-`src/components/modals/food/*` files are now thin re-export shims.
+- `__tests__/` — data pool integrity.
 
 ## Guardrails
 

@@ -1,8 +1,8 @@
 {
   "id": "food",
   "displayName": "Food",
-  "category": "journey",
-  "surface": "page",
+  "ring": "square",
+  "routeHref": "food.html",
   "icon": "./icon.svg",
   "version": "0.1.0",
   "renderer": "dom",

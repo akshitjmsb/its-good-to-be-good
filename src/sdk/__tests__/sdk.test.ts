@@ -7,8 +7,8 @@ function manifest(overrides: Partial<ModuleManifest> = {}): ModuleManifest {
   return {
     id: 'test-module',
     displayName: 'Test Module',
-    category: 'learn',
-    surface: 'modal',
+    ring: 'square',
+    routeHref: 'test-module.html',
     icon: './icon.svg',
     version: '0.1.0',
     ...overrides,

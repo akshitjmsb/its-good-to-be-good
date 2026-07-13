@@ -1,10 +1,13 @@
 {
   "id": "todo",
   "displayName": "To do",
-  "category": "journey",
-  "surface": "page",
+  "ring": "square",
+  "routeHref": "todo.html",
   "icon": "./icon.svg",
   "version": "0.2.0",
   "renderer": "dom",
-  "permissions": ["storage", "timer"]
+  "permissions": [
+    "storage",
+    "timer"
+  ]
 }

@@ -8,7 +8,7 @@
  * intentionally unused here (prefixed `_userId`).
  */
 
-import { convex } from '../../lib/convex';
+import { convex } from './client';
 import { api } from '../../../convex/_generated/api';
 import { Task } from '../../types';
 

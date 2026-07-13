@@ -6,7 +6,8 @@
  * `src/modules/food/` (data + view); this entry only mounts it.
  */
 
-import { renderFoodView } from '../modules/food/view';
+import './food.css';
+import { renderFoodView } from './view';
 
 document.addEventListener('DOMContentLoaded', () => {
   const host = document.getElementById('food-view-host');

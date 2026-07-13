@@ -1,8 +1,8 @@
 # Todo module
 
 - **id:** `todo`
-- **category:** journey
-- **surface:** page (`todo.html`)
+- **ring:** square (purpose tool — opens its own page)
+- **page:** `todo.html`, mounted by `entry.ts`
 - **renderer:** dom
 - **permissions:** storage (localStorage write-ahead log), timer (background sync)
 
@@ -19,8 +19,8 @@ module is the home-side handle that routes to it.
 - `icon.svg` — module icon.
 - `__tests__/` — controller surface coverage.
 
-The page entry is `src/todo.tsx` (Vite entry for `todo.html`). It is a thin
-DOM layer over pure, unit-tested logic in `src/domains/todo/`:
+The page entry is `src/modules/todo/entry.ts` (Vite entry for `todo.html`). It is a thin
+DOM layer over pure, unit-tested logic in `src/modules/todo/`:
 
 - `model.ts` — ordering, the bidirectional parent/child completion cascade,
   position reindexing, the non-destructive id-based sync merge, and the
@@ -48,5 +48,5 @@ client-generated `id` plus *explicit delete tombstones* — it never deletes
 ## Guardrails
 
 - `navigateTodoPage` no-ops if `window` is undefined (test runner).
-- The `src/domains/todo/` modules are pure (no DOM, no network, injected
+- The `src/modules/todo/` modules are pure (no DOM, no network, injected
   IO/clock) so they are fully tested in the Node test environment.

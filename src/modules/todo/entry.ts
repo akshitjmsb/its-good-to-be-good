@@ -23,25 +23,25 @@
  * CSS transitions) survives, with FLIP animation on reorder.
  */
 
-import { loadTasks, saveTasks } from './infra/convex/persistence';
-import { initAuthStore, getAuthState, subscribeAuth } from './domains/auth/store';
-import { sanitizeTaskInput, createSafeHtml } from './utils/escapeHtml';
+import { loadTasks, saveTasks } from '../../platform/convex/persistence';
+import { initAuthStore, getAuthState, subscribeAuth } from '../../platform/auth/store';
+import { sanitizeTaskInput, createSafeHtml } from '../../utils/escapeHtml';
 import {
   topLevel,
   childrenOf,
   reindex,
   applyCompletion,
   mergeTasks,
-} from './domains/todo/model';
-import { SaveController, type SaveStatus } from './domains/todo/save-controller';
+} from './model';
+import { SaveController, type SaveStatus } from './save-controller';
 import {
   createWal,
   getBrowserStorage,
   walKeyFor,
   type Wal,
   type WalSnapshot,
-} from './domains/todo/wal';
-import type { Task } from './types';
+} from './wal';
+import type { Task } from '../../types';
 
 const LIST_ID = 'tasks-list-todo';
 const SYNC_INTERVAL_MS = 30_000;

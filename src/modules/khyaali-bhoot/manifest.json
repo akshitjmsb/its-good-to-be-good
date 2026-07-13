@@ -1,10 +1,12 @@
 {
   "id": "khyaali-bhoot",
   "displayName": "Khyaali Bhoot",
-  "category": "journey",
-  "surface": "page",
+  "ring": "square",
+  "routeHref": "khyaali-bhoot.html",
   "icon": "./icon.svg",
   "version": "0.1.0",
   "renderer": "dom",
-  "permissions": ["storage"]
+  "permissions": [
+    "storage"
+  ]
 }

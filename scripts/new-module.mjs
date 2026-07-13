@@ -1,360 +1,143 @@
 #!/usr/bin/env node
 /**
- * King module scaffolder.
+ * King module scaffolder — creates a new square (purpose) tool.
  *
  * Usage:
- *   npm run new:module <id> -- --category journey|learn \
- *                              --surface page|modal|external \
- *                              [--renderer dom|react] \
- *                              [--permissions ai,cache,storage,timer] \
- *                              [--external-url https://...]
+ *   npm run new:module <id> [-- --name "Display Name"]
  *
- * Creates `src/modules/<id>/` with manifest, controller, view, data,
- * types, icon, styles, AGENT.md, and a controller test skeleton.
+ * Creates `src/modules/<id>/` (manifest, entry.ts, icon.svg, AGENT.md) and
+ * `<id>.html`, then prints the three manual wiring steps the architecture
+ * guard will hold you to: EXPECTED_MODULES in scripts/check-architecture.mjs,
+ * a corner/tile link on the home, and the Vite input.
+ *
+ * Circle (soul) practices are rare and hand-crafted — they live in the home
+ * markup and `src/modules/being/`; this scaffolder doesn't generate them.
  */
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
-
-const ALLOWED_CATEGORIES = new Set(['journey', 'learn']);
-const ALLOWED_SURFACES = new Set(['page', 'modal', 'external']);
-const ALLOWED_RENDERERS = new Set(['dom', 'react']);
-const ALLOWED_PERMISSIONS = new Set(['ai', 'storage', 'timer', 'cache']);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function fail(message) {
   console.error(`Error: ${message}`);
   process.exit(1);
 }
 
-function parseArgs(argv) {
-  const positional = [];
-  const flags = Object.create(null);
-  let i = 0;
-  while (i < argv.length) {
-    const token = argv[i];
-    if (token.startsWith('--')) {
-      const name = token.slice(2);
-      const next = argv[i + 1];
-      if (!next || next.startsWith('--')) {
-        flags[name] = true;
-        i += 1;
-      } else {
-        flags[name] = next;
-        i += 2;
-      }
-    } else {
-      positional.push(token);
-      i += 1;
-    }
-  }
-  return { positional, flags };
+const args = process.argv.slice(2).filter(a => a !== '--');
+const id = args[0];
+const nameFlagIndex = args.indexOf('--name');
+const displayName =
+  nameFlagIndex !== -1 && args[nameFlagIndex + 1]
+    ? args[nameFlagIndex + 1]
+    : id
+        ?.split('-')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+
+if (!id) fail('Usage: npm run new:module <id> [-- --name "Display Name"]');
+if (!/^[a-z][a-z0-9-]*$/.test(id)) fail(`Module id must be kebab-case (was "${id}").`);
+
+const baseDir = path.join(repoRoot, 'src/modules', id);
+const pagePath = path.join(repoRoot, `${id}.html`);
+
+try {
+  await fs.access(baseDir);
+  fail(`src/modules/${id}/ already exists.`);
+} catch {
+  /* good — does not exist */
 }
 
-function toPascalCase(id) {
-  return id
-    .split('-')
-    .map(part => (part ? part[0].toUpperCase() + part.slice(1) : ''))
-    .join('');
-}
-
-function validateId(id) {
-  if (!/^[a-z][a-z0-9-]*$/.test(id)) {
-    fail(`Module id "${id}" must be kebab-case (lowercase letters, digits, dashes; start with a letter).`);
-  }
-}
-
-async function ensureDoesNotExist(targetDir) {
-  try {
-    await fs.access(targetDir);
-    fail(`Directory already exists: ${path.relative(repoRoot, targetDir)}`);
-  } catch (err) {
-    if (err && err.code === 'ENOENT') return;
-    throw err;
-  }
-}
-
-function manifestContents({ id, displayName, category, surface, permissions, renderer, externalUrl }) {
-  const body = {
-    id,
-    displayName,
-    category,
-    surface,
-    icon: './icon.svg',
-    version: '0.1.0',
-    renderer,
-  };
-  if (permissions.length > 0) body.permissions = permissions;
-  if (surface === 'external' && externalUrl) body.externalUrl = externalUrl;
-  return JSON.stringify(body, null, 2) + '\n';
-}
-
-function controllerSkeleton({ id, displayName, renderer }) {
-  const className = `${toPascalCase(id)}Module`;
-  if (renderer === 'react') {
-    return `/**
- * ${displayName} module controller.
- *
- * Mounts a React tree into the host container. The shell hands us the
- * container, the SDK, and a userId — we own everything inside it.
- */
-
-import { createRoot, type Root } from 'react-dom/client';
-import { createElement } from 'react';
-import type { ModuleContext, ModuleController } from '../../sdk/types';
-import { App } from './App';
-
-let root: Root | null = null;
-
-export const init: ModuleController['init'] = async (ctx: ModuleContext) => {
-  root = createRoot(ctx.container);
-  root.render(createElement(App, { ctx }));
+const manifest = {
+  id,
+  displayName,
+  ring: 'square',
+  routeHref: `${id}.html`,
+  icon: './icon.svg',
+  version: '0.1.0',
+  renderer: 'dom',
+  permissions: ['storage'],
 };
 
-export const destroy: ModuleController['destroy'] = () => {
-  root?.unmount();
-  root = null;
-};
-
-export const ${className}: ModuleController = { init, destroy };
-export default ${className};
-`;
-  }
-  return `/**
- * ${displayName} module controller.
- *
- * Owns mounting and teardown of the module's view inside the container
- * the shell hands us. Anything DOM-specific belongs inside view.ts.
+const entry = `/**
+ * ${displayName} page entry.
  */
 
-import type { ModuleContext, ModuleController } from '../../sdk/types';
-import { renderView } from './view';
+import './${id}.css';
 
-let teardown: (() => void) | null = null;
-
-export const init: ModuleController['init'] = async (ctx: ModuleContext) => {
-  teardown = renderView(ctx.container, ctx);
-};
-
-export const destroy: ModuleController['destroy'] = () => {
-  teardown?.();
-  teardown = null;
-};
-
-export const ${className}: ModuleController = { init, destroy };
-export default ${className};
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('app-container');
+  if (container) container.dataset.runtime = '${id}';
+});
 `;
-}
 
-function viewSkeleton({ displayName }) {
-  return `/**
- * ${displayName} view — DOM rendering.
- */
-
-import type { ModuleContext } from '../../sdk/types';
-
-export function renderView(container: HTMLElement, _ctx: ModuleContext): () => void {
-  const root = document.createElement('section');
-  root.className = '${displayName.toLowerCase().replace(/\s+/g, '-')}-view';
-  root.textContent = '${displayName} module — replace this with the real view.';
-  container.appendChild(root);
-
-  return () => {
-    if (root.parentNode === container) container.removeChild(root);
-  };
-}
-`;
-}
-
-function reactAppSkeleton({ displayName }) {
-  return `/**
- * ${displayName} React entry. Receives the module context as a prop.
- */
-
-import type { ModuleContext } from '../../sdk/types';
-
-export function App({ ctx: _ctx }: { ctx: ModuleContext }) {
-  return <section className="${displayName.toLowerCase().replace(/\s+/g, '-')}-view">${displayName} module — replace this with the real view.</section>;
-}
-`;
-}
-
-function dataSkeleton({ displayName }) {
-  return `/**
- * ${displayName} data module. Put module-specific data, fixtures, and
- * pure helpers here. Keep the controller and view free of business logic.
- */
-
-export const __${displayName.toUpperCase().replace(/\s+/g, '_')}_DATA_PLACEHOLDER = true;
-`;
-}
-
-function typesSkeleton({ displayName }) {
-  const symbol = toPascalCase(displayName.replace(/\s+/g, '-'));
-  return `/**
- * ${displayName} module-specific types.
- */
-
-export interface ${symbol}State {
-  // Replace with the module's real state shape.
-  ready: boolean;
-}
-`;
-}
-
-function iconSvgPlaceholder() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-  <rect x="4" y="4" width="16" height="16" rx="2"/>
-  <path d="M8 12h8"/>
-  <path d="M12 8v8"/>
+const icon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="9" />
 </svg>
 `;
-}
 
-function stylesSkeleton({ id }) {
-  return `/* ${id} module styles — scoped to elements inside the module view. */
-`;
-}
-
-function agentTemplate({ id, displayName, category, surface, permissions, renderer }) {
-  const permsLine = permissions.length > 0 ? permissions.join(', ') : 'none';
-  return `# ${displayName} module
+const agentMd = `# ${displayName} module
 
 - **id:** \`${id}\`
-- **category:** ${category}
-- **surface:** ${surface}
-- **renderer:** ${renderer}
-- **permissions:** ${permsLine}
+- **ring:** square (purpose tool — opens its own page)
+- **page:** \`${id}.html\`, mounted by \`entry.ts\`
 
 ## Purpose
 
-Describe what this module does and what makes it interesting.
-
-## Files
-
-- \`manifest.json\` — module metadata (don't hand-edit the id).
-- \`controller.ts\` — implements \`ModuleController\` (init/destroy).
-- \`view.ts\` — DOM rendering. Replace with \`App.tsx\` if renderer is \`react\`.
-- \`data.ts\` — module-specific data and pure helpers.
-- \`types.ts\` — module-specific TypeScript types.
-- \`icon.svg\` — monoline 24x24 stroke icon (currentColor).
-- \`styles.css\` — scoped styles.
-- \`__tests__/\` — at least one test required by the architecture guard.
-
-## Guardrails
-
-- Only import from \`../../sdk/\`, \`../../core/\`, this folder, and \`node_modules\`.
-- Never import from \`infra/\`, \`app/\`, \`components/\`, or other modules.
-- The vintage typewriter aesthetic is locked — see \`CLAUDE.md\`.
+TODO — one paragraph on what this tool records.
 `;
-}
 
-function testSkeleton({ id, displayName }) {
-  const className = `${toPascalCase(id)}Module`;
-  return `import { describe, expect, it } from 'vitest';
-import { ${className}, init, destroy } from '../controller';
+const pageHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${displayName} — It's Good To Be King</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/index.css">
+    <link rel="stylesheet" href="src/styles/home-lock.css">
+    <link rel="icon" href="/vitruvian-logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="It's Good To Be King">
+    <meta name="theme-color" content="#111111">
+</head>
+<body class="home-vintage-lock">
+    <div id="app-container" class="app-container ${id}-page">
+        <nav class="page-back-nav">
+            <a href="index.html" class="home-link">← Home</a>
+        </nav>
 
-describe('${displayName} module controller', () => {
-  it('exposes init and destroy', () => {
-    expect(typeof init).toBe('function');
-    expect(typeof destroy).toBe('function');
-    expect(${className}.init).toBe(init);
-    expect(${className}.destroy).toBe(destroy);
-  });
-});
+        <header class="text-center mb-6">
+            <div class="flex justify-center items-center">
+                <h1>${displayName}</h1>
+            </div>
+        </header>
+    </div>
+
+    <script type="module" src="src/modules/${id}/entry.ts"></script>
+</body>
+</html>
 `;
-}
 
-async function writeFile(targetDir, relativePath, contents) {
-  const fullPath = path.join(targetDir, relativePath);
-  await fs.mkdir(path.dirname(fullPath), { recursive: true });
-  await fs.writeFile(fullPath, contents, 'utf8');
-}
+await fs.mkdir(baseDir, { recursive: true });
+await fs.writeFile(path.join(baseDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+await fs.writeFile(path.join(baseDir, 'entry.ts'), entry);
+await fs.writeFile(path.join(baseDir, `${id}.css`), `/* ${displayName} page styles */\n`);
+await fs.writeFile(path.join(baseDir, 'icon.svg'), icon);
+await fs.writeFile(path.join(baseDir, 'AGENT.md'), agentMd);
+await fs.writeFile(pagePath, pageHtml);
 
-async function main() {
-  const argv = process.argv.slice(2);
-  const { positional, flags } = parseArgs(argv);
+console.log(`Created src/modules/${id}/ and ${id}.html.
 
-  const id = positional[0];
-  if (!id) {
-    fail('Missing module id. Usage: npm run new:module <id> -- --category <c> --surface <s>');
-  }
-  validateId(id);
+Wire it up (the architecture guard enforces all three):
+  1. Add '${id}': 'square' to EXPECTED_MODULES in scripts/check-architecture.mjs
+  2. Add a tile on the home: <a class="orbit-tool" href="${id}.html" ...> in index.html
+  3. Register the Vite input in vite.config.ts: ${id}: path.resolve(__dirname, '${id}.html')
 
-  const category = String(flags.category ?? '');
-  if (!ALLOWED_CATEGORIES.has(category)) {
-    fail(`--category must be one of: ${[...ALLOWED_CATEGORIES].join(', ')}`);
-  }
-
-  const surface = String(flags.surface ?? '');
-  if (!ALLOWED_SURFACES.has(surface)) {
-    fail(`--surface must be one of: ${[...ALLOWED_SURFACES].join(', ')}`);
-  }
-
-  const renderer = String(flags.renderer ?? 'dom');
-  if (!ALLOWED_RENDERERS.has(renderer)) {
-    fail(`--renderer must be one of: ${[...ALLOWED_RENDERERS].join(', ')}`);
-  }
-
-  const permissions = String(flags.permissions ?? '')
-    .split(',')
-    .map(p => p.trim())
-    .filter(Boolean);
-  for (const p of permissions) {
-    if (!ALLOWED_PERMISSIONS.has(p)) {
-      fail(`Unknown permission "${p}". Allowed: ${[...ALLOWED_PERMISSIONS].join(', ')}`);
-    }
-  }
-
-  const externalUrl = flags['external-url'] ? String(flags['external-url']) : undefined;
-  if (surface === 'external' && !externalUrl) {
-    fail('--external-url is required when --surface external is set.');
-  }
-
-  const displayName = flags['display-name']
-    ? String(flags['display-name'])
-    : id
-        .split('-')
-        .map(p => p.charAt(0).toUpperCase() + p.slice(1))
-        .join(' ');
-
-  const targetDir = path.join(repoRoot, 'src', 'modules', id);
-  await ensureDoesNotExist(targetDir);
-
-  await writeFile(
-    targetDir,
-    'manifest.json',
-    manifestContents({ id, displayName, category, surface, permissions, renderer, externalUrl })
-  );
-  await writeFile(targetDir, 'controller.ts', controllerSkeleton({ id, displayName, renderer }));
-  if (renderer === 'react') {
-    await writeFile(targetDir, 'App.tsx', reactAppSkeleton({ displayName }));
-  } else {
-    await writeFile(targetDir, 'view.ts', viewSkeleton({ displayName }));
-  }
-  await writeFile(targetDir, 'data.ts', dataSkeleton({ displayName }));
-  await writeFile(targetDir, 'types.ts', typesSkeleton({ displayName }));
-  await writeFile(targetDir, 'icon.svg', iconSvgPlaceholder());
-  await writeFile(targetDir, 'styles.css', stylesSkeleton({ id }));
-  await writeFile(targetDir, 'AGENT.md', agentTemplate({ id, displayName, category, surface, permissions, renderer }));
-  await writeFile(
-    targetDir,
-    path.join('__tests__', 'controller.test.ts'),
-    testSkeleton({ id, displayName })
-  );
-
-  const relTarget = path.relative(repoRoot, targetDir);
-  console.log(`Scaffolded ${displayName} module at ${relTarget}/`);
-  console.log('');
-  console.log('Next steps:');
-  console.log(`  1. Replace the placeholder view/data/types with the real module.`);
-  console.log(`  2. Update ${relTarget}/icon.svg with a monoline 24x24 SVG.`);
-  console.log(`  3. Add real tests under ${relTarget}/__tests__/.`);
-  console.log(`  4. Run \`npm run verify\` to validate.`);
-}
-
-await main();
+Then: npm run check:architecture`);

@@ -13,7 +13,7 @@
  */
 
 import { type AuthTokenFetcher } from 'convex/browser';
-import { convex } from '../../lib/convex';
+import { convex } from '../convex/client';
 import { api } from '../../../convex/_generated/api';
 
 export interface AuthUser {

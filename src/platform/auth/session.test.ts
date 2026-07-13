@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AuthSession } from '../session';
+import type { AuthSession } from './session';
 
 type AuthChangeCallback = (event: string, session: AuthSession | null) => void;
 
@@ -10,7 +10,7 @@ const { getSessionMock, onAuthStateChangeMock } = vi.hoisted(() => ({
   onAuthStateChangeMock: vi.fn(),
 }));
 
-vi.mock('../session', () => ({
+vi.mock('./session', () => ({
   getSession: getSessionMock,
   onAuthStateChange: onAuthStateChangeMock,
 }));
@@ -20,7 +20,7 @@ import {
   getAuthState,
   initAuthStore,
   subscribeAuth,
-} from '../store';
+} from './store';
 
 function makeSession(userId: string): AuthSession {
   return { user: { id: userId, email: `${userId}@example.com` } };

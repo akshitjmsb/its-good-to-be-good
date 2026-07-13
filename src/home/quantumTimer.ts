@@ -10,7 +10,7 @@ import {
   formatQuantumTime,
   getQuantumTimer,
   type QuantumState,
-} from '../core/quantumTimer';
+} from '../platform/quantumTimer';
 
 const TICK_MS = 1_000;
 const BREAK_FALLBACK_MS = 12_000;

@@ -1,8 +1,6 @@
 /* Import component styles - must come first */
 @import './base.css';
 @import './components.css';
-@import './exercise.css';
-@import './food.css';
 @import './auth.css';
 
 @tailwind base;

@@ -1,3 +1,5 @@
+import './khyaali-bhoot.css';
+
 /**
  * Khyaali Bhoot -- talk to your imaginary ghosts.
  *

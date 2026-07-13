@@ -6,17 +6,17 @@ const { query, mutation } = vi.hoisted(() => ({
   mutation: vi.fn(),
 }));
 
-vi.mock('../../../lib/convex', () => ({
+vi.mock('./client', () => ({
   convex: { query, mutation },
 }));
 
-vi.mock('../../../../convex/_generated/api', () => ({
+vi.mock('../../../convex/_generated/api', () => ({
   api: {
     tasks: { list: 'tasks.list', save: 'tasks.save' },
   },
 }));
 
-import { loadTasks, saveTasks } from '../persistence';
+import { loadTasks, saveTasks } from './persistence';
 
 beforeEach(() => {
   query.mockReset();

@@ -1,19 +1,20 @@
 # Khyaali Bhoot module
 
 - **id:** `khyaali-bhoot`
-- **category:** journey
-- **surface:** page (`khyaali-bhoot.html`)
+- **ring:** square (purpose tool — opens its own page)
+- **page:** `khyaali-bhoot.html`, mounted by `entry.ts`
 - **renderer:** dom
 - **permissions:** storage
 
 ## Purpose
 
-Daydream / parking-lot for fleeting ideas. Page entry at
-`src/pages/khyaali-bhoot.ts`; this module is a home-side navigation handle.
+Daydream / parking-lot for fleeting fears and ideas. Write to the ghost,
+tap "Let it go", watch it dissolve. No history — the act of writing is
+the release.
 
 ## Files
 
-- `manifest.json` — module metadata.
-- `controller.ts` — navigation handle.
+- `manifest.json` — module metadata (the manifest IS the registry).
+- `entry.ts` — the whole runtime (prompts, whispers, dissolve animation).
+- `khyaali-bhoot.css` — page styles (imported by entry.ts).
 - `icon.svg` — module icon.
-- `__tests__/` — controller surface coverage.

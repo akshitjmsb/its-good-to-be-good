@@ -7,12 +7,12 @@
  * (meditation timer + practice panels) via `initBeingOrbit()`.
  */
 
-import { initializeQuantumTimer } from '../components/quantumTimer';
+import { initializeQuantumTimer } from './quantumTimer';
 import { initBeingOrbit } from '../modules/being/orbit';
-import { initAuthStore, getAuthState } from '../domains/auth/store';
-import { onAuthStateChange } from '../domains/auth/session';
-import { mountLoginGate } from '../auth/loginGate';
-import { mountUserChip } from '../auth/userChip';
+import { initAuthStore, getAuthState } from '../platform/auth/store';
+import { onAuthStateChange } from '../platform/auth/session';
+import { mountLoginGate } from './loginGate';
+import { mountUserChip } from './userChip';
 
 function updateTimeDisplay(): void {
   const options: Intl.DateTimeFormatOptions = {

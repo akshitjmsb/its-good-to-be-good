@@ -3,8 +3,8 @@
  * home header. Stays out of the way until you go looking for it.
  */
 
-import { signOut } from '../domains/auth/session';
-import { getAuthState, subscribeAuth } from '../domains/auth/store';
+import { signOut } from '../platform/auth/session';
+import { getAuthState, subscribeAuth } from '../platform/auth/store';
 
 export function mountUserChip(host: HTMLElement): () => void {
   function render(): void {

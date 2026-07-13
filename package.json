@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "A personal dashboard application.",
-  "main": "src/index.tsx",
+  "main": "src/home/entry.ts",
   "engines": {
     "node": ">=20"
   },
@@ -11,11 +11,10 @@
     "start": "serve .",
     "build": "vite build",
     "dev": "vite",
-    "compile": "tsc src/index.tsx --outDir dist --target es2020 --module es2020 --moduleResolution node",
     "test": "vitest run",
     "lint": "eslint \"src/**/*.{ts,tsx}\" \"*.{js,ts}\" --max-warnings=0",
-    "format": "prettier --write \"src/app/**/*.ts\" \"src/domains/**/*.ts\" \"src/infra/**/*.ts\" \"src/components/modals/**/*.ts\" \"src/core/__tests__/**/*.ts\" \"src/utils/__tests__/**/*.ts\" \"src/index.tsx\" \"convex/**/*.ts\" \"docs/**/*.md\" \"AGENTS.md\" \"README.md\" \"QUICK_START.md\" \"package.json\" \"tsconfig.json\" \"vitest.config.ts\" \".eslintrc.json\" \".github/workflows/ci.yml\"",
-    "format:check": "prettier --check \"src/app/**/*.ts\" \"src/domains/**/*.ts\" \"src/infra/**/*.ts\" \"src/components/modals/**/*.ts\" \"src/core/__tests__/**/*.ts\" \"src/utils/__tests__/**/*.ts\" \"src/index.tsx\" \"convex/**/*.ts\" \"docs/**/*.md\" \"AGENTS.md\" \"README.md\" \"QUICK_START.md\" \"package.json\" \"tsconfig.json\" \"vitest.config.ts\" \".eslintrc.json\" \".github/workflows/ci.yml\"",
+    "format": "prettier --write \"src/home/**/*.ts\" \"src/platform/**/*.ts\" \"src/sdk/**/*.ts\" \"src/utils/**/*.ts\" \"convex/**/*.ts\" \"docs/**/*.md\" \"AGENTS.md\" \"README.md\" \"QUICK_START.md\" \"package.json\" \"tsconfig.json\" \"vitest.config.ts\" \".eslintrc.json\" \".github/workflows/ci.yml\"",
+    "format:check": "prettier --check \"src/home/**/*.ts\" \"src/platform/**/*.ts\" \"src/sdk/**/*.ts\" \"src/utils/**/*.ts\" \"convex/**/*.ts\" \"docs/**/*.md\" \"AGENTS.md\" \"README.md\" \"QUICK_START.md\" \"package.json\" \"tsconfig.json\" \"vitest.config.ts\" \".eslintrc.json\" \".github/workflows/ci.yml\"",
     "type-check": "tsc --noEmit",
     "check:architecture": "node ./scripts/check-architecture.mjs",
     "test:changed": "node ./scripts/run-changed-tests.mjs",

@@ -19,6 +19,7 @@
  * re-tapping the open icon) closes the stage and returns to the orbit.
  */
 
+import './exercise.css';
 import { initMeditate } from './meditate';
 import { renderExerciseView } from './exercise-view';
 import { STRETCH_ROUTINES } from './exercise-data';

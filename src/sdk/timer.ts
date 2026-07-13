@@ -8,7 +8,7 @@
 import {
   createCountdownTimer,
   type CountdownState,
-} from '../core/countdownTimer';
+} from '../platform/countdownTimer';
 import type { TimerAdapter, TimerHandle, TimerState } from './types';
 
 function toExternalState(state: CountdownState): TimerState {

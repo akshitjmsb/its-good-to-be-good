@@ -1,17 +1,20 @@
 /**
  * King SDK — public contract between the shell and modules.
  *
- * Each module is a self-contained mini-app inside `src/modules/<id>/`.
- * The manifest + controller lifecycle are the only hard requirements.
- * Inside its folder a module can use DOM, React, canvas, whatever it likes.
+ * Each module is a self-contained mini-app inside `src/modules/<id>/`,
+ * described by its manifest.json. The ring encodes the home's geometry:
+ *
+ *   • `circle` — a soul practice. Acts in place on the home, leaves
+ *     nothing behind, never navigates. No routeHref.
+ *   • `square` — a purpose tool. Opens its own page (routeHref) from a
+ *     corner tile on the home and accumulates a record.
  *
  * Permissions in the manifest gate which SDK adapters the module is allowed
  * to call. Calling an adapter that isn't listed throws a clear error at
  * runtime, so missing permissions surface in dev rather than at deploy.
  */
 
-export type ModuleCategory = 'journey' | 'learn';
-export type ModuleSurface = 'page' | 'modal' | 'external';
+export type ModuleRing = 'circle' | 'square';
 export type ModuleRenderer = 'dom';
 export type ModulePermission = 'storage' | 'timer';
 
@@ -20,40 +23,16 @@ export interface ModuleManifest {
   id: string;
   /** user-visible name */
   displayName: string;
-  category: ModuleCategory;
-  surface: ModuleSurface;
+  ring: ModuleRing;
+  /** the tool's page — required for square, forbidden for circle */
+  routeHref?: string;
   /** path to icon SVG, relative to the module folder */
   icon: string;
   /** semver */
   version: string;
   permissions?: ModulePermission[];
-  /** required when surface === 'external' */
-  externalUrl?: string;
   /** default 'dom' */
   renderer?: ModuleRenderer;
-  /** other module ids this module depends on (rare) */
-  dependencies?: string[];
-}
-
-/**
- * Lifecycle contract every module must satisfy.
- */
-export interface ModuleController {
-  init(ctx: ModuleContext): Promise<void>;
-  destroy(): void;
-  refresh?(): void;
-}
-
-/**
- * Provided by the shell to each module on init().
- */
-export interface ModuleContext {
-  userId: string;
-  /** YYYY-MM-DD in the user's local timezone */
-  today: string;
-  /** DOM element the module renders into */
-  container: HTMLElement;
-  sdk: KingSDK;
 }
 
 /**

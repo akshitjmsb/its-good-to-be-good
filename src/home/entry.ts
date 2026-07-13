@@ -1,4 +1,4 @@
-import { bootstrapApp } from './app/bootstrap';
+import { bootstrapApp } from './bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
   void bootstrapApp();

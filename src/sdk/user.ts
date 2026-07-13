@@ -5,7 +5,7 @@
  * The `userId` override exists for tests; production code never sets it.
  */
 
-import { getAuthState, subscribeAuth } from '../domains/auth/store';
+import { getAuthState, subscribeAuth } from '../platform/auth/store';
 import type { UserAdapter } from './types';
 
 export function createUserAdapter(userIdOverride?: string): UserAdapter {
