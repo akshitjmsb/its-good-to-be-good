@@ -11,27 +11,9 @@ const repoRoot = process.env.ARCH_CHECK_ROOT
   ? path.resolve(process.env.ARCH_CHECK_ROOT)
   : path.resolve(__dirname, '..');
 
-const EXPECTED_JOURNEY_MODULES = [
-  'todo',
-  'quantum',
-  'being',
-  'money',
-  'health',
-  'travel',
-  'tennis',
-  'khyaali-bhoot',
-];
+const EXPECTED_JOURNEY_MODULES = ['todo', 'being', 'tennis', 'khyaali-bhoot'];
 
-const EXPECTED_LEARN_MODULES = [
-  'world-order',
-  'coffee',
-  'guitar',
-  'poetry',
-  'french',
-  'food',
-  'analytics',
-  'curious',
-];
+const EXPECTED_LEARN_MODULES = ['food'];
 
 const errors = [];
 
@@ -74,10 +56,10 @@ function isForbiddenLayerImport(specifier) {
   return /(^|\/)(components|app)(\/|$)/.test(specifier);
 }
 
-const ALLOWED_PERMISSIONS = new Set(['ai', 'storage', 'timer', 'cache']);
+const ALLOWED_PERMISSIONS = new Set(['storage', 'timer']);
 const ALLOWED_CATEGORIES = new Set(['journey', 'learn']);
 const ALLOWED_SURFACES = new Set(['page', 'modal', 'external']);
-const ALLOWED_RENDERERS = new Set(['dom', 'react']);
+const ALLOWED_RENDERERS = new Set(['dom']);
 const SEMVER_REGEX = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 async function listSubdirectories(relativeDir) {
@@ -273,34 +255,6 @@ async function validateLayerBoundaries() {
         }
       });
     });
-  }
-}
-
-async function validateModalControllerBoundaries() {
-  // After Phase 2, the canonical analytics implementation lives
-  // in `src/modules/<id>/controller.ts` and the legacy locations are
-  // re-export shims. The module-import-boundary check enforces the broader
-  // layering rule (modules can use infra/ + domains/ but not components/
-  // or app/), so this function only asserts that the canonical modules
-  // don't bypass domain services for content lookups.
-  const checks = [
-    {
-      path: 'src/modules/analytics/controller.ts',
-      // Analytics must keep going through the domain content service for
-      // its daily payload — the SDK adapters that replace this in Phase 3
-      // will sit on top of the same service.
-      required: '../../domains/content/service',
-    },
-  ];
-
-  for (const check of checks) {
-    if (!(await fileExists(check.path))) continue;
-    const source = await readText(check.path);
-    if (check.required && !source.includes(check.required)) {
-      fail(
-        `${check.path} must import "${check.required}" to keep UI -> domain -> infra layering.`
-      );
-    }
   }
 }
 
@@ -564,7 +518,6 @@ async function main() {
   validateRegistryBasics();
   await validateLearnModuleWiring();
   await validateLayerBoundaries();
-  await validateModalControllerBoundaries();
   await validateUnsafeAiHtmlInjection();
   await validateNoExperimentalImports();
   await validateManifestModules();

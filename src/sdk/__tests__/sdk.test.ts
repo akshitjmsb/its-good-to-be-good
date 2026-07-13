@@ -1,10 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-// The cache adapter pulls in the Convex client, which throws at import time
-// when VITE_CONVEX_URL is missing. Mock it to keep the test hermetic.
-vi.mock('../../lib/convex', () => ({
-  convex: { query: vi.fn(), mutation: vi.fn(), action: vi.fn() },
-}));
+import { describe, expect, it } from 'vitest';
 
 import { createModuleSDK } from '../index';
 import type { ModuleManifest } from '../types';
@@ -42,21 +36,6 @@ describe('createModuleSDK', () => {
     expect(sdk.user.isAuthenticated()).toBe(true);
   });
 
-  it('exposes ai adapter when "ai" permission is granted', () => {
-    const sdk = createModuleSDK(manifest({ permissions: ['ai'] }));
-    expect(typeof sdk.ai.callAI).toBe('function');
-    expect(typeof sdk.ai.hasProviderReady).toBe('function');
-    expect(typeof sdk.ai.parseJsonResponse).toBe('function');
-  });
-
-  it('throws a clear error when ai is used without permission', () => {
-    const sdk = createModuleSDK(manifest({ id: 'coffee' })); // no ai
-    expect(() => sdk.ai.callAI('hello')).toThrow(
-      /Module "coffee" tried to call ai\.callAI/
-    );
-    expect(() => sdk.ai.hasProviderReady()).toThrow(/"ai" permission/);
-  });
-
   it('throws when storage is used without permission', () => {
     const sdk = createModuleSDK(manifest({ id: 'no-storage' }));
     expect(() => sdk.storage.get('key')).toThrow(/"storage" permission/);
@@ -67,13 +46,6 @@ describe('createModuleSDK', () => {
     const sdk = createModuleSDK(manifest({ id: 'no-timer' }));
     expect(() => sdk.timer.create({ name: 't', defaultDurationMs: 1000 })).toThrow(
       /"timer" permission/
-    );
-  });
-
-  it('throws when cache is used without permission', () => {
-    const sdk = createModuleSDK(manifest({ id: 'no-cache' }));
-    expect(() => sdk.cache.get('content', '2026-01-01')).toThrow(
-      /"cache" permission/
     );
   });
 
@@ -89,18 +61,10 @@ describe('createModuleSDK', () => {
     expect(typeof sdk.timer.create).toBe('function');
   });
 
-  it('returns a real cache adapter when "cache" is granted', () => {
-    const sdk = createModuleSDK(manifest({ id: 'has-cache', permissions: ['cache'] }));
-    expect(typeof sdk.cache.get).toBe('function');
-    expect(typeof sdk.cache.set).toBe('function');
-  });
-
   it('grants all permissions independently', () => {
     const sdk = createModuleSDK(
-      manifest({ id: 'all', permissions: ['ai', 'cache', 'storage', 'timer'] })
+      manifest({ id: 'all', permissions: ['storage', 'timer'] })
     );
-    expect(typeof sdk.ai.callAI).toBe('function');
-    expect(typeof sdk.cache.get).toBe('function');
     expect(typeof sdk.storage.get).toBe('function');
     expect(typeof sdk.timer.create).toBe('function');
   });

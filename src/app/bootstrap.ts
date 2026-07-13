@@ -1,10 +1,5 @@
 import { getCanonicalTime } from '../core/time';
 import type { MultilingualQuote } from '../components/reflection';
-import {
-  attachQuoteDeepDive,
-  setActiveQuote,
-} from '../components/quoteDeepDive';
-import { initializeAIProviderSelect } from '../components/aiProviderSelect';
 import { initializeQuantumTimer } from '../components/quantumTimer';
 import { initializeModalManager } from '../components/modals/modalManager';
 import {
@@ -14,12 +9,7 @@ import {
 import { createAppRuntimeStore } from './state';
 import { renderDayModule } from './render';
 import { initializeSchedulers } from './scheduler';
-// Disabled: Apple-style drag-to-reorder. Keep the module on disk; just don't wire it up.
-// import { initializeModuleReorder } from './moduleReorder';
-import { initializeCustomModules } from './customModules';
-import { initializeModuleEditor } from './moduleEditor';
 import { createAppRouter } from './moduleRouter';
-import { initModuleStore } from '../domains/modules/customModules';
 import { initAuthStore, getAuthState } from '../domains/auth/store';
 import { onAuthStateChange } from '../domains/auth/session';
 import { mountLoginGate } from '../auth/loginGate';
@@ -117,11 +107,6 @@ export async function bootstrapApp(): Promise<void> {
     dayModule?.classList.add('active');
 
     renderNavigationIcons();
-    // Re-apply user overrides after the SVG icons paint, so emoji choices
-    // for built-in journey tiles aren't wiped by the periodic re-render.
-    // initializeCustomModules() guards against duplicate tile injection,
-    // so calling it on every render is safe.
-    initializeCustomModules();
 
     // Quote dataset is code-split — the shell + icons above paint without it,
     // then the quote-of-the-day fills in once the chunk resolves.
@@ -129,36 +114,13 @@ export async function bootstrapApp(): Promise<void> {
     const todaysQuote = await loadQuoteFor(activeContentDate);
     store.setState({ todaysQuote });
     renderDayModule(todaysQuote);
-    setActiveQuote(userId, todaysQuote);
-    attachQuoteDeepDive();
   }
 
   async function initializeApp() {
     try {
       renderModuleIcons();
-      // Cache-first: initModuleStore hydrates from localStorage synchronously
-      // so we can paint tiles immediately, then refreshes from Convex in the
-      // background. When fresh data lands, re-inject tiles and re-render the
-      // day module so any remote name/emoji/archive changes appear without
-      // a reload. Both callees are idempotent.
-      await initModuleStore(userId, {
-        onRefresh: () => {
-          initializeCustomModules();
-          void mainRender();
-        },
-      });
-      // Inject user-created tiles + apply name/emoji overrides on top of
-      // the static icon paint. The editor wiring then attaches the
-      // "+ Add module" pill, "Edit" toggle, and per-tile pencils.
-      initializeCustomModules();
-      initializeModuleEditor();
-      // Apple-style drag-to-reorder is disabled — buggy in current form.
-      // Carousel/grid order is driven by index.html markup. Re-enable by
-      // uncommenting once the long-press/jiggle interaction is fixed.
-      // initializeModuleReorder();
       updateDateDerivedData();
       initializeQuantumTimer();
-      initializeAIProviderSelect();
 
       // PWA users on the home screen have no browser refresh button.
       document

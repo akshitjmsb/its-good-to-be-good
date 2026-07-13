@@ -6,8 +6,6 @@
  * declare in its manifest throws a clear error.
  */
 
-import { createAIAdapter } from './ai';
-import { createCacheAdapter } from './cache';
 import { sharedEventBus } from './events';
 import { createStorageAdapter } from './storage';
 import { createTimerAdapter } from './timer';
@@ -53,18 +51,6 @@ export function createModuleSDK(
   const permissions = new Set<ModulePermission>(manifest.permissions ?? []);
   const user = createUserAdapter(userIdOverride);
 
-  const ai = permissions.has('ai')
-    ? createAIAdapter()
-    : denyAdapter(manifest.id, 'ai', {} as ReturnType<typeof createAIAdapter>);
-
-  const cache = permissions.has('cache')
-    ? createCacheAdapter(manifest.id, user)
-    : denyAdapter(
-        manifest.id,
-        'cache',
-        {} as ReturnType<typeof createCacheAdapter>
-      );
-
   const storage = permissions.has('storage')
     ? createStorageAdapter(manifest.id)
     : denyAdapter(
@@ -82,8 +68,6 @@ export function createModuleSDK(
       );
 
   return {
-    ai,
-    cache,
     storage,
     timer,
     // events, ui, user are always available — they don't gate

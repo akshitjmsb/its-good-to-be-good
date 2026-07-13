@@ -13,17 +13,10 @@ vi.mock('../../../lib/convex', () => ({
 vi.mock('../../../../convex/_generated/api', () => ({
   api: {
     tasks: { list: 'tasks.list', save: 'tasks.save' },
-    poetry: { list: 'poetry.list', replace: 'poetry.replace' },
   },
 }));
 
-import {
-  loadTasks,
-  saveTasks,
-  loadPoetryRecents,
-  savePoetryRecents,
-  recordPoetrySelection,
-} from '../persistence';
+import { loadTasks, saveTasks } from '../persistence';
 
 beforeEach(() => {
   query.mockReset();
@@ -151,45 +144,3 @@ describe('saveTasks', () => {
   });
 });
 
-describe('poetry recents', () => {
-  it('loads and maps recents', async () => {
-    query.mockResolvedValue([
-      { poet: 'Rumi', language: 'Persian', timestamp: 2 },
-    ]);
-    const recents = await loadPoetryRecents('u');
-    expect(query).toHaveBeenCalledWith('poetry.list', {});
-    expect(recents).toEqual([{ poet: 'Rumi', language: 'Persian', timestamp: 2 }]);
-  });
-
-  it('replaces recents via a single mutation', async () => {
-    await savePoetryRecents('u', [
-      { poet: 'Ghalib', language: 'Urdu', timestamp: 5 },
-    ]);
-    expect(mutation).toHaveBeenCalledWith('poetry.replace', {
-      recents: [{ poet: 'Ghalib', language: 'Urdu', timestamp: 5 }],
-    });
-  });
-});
-
-describe('recordPoetrySelection (pure)', () => {
-  it('prepends a new selection with a timestamp', () => {
-    const result = recordPoetrySelection([], 'Rumi', 'Persian');
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({ poet: 'Rumi', language: 'Persian' });
-    expect(typeof result[0].timestamp).toBe('number');
-  });
-
-  it('deduplicates back-to-back identical selections', () => {
-    const first = recordPoetrySelection([], 'Ghalib', 'Urdu');
-    const second = recordPoetrySelection(first, 'Ghalib', 'Urdu');
-    expect(second).toHaveLength(1);
-  });
-
-  it('caps history at MAX_POETRY_RECENTS (6)', () => {
-    let recents: ReturnType<typeof recordPoetrySelection> = [];
-    for (let i = 0; i < 10; i++) {
-      recents = recordPoetrySelection(recents, `poet-${i}`, 'English');
-    }
-    expect(recents.length).toBeLessThanOrEqual(6);
-  });
-});

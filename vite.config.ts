@@ -1,12 +1,10 @@
 import path from 'path';
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
     return {
       plugins: [
-        react(),
         VitePWA({
           // Auto-update the service worker in the background; existing tabs
           // pick up the new shell on next navigation without a prompt.
@@ -84,15 +82,9 @@ export default defineConfig(() => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             todo: path.resolve(__dirname, 'todo.html'),
-            health: path.resolve(__dirname, 'health.html'),
             being: path.resolve(__dirname, 'being.html'),
-            money: path.resolve(__dirname, 'money.html'),
-            quantum: path.resolve(__dirname, 'quantum.html'),
-            travel: path.resolve(__dirname, 'travel.html'),
             tennis: path.resolve(__dirname, 'tennis.html'),
             'khyaali-bhoot': path.resolve(__dirname, 'khyaali-bhoot.html'),
-            french: path.resolve(__dirname, 'french.html'),
-            custom: path.resolve(__dirname, 'custom.html'),
           }
         }
       }

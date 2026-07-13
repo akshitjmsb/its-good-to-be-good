@@ -54,7 +54,6 @@
                  Tucks under the title as quiet journal metadata. -->
             <div id="user-chip" class="user-chip" hidden></div>
             <p id="current-datetime" class="text-xs mt-2"></p>
-            <p id="ai-provider-select" class="ai-provider-select"></p>
         </header>
 
         <!-- Sync Status -->
@@ -94,20 +93,6 @@
                             <h2>Tennis</h2>
                         </a>
 
-                        <!-- Quantum nav card hidden — the timer widget lives in the
-                             header (top-right) so this carousel slot was redundant.
-                             Markup retained so the dedicated quantum.html page is
-                             still reachable; remove `hidden` to re-surface. -->
-                        <a hidden href="quantum.html"
-                           class="nav-item"
-                           role="listitem"
-                           data-module="quantum"
-                           aria-label="Navigate to Quantum page"
-                           title="Quantum timer and focus sessions">
-                            <div class="nav-icon" id="quantum-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 1v6m0 6v6" /><path d="M17 7l-5 5 5 5" /><path d="M7 7l5 5-5 5" /><path d="M1 12h6m6 0h6" /></svg></div>
-                            <h2>Quantum</h2>
-                        </a>
-
                         <a href="khyaali-bhoot.html"
                            class="nav-item"
                            role="listitem"
@@ -126,36 +111,6 @@
                            title="Meditate and exercise — stillness and movement">
                             <div class="nav-icon" id="being-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c1.7 2.4 1.7 5.6 0 8-1.7-2.4-1.7-5.6 0-8z" /><path d="M12 12C9.8 9.4 6.7 8 3.5 8c0 3.3 2.3 6.2 5.5 7" /><path d="M12 12c2.2-2.6 5.3-4 8.5-4 0 3.3-2.3 6.2-5.5 7" /><path d="M4 12.5c1.6 2.7 4.7 4.5 8 4.5s6.4-1.8 8-4.5" /></svg></div>
                             <h2>Being</h2>
-                        </a>
-
-                        <a href="money.html"
-                           class="nav-item"
-                           role="listitem"
-                           data-module="money"
-                           aria-label="Navigate to Money page"
-                           title="Financial tracking and budgeting">
-                            <div class="nav-icon" id="money-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg></div>
-                            <h2>Money</h2>
-                        </a>
-
-                        <a href="health.html"
-                           class="nav-item"
-                           role="listitem"
-                           data-module="health"
-                           aria-label="Navigate to Health page"
-                           title="Health tracking and wellness">
-                            <div class="nav-icon" id="health-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg></div>
-                            <h2>Health</h2>
-                        </a>
-
-                        <a href="travel.html"
-                           class="nav-item"
-                           role="listitem"
-                           data-module="travel"
-                           aria-label="Navigate to Travel page"
-                           title="Travel planning and adventures">
-                            <div class="nav-icon" id="travel-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg></div>
-                            <h2>Travel</h2>
                         </a>
                     </div>
                 </div>
@@ -177,40 +132,9 @@
             <section class="mobile-section">
                 <h2>Learn</h2>
                 <div class="category-grid grid grid-cols-3 gap-3 sm:gap-2 mt-3">
-                    <!-- World Order temporarily hidden from the Learn grid pending
-                         a re-think of the feature. Markup stays so the modal can
-                         be re-enabled by removing the `hidden` attribute below. -->
-                    <button hidden id="geopolitics-clickable" type="button" class="preview-card module-card" data-module="world-order" aria-label="Open World Order module" title="Open World Order module">
-                        <div class="module-icon" id="world-order-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2v20" /><path d="M4.5 7c2.5 2.5 7.5 2.5 10 0" /><path d="M4.5 17c2.5-2.5 7.5-2.5 10 0" /></svg></div>
-                        <h3 class="font-bold text-sm sm:text-xs">World Order</h3>
-                    </button>
-                    <button id="coffee-clickable" type="button" class="preview-card module-card" data-module="coffee" aria-label="Open Coffee module" title="Open Coffee module">
-                        <div class="module-icon" id="coffee-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12v8c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V8z" /><path d="M6 8V6c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2v2" /><path d="M18 10v4c0 1.1-.9 2-2 2h-2" /><path d="M8 4h2" /><path d="M10 2h2" /><path d="M12 4h2" /></svg></div>
-                        <h3 class="font-bold text-sm sm:text-xs">Coffee</h3>
-                    </button>
-                    <button id="guitar-clickable" type="button" class="preview-card module-card" data-module="guitar" aria-label="Open Mr. Mojo" title="Open Mr. Mojo">
-                        <div class="module-icon" id="guitar-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l-1 18H7L6 3z" /><path d="M6 3l6 6" /><path d="M12 9v12" /><path d="M8 15h8" /><circle cx="12" cy="18" r="2" /></svg></div>
-                        <h3 class="font-bold text-sm sm:text-xs">Mr. Mojo</h3>
-                    </button>
-                    <button id="poetry-clickable" type="button" class="preview-card module-card" data-module="poetry" aria-label="Open Poetry module" title="Open Poetry module">
-                        <div class="module-icon" id="poetry-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg></div>
-                        <h3 class="font-bold text-sm sm:text-xs">Poetry</h3>
-                    </button>
-                    <button id="french-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="french" aria-label="Open French translator" title="Open French translator">
-                        <div class="module-icon" id="french-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4z" /><path d="M8 6v12" /><path d="M16 6v12" /><path d="M12 8h4" /><path d="M12 12h4" /><path d="M12 16h4" /><path d="M8 8h4" /><path d="M8 12h4" /><path d="M8 16h4" /></svg></div>
-                        <h3 class="font-bold text-sm sm:text-xs">French</h3>
-                    </button>
                     <button id="food-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="food" aria-label="Open Food module" title="Open Food module">
                         <div class="module-icon" id="food-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" /><path d="M8 4l1 1 1-1" /><path d="M8 6v8" /><path d="M7 6h2" /><path d="M7 8h2" /><path d="M16 4l-1 1-1-1" /><path d="M16 6v8" /><path d="M15 6h2" /><path d="M15 8h2" /><circle cx="12" cy="12" r="3" /></svg></div>
                         <h3 class="font-bold text-sm sm:text-xs">Food</h3>
-                    </button>
-                    <button id="analytics-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="analytics" aria-label="Open Analytics module" title="Open Analytics module">
-                        <div class="module-icon" id="analytics-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="16" width="3" height="5" /><rect x="7" y="12" width="3" height="9" /><rect x="11" y="8" width="3" height="13" /><rect x="15" y="4" width="3" height="17" /><rect x="19" y="6" width="3" height="15" /><path d="M2 21h20" /></svg></div>
-                        <h3 class="font-bold text-sm sm:text-xs">Analytics</h3>
-                    </button>
-                    <button id="hood-clickable-day" type="button" class="preview-card cursor-pointer module-card" data-module="curious" aria-label="Open Curious module" title="Open Curious module">
-                        <div class="module-icon" id="curious-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg></div>
-                        <h3 class="font-bold text-sm sm:text-xs">Curious</h3>
                     </button>
                 </div>
             </section>
@@ -230,91 +154,6 @@
                 <div id="food-content" class="overflow-y-auto flex-grow"></div>
             </div>
         </div>
-    
-         <div id="hood-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 id="hood-modal-title" class="text-lg font-bold"></h3>
-                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="hood-explanation-content" class="text-sm max-h-96 overflow-y-auto"></div>
-            </div>
-        </div>
-
-        <div id="geopolitics-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 id="geopolitics-modal-title" class="text-lg font-bold">World Order</h3>
-                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div class="overflow-y-auto">
-                    <div id="geopolitics-headlines-content" class="text-sm"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="coffee-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">Café</h3>
-                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="coffee-content" class="overflow-y-auto">
-                    <!-- JS will populate this -->
-                </div>
-            </div>
-        </div>
-
-        <div id="poetry-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">Daily Poetry</h3>
-                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="poetry-content" class="overflow-y-auto">
-                    <!-- JS will populate this -->
-                </div>
-            </div>
-        </div>
-
-        <div id="analytics-engineer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-2 sm:p-4 z-50">
-            <div class="modal-content-panel p-3 sm:p-4 rounded-lg max-w-4xl w-full mx-auto max-h-[95vh] sm:max-h-[90vh] flex flex-col">
-                <!-- Header -->
-                <div class="flex justify-between items-center mb-3 sm:mb-4 flex-shrink-0">
-                    <h3 class="text-base sm:text-lg font-bold">Analytics Topics</h3>
-                    <button class="modal-close-btn text-2xl sm:text-3xl leading-none font-bold hover:text-black transition-colors p-1">
-                        &times;
-                    </button>
-                </div>
-                
-                <!-- Card Navigation -->
-                <div class="flex justify-center items-center mb-3 sm:mb-4 space-x-2 flex-shrink-0">
-                    <button id="prev-card-btn" class="p-2 sm:p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition-all duration-200 shadow-sm">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-                    <div id="card-indicators" class="flex space-x-1.5 sm:space-x-2">
-                        <!-- Indicators will be populated by JS -->
-                    </div>
-                    <button id="next-card-btn" class="p-2 sm:p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition-all duration-200 shadow-sm">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <!-- Card Container -->
-                <div id="analytics-cards-container" class="flex-grow relative overflow-hidden min-h-0">
-                    <div id="analytics-cards-wrapper" class="flex transition-transform duration-300 ease-in-out h-full">
-                        <!-- Cards will be populated by JS -->
-                    </div>
-                </div>
-                
-            </div>
-        </div>
-    
-        <!-- Archive and Chat modals removed for simplicity -->
     </div>
 
     <script type="module" src="src/index.tsx"></script>

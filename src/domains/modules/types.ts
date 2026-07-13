@@ -1,22 +1,10 @@
 export type JourneyModuleId =
   | 'todo'
-  | 'quantum'
   | 'being'
-  | 'money'
-  | 'health'
-  | 'travel'
   | 'tennis'
   | 'khyaali-bhoot';
 
-export type LearnModuleId =
-  | 'world-order'
-  | 'coffee'
-  | 'guitar'
-  | 'poetry'
-  | 'french'
-  | 'food'
-  | 'analytics'
-  | 'curious';
+export type LearnModuleId = 'food';
 
 export type ModuleId = JourneyModuleId | LearnModuleId;
 

@@ -1,9 +1,0 @@
-{
-  "id": "health",
-  "displayName": "Health",
-  "category": "journey",
-  "surface": "page",
-  "icon": "./icon.svg",
-  "version": "0.1.0",
-  "renderer": "dom"
-}

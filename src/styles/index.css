@@ -2,10 +2,8 @@
 @import './base.css';
 @import './components.css';
 @import './modals.css';
-@import './analytics.css';
 @import './exercise.css';
 @import './food.css';
-@import './topics.css';
 @import './auth.css';
 
 @tailwind base;

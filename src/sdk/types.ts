@@ -10,12 +10,10 @@
  * runtime, so missing permissions surface in dev rather than at deploy.
  */
 
-import type { CallOptions } from '../infra/ai/providers/types';
-
 export type ModuleCategory = 'journey' | 'learn';
 export type ModuleSurface = 'page' | 'modal' | 'external';
-export type ModuleRenderer = 'dom' | 'react';
-export type ModulePermission = 'ai' | 'storage' | 'timer' | 'cache';
+export type ModuleRenderer = 'dom';
+export type ModulePermission = 'storage' | 'timer';
 
 export interface ModuleManifest {
   /** kebab-case unique id (matches folder name) */
@@ -63,31 +61,11 @@ export interface ModuleContext {
  * infrastructure rather than introduce new capabilities.
  */
 export interface KingSDK {
-  ai: AIAdapter;
-  cache: CacheAdapter;
   storage: StorageAdapter;
   timer: TimerAdapter;
   events: EventBus;
   ui: UIAdapter;
   user: UserAdapter;
-}
-
-/* ── AI ───────────────────────────────────────────────────────────────── */
-
-export interface AIAdapter {
-  /** Send a prompt to the currently selected provider. */
-  callAI(prompt: string, opts?: CallOptions): Promise<string>;
-  /** Returns true if the active provider is configured (api key, etc.). */
-  hasProviderReady(): boolean;
-  /** Parse JSON from a model response, tolerating ```json fences. */
-  parseJsonResponse(text: string): unknown;
-}
-
-/* ── Cache (Convex content cache) ───────────────────────────────────── */
-
-export interface CacheAdapter {
-  get<T>(contentType: string, dateKey: string): Promise<T | null>;
-  set<T>(contentType: string, dateKey: string, content: T): Promise<void>;
 }
 
 /* ── Storage (namespaced localStorage with cross-tab sync) ────────────── */

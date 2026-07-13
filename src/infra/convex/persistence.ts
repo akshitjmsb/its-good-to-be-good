@@ -1,18 +1,16 @@
 /**
- * Convex persistence for tasks and poetry recents.
+ * Convex persistence for tasks.
  *
- * The exported signatures are unchanged from the old Supabase module so callers
- * (`src/todo.tsx`, the poetry controller) don't change. The `userId` parameter
- * is now vestigial — identity is taken from the authenticated Convex client
- * context server-side — but it is kept so call sites stay identical. It is
+ * The exported signatures are unchanged from the old Supabase module so the
+ * caller (`src/todo.tsx`) doesn't change. The `userId` parameter is now
+ * vestigial — identity is taken from the authenticated Convex client context
+ * server-side — but it is kept so call sites stay identical. It is
  * intentionally unused here (prefixed `_userId`).
  */
 
 import { convex } from '../../lib/convex';
 import { api } from '../../../convex/_generated/api';
-import { PoetrySelection, Task } from '../../types';
-
-const MAX_POETRY_RECENTS = 6;
+import { Task } from '../../types';
 
 interface ConvexTask {
   id: string;
@@ -84,53 +82,3 @@ export async function saveTasks(
   }
 }
 
-export async function loadPoetryRecents(
-  _userId: string
-): Promise<PoetrySelection[]> {
-  try {
-    const rows = (await convex.query(api.poetry.list, {})) as PoetrySelection[];
-    return rows.map((item) => ({
-      poet: item.poet,
-      language: item.language,
-      timestamp: item.timestamp,
-    }));
-  } catch (error) {
-    console.error('Error loading poetry recents from Convex:', error);
-    return [];
-  }
-}
-
-export async function savePoetryRecents(
-  _userId: string,
-  recents: PoetrySelection[]
-): Promise<void> {
-  try {
-    await convex.mutation(api.poetry.replace, {
-      recents: recents.map((r) => ({
-        poet: r.poet,
-        language: r.language,
-        timestamp: r.timestamp,
-      })),
-    });
-  } catch (error) {
-    console.error('Error saving poetry recents:', error);
-    throw error;
-  }
-}
-
-export function recordPoetrySelection(
-  recents: PoetrySelection[],
-  poet: string,
-  language: string
-): PoetrySelection[] {
-  const next = [{ poet, language, timestamp: Date.now() }, ...recents];
-  const unique: PoetrySelection[] = [];
-  for (const item of next) {
-    const last = unique[unique.length - 1];
-    if (!last || last.poet !== item.poet || last.language !== item.language) {
-      unique.push(item);
-    }
-    if (unique.length >= MAX_POETRY_RECENTS) break;
-  }
-  return unique;
-}

@@ -1,5 +1,4 @@
 import type { MultilingualQuote } from '../components/reflection';
-import { renderDeepDiveScaffold } from '../components/quoteDeepDive';
 import { escapeHtml } from '../utils/escapeHtml';
 import { ensureScriptFont } from '../utils/scriptFonts';
 
@@ -30,7 +29,6 @@ export function renderQuoteHTML(quote: MultilingualQuote): string {
       ${safeTranslation ? `<div class="quote-translation">"${safeTranslation}"</div>` : ''}
       <div class="quote-author">— ${safeAuthor}${safeSource ? ` · ${safeSource}` : ''}</div>
     </div>
-    ${renderDeepDiveScaffold()}
   `;
 }
 

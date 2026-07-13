@@ -72,34 +72,9 @@ export function setModalTitle(elements: ModalElements, title: string): void {
  * loading copy across modal handlers.
  */
 export const MODAL_CONFIGS: Record<string, ModalConfig> = {
-    coffee: {
-        modalId: 'coffee-modal',
-        contentId: 'coffee-content'
-    },
-    worldOrder: {
-        modalId: 'geopolitics-modal',
-        contentId: 'geopolitics-headlines-content',
-        loadingMessage: 'Searching the web for the latest headlines...'
-    },
-    poetry: {
-        modalId: 'poetry-modal',
-        contentId: 'poetry-content',
-        loadingMessage: 'Generating beautiful poetry for you...'
-    },
     food: {
         modalId: 'food-modal',
         contentId: 'food-content',
         titleId: 'food-modal-title'
-    },
-    hood: {
-        modalId: 'hood-modal',
-        contentId: 'hood-explanation-content',
-        titleId: 'hood-modal-title',
-        loadingMessage: 'Loading topic...'
-    },
-    analytics: {
-        modalId: 'analytics-engineer-modal',
-        contentId: 'analytics-cards-wrapper',
-        loadingMessage: 'Loading analytics topics...'
     }
 };

@@ -40,7 +40,7 @@ function createFixture(root: string) {
   writeFixtureFile(
     root,
     'index.html',
-    `<html><body>${cardHtml}<a href="french.html"></a>${modalHtml}</body></html>`
+    `<html><body>${cardHtml}${modalHtml}</body></html>`
   );
 
   const modalManagerContent = [
@@ -49,7 +49,6 @@ function createFixture(root: string) {
     ...learnModules
       .filter(module => module.surface === 'page' && module.routeHref)
       .map(module => `  // route: ${module.routeHref}`),
-    "  window.location.href = 'french.html';",
     '}',
   ].join('\n');
   writeFixtureFile(
@@ -72,16 +71,7 @@ function createFixture(root: string) {
     if (module.ownerPath === 'src/components/modals/modalManager.ts') return;
     if (module.ownerPath === 'src/components/modals/factory.ts') return;
 
-    if (module.ownerPath === 'src/modules/analytics/controller.ts') {
-      // Analytics must keep going through the content service. The fixture
-      // mirrors that — `validateModalControllerBoundaries` text-scans for
-      // the required import.
-      writeFixtureFile(
-        root,
-        module.ownerPath,
-        "import { getAnalyticsContent } from '../../domains/content/service';\nexport function showAnalyticsModal() { return getAnalyticsContent; }\nexport function init(){}\nexport function destroy(){}\n"
-      );
-    } else if (module.surface === 'page' && module.routeHref) {
+    if (module.surface === 'page' && module.routeHref) {
       // Page-surface controllers carry their routeHref so the wiring
       // check (now also looking at ownerPath) can find it.
       writeFixtureFile(
@@ -178,16 +168,12 @@ describe('architecture check script', () => {
     try {
       createFixture(fixtureRoot);
 
-      // Remove one canonical learn card selector on purpose.
-      writeFixtureFile(
-        fixtureRoot,
-        'index.html',
-        '<html><body><button id="coffee-clickable" data-module="coffee">Coffee</button></body></html>'
-      );
+      // Remove the canonical learn card selector on purpose.
+      writeFixtureFile(fixtureRoot, 'index.html', '<html><body></body></html>');
 
       const result = runArchitectureCheck(fixtureRoot);
       expect(result.status).toBe(1);
-      expect(result.stderr).toContain('world-order');
+      expect(result.stderr).toContain('food');
       expect(result.stderr).toContain('missing card selector');
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });

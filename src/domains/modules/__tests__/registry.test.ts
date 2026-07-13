@@ -5,27 +5,9 @@ import {
   getModulesByCategory,
 } from '../registry';
 
-const EXPECTED_JOURNEY_IDS = [
-  'todo',
-  'quantum',
-  'being',
-  'money',
-  'health',
-  'travel',
-  'tennis',
-  'khyaali-bhoot',
-];
+const EXPECTED_JOURNEY_IDS = ['todo', 'being', 'tennis', 'khyaali-bhoot'];
 
-const EXPECTED_LEARN_IDS = [
-  'world-order',
-  'coffee',
-  'guitar',
-  'poetry',
-  'french',
-  'food',
-  'analytics',
-  'curious',
-];
+const EXPECTED_LEARN_IDS = ['food'];
 
 describe('module registry', () => {
   it('has unique module ids', () => {
@@ -53,11 +35,11 @@ describe('module registry', () => {
     });
   });
 
-  it('keeps French as a Learn module with page surface', () => {
-    const french = getModuleById('french');
-    expect(french).toBeDefined();
-    expect(french?.category).toBe('learn');
-    expect(french?.surface).toBe('page');
-    expect(french?.routeHref).toBe('french.html');
+  it('keeps Food as a Learn module with modal surface', () => {
+    const food = getModuleById('food');
+    expect(food).toBeDefined();
+    expect(food?.category).toBe('learn');
+    expect(food?.surface).toBe('modal');
+    expect(food?.modalId).toBe('food-modal');
   });
 });
