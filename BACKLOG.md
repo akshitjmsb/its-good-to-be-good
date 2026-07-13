@@ -1,7 +1,6 @@
 # King — Product Backlog
 
 ## Next Up
-- [ ] Name the two rings in the UI (deliberately unnamed for now)
 - [ ] Tennis: grow from static roadmap into a practice log (adopt
       sdk/durable when it syncs to the server)
 
@@ -11,6 +10,7 @@
   than an in-app editor
 
 ## Done
+- [x] Ring names — Sukoon (circle) and Junoon (square), July 2026
 - [x] The orbit home — circle of practices, square of tools (July 2026)
 - [x] Reorg phases 1–4: 16 modules → 5, one contract, manifest-as-registry
 - [x] Meditation practices — timer, breathing ring, chime/OM/sleep

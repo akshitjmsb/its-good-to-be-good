@@ -1653,6 +1653,32 @@ button.preview-card {
     line-height: 1;
 }
 
+/* Ring names — Sukoon inside the circle, Junoon in the square's margin.
+   Whisper-quiet: muted ink, wide tracking, no pointer events. The orbit's
+   ring line passes between the two words. */
+.orbit-ring-name {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Special Elite', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.32em;
+    text-indent: 0.32em; /* re-centre: tracking adds a trailing gap */
+    text-transform: uppercase;
+    color: var(--home-muted, #6b7280);
+    opacity: 0.75;
+    pointer-events: none;
+    user-select: none;
+}
+
+.orbit-ring-name--sukoon {
+    top: calc(50% + var(--orbit-r) - 1.7rem);
+}
+
+.orbit-ring-name--junoon {
+    bottom: 0.6rem;
+}
+
 /* Square guide — the earthly frame. Drawn at the container edge so the four
    purpose tools sit on its corners, echoing the square of da Vinci's drawing
    (the circle holds the soul, the square holds the work). */
