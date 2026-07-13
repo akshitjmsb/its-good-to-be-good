@@ -42,3 +42,4 @@ vite.config.ts.timestamp-*.mjs
 # `npx convex dev` runs; that command regenerates them in place).
 .env*.local
 .env.temp
+backups/
