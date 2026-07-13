@@ -32,9 +32,9 @@
     "new:module": "node ./scripts/new-module.mjs"
   },
   "keywords": [
-    "dashboard",
-    "perplexity",
-    "personal"
+    "personal",
+    "pwa",
+    "orbit"
   ],
   "author": "Akki Boy",
   "license": "ISC",

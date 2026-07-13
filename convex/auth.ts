@@ -13,7 +13,7 @@
  * "Remember me" is the DEFAULT — there is no checkbox. Sessions are long-lived
  * so a user signs in once (e.g. on their phone) and stays signed in for months
  * unless they explicitly sign out. The short-lived (1h) JWT still auto-refreshes
- * against the stored refresh token (see src/domains/auth/session.ts), so the
+ * against the stored refresh token (see src/platform/auth/session.ts), so the
  * 90-day window below is what actually keeps them logged in across app
  * restarts:
  *  - `totalDurationMs`    — hard cap; after this the user must re-authenticate

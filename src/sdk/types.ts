@@ -65,7 +65,7 @@ export interface StorageAdapter {
   ): StorageUnsubscribe;
 }
 
-/* ── Timer (wraps src/core/countdownTimer.ts) ─────────────────────────── */
+/* ── Timer (wraps src/platform/countdownTimer.ts) ─────────────────────────── */
 
 export interface TimerHandle {
   start(): void;

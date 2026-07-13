@@ -20,7 +20,7 @@ const convexUrl = import.meta.env.VITE_CONVEX_URL;
  * persistence call sites already treat a thrown client as "no session /
  * offline" and fall back to localStorage.
  *
- * Auth is wired in `src/domains/auth/session.ts`, which calls
+ * Auth is wired in `src/platform/auth/session.ts`, which calls
  * `convex.setAuth(...)` with a token fetcher backed by localStorage + the
  * Convex Auth refresh flow.
  */

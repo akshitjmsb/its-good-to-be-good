@@ -20,8 +20,7 @@ export const DEFAULT_DURATION_MS = 30 * 60 * 1000;
 const NAMESPACE = 'quantum-timer';
 
 // Re-exported under quantum-specific names for backwards compatibility
-// with existing call sites in src/components/quantumTimer.ts and
-// src/pages/quantum.ts.
+// with existing call sites in src/home/quantumTimer.ts.
 export type QuantumStatus = CountdownStatus;
 export type QuantumSession = CountdownSession;
 export type QuantumState = CountdownState;

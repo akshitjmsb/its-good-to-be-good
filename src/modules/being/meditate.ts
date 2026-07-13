@@ -2,7 +2,7 @@
  * Meditate view — the timer + breath UI over the shared countdown core.
  *
  * The timer + persistence + cross-tab sync live in
- * `src/core/countdownTimer.ts` (consumed via `getMeditateTimer()`).
+ * `src/platform/countdownTimer.ts` (consumed via `getMeditateTimer()`).
  * This file owns the meditation-specific UI: chime on completion,
  * breath-ring guidance during running sessions, and the preset
  * duration row.

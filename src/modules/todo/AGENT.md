@@ -30,7 +30,7 @@ DOM layer over pure, unit-tested logic in `src/modules/todo/`:
   and auth-gated pause/resume.
 - `wal.ts` — the localStorage write-ahead log (injectable storage).
 
-Persistence (`src/infra/supabase/persistence.ts`) is an upsert keyed on the
+Persistence (`src/platform/convex/persistence.ts`) is an upsert keyed on the
 client-generated `id` plus *explicit delete tombstones* — it never deletes
 "everything not in my local list", so a second device's tasks are safe.
 

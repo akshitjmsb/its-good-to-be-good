@@ -1,82 +1,73 @@
 # Agent Contract
 
-This file defines how AI agents should work safely in this repository.
+How AI agents work safely in this repository. Read `CLAUDE.md` for the
+design system; this file is the operating contract.
 
 ## Architecture Map
 
-- `src/app/*`: app orchestration (bootstrap, scheduling, render wiring, state glue).
-- `src/domains/*`: domain logic and typed contracts.
-- `src/infra/*`: external adapters (Supabase, AI clients, persistence/cache).
-- `src/components/*`: UI modules and modal behavior.
-- `src/apps/french-translator/*`: isolated French translator app.
+- `src/modules/<id>/*`: one folder per feature — manifest.json (the
+  registry), entry.ts, views, data, styles, icon, AGENT.md, tests.
+- `src/home/*`: the shell — entry, bootstrap, login gate, user chip,
+  quantum timer widget.
+- `src/platform/*`: the foundation — Convex client + persistence, auth
+  store/session, timers, store, time.
+- `src/sdk/*`: the module contract — storage, timer, events, ui, user,
+  durable (WAL + SaveController).
+- `src/styles/*`: shared tokens + home lock only.
 
 ## Locked Invariants
 
-1. Home design lock must remain unchanged unless explicitly requested:
+1. The home design lock: `index.html` uses `body.home-vintage-lock`;
+   `src/styles/home-lock.css` is the visual guardrail. The home is the
+   orbit — circle practices act in place, square tools navigate to their
+   own page. No dashboard chrome.
+2. The ring contract (machine-checked): a `circle` module never has a
+   `routeHref`; a `square` module always does, with a real page linked
+   from the home and mounted by its `entry.ts`.
+3. Layering (machine-checked): `platform/`, `sdk/`, `utils/` never import
+   `home/` or `modules/`; modules import only their own folder + the
+   foundation.
+4. Backend is Convex with real auth (`@convex-dev/auth`). Identity comes
+   from the authenticated Convex context server-side — never trust a
+   client-supplied user id.
+5. Secrets belong only in `.env.local`. Never commit credentials.
+6. Vanilla TS + HTML only. No React, no frameworks.
+7. Mobile first: verify at ~375×812 before desktop.
 
-- `index.html` uses `body.home-vintage-lock`
-- `src/styles/home-lock.css` is the visual guardrail
+## Data Safety
 
-2. Runtime model is local Supabase-first:
-
-- single anonymous user: `00000000-0000-0000-0000-000000000000`
-- content path: `Supabase cache -> Perplexity -> local fallback`
-
-3. Secret handling:
-
-- keys belong only in `.env.local`
-- never commit `.env.local` or any real credentials
-
-## Tool vs Module Language Contract
-
-- Never call a user-facing feature a tool.
-- Never call internal infra/utils capabilities a module.
-- Module subtypes are:
-  - Journey Modules (`todo`, `quantum`, `meditate`, `money`, `health`, `travel`)
-  - Learn Modules (`world-order`, `tennis`, `coffee`, `guitar`, `poetry`, `french`, `food`, `analytics`, `curious`, `exercise`)
-- Source of truth:
-  - `src/domains/modules/types.ts`
-  - `src/domains/modules/registry.ts`
+- Any module that syncs a record to the server uses the SDK durable
+  primitives (`src/sdk/durable.ts`): WAL before network, SaveController
+  with confirmed-save dirty tracking. To Do is the reference
+  implementation.
+- Never write a save path that clears "dirty" before the server confirms.
+- Escape all user/content strings through `escapeHtml`/`createSafeHtml`
+  before `innerHTML`.
 
 ## Required Verification Before Commit
 
-Run and pass:
-
 ```bash
-npm run verify
+npm run verify        # type-check + lint + tests + architecture guard + build
 ```
 
-For agent PR prep, run:
+For agent PR prep:
 
 ```bash
 npm run agent:prepr
 ```
 
-## Migration Protocol
+## Convex Changes
 
-1. Schema changes require a new file under `supabase/migrations/`.
-2. Do not edit old migration files to change history.
-3. Keep runtime union types in sync with DB constraints.
-4. Validate with:
-
-```bash
-npm run supabase:push
-```
-
-## File Ownership Guidance
-
-Active:
-
-- `src/app`, `src/domains`, `src/infra`, `src/components`, `src/apps`, `src/styles`, `supabase/migrations`
-
-Legacy/Archive:
-
-- root status markdowns moved to `docs/archive/`
-- avoid reintroducing removed feature paths unless requested
-- experimental or deprecated source lives under `archive/experimental-src/` and must not be imported into `src/*`
+1. Schema lives in `convex/schema.ts`; functions in `convex/*.ts`.
+2. Regenerate types with `npm run convex:codegen` after changing functions.
+3. Dropping a table loses data — export first (`npx convex export`) and
+   get explicit approval.
 
 ## Change Discipline
 
 1. Prefer small, typed interfaces over broad `any`.
 2. Keep user-visible behavior stable unless scope says otherwise.
-3. Re-export old paths only when needed for gradual migration.
+3. A feature's code lives in its module folder — don't smear it across
+   layers.
+4. Adding a module: `npm run new:module <id>`, then follow the guard's
+   three wiring steps.

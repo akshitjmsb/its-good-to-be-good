@@ -1,11 +1,17 @@
 # King — Product Backlog
 
 ## Next Up
-- [ ] Drag-to-reorder modules on home page (in progress)
+- [ ] Name the two rings in the UI (deliberately unnamed for now)
+- [ ] Tennis: grow from static roadmap into a practice log (adopt
+      sdk/durable when it syncs to the server)
 
-## Future
-- [ ] User-created modules — ability to create new modules from templates (roadmap/timeline, tracker, checklist, journal) without touching code. Name it, pick an icon, choose a template, fill in content over time.
+## Decided against (July 2026 reorg)
+- Drag-to-reorder home modules — the orbit is fixed markup by design
+- User-created modules from templates — a real module in code is cheaper
+  than an in-app editor
 
 ## Done
-- [x] Meditation page — timer, breathing ring, chime/OM/sleep toggles
-- [x] Tennis Module — 6-phase development roadmap
+- [x] The orbit home — circle of practices, square of tools (July 2026)
+- [x] Reorg phases 1–4: 16 modules → 5, one contract, manifest-as-registry
+- [x] Meditation practices — timer, breathing ring, chime/OM/sleep
+- [x] Tennis roadmap — 6-phase development timeline

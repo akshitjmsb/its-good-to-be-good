@@ -1,5 +1,5 @@
 /**
- * Timer adapter — wraps src/core/countdownTimer.ts.
+ * Timer adapter — wraps src/platform/countdownTimer.ts.
  *
  * Namespaces are automatically prefixed with the module id so timers from
  * two modules don't share storage.

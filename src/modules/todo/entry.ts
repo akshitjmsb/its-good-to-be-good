@@ -3,7 +3,7 @@
  * subtask support. Vanilla TS/DOM (no framework).
  *
  * Reliability model (the heavy lifting lives in pure modules under
- * `src/domains/todo/`, which is where the unit tests are):
+ * this module folder, which is where the unit tests are):
  *
  *  - Every task carries a client-generated UUID and a client-authoritative
  *    `updated_at`. Saves are an upsert keyed on id plus explicit delete

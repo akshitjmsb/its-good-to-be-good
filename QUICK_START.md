@@ -1,69 +1,21 @@
-# Quick Start Guide
-
-Get up and running with It's Good To Be King locally in a few minutes.
-
-## 1. Install Supabase CLI
-
-```bash
-# macOS
-brew install supabase/tap/supabase
-
-# Windows (Scoop)
-scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-scoop install supabase
-
-# Verify
-supabase --version
-```
-
-## 2. Install Dependencies
+# Quick Start
 
 ```bash
 npm install
+npx convex dev        # provisions the backend; writes VITE_CONVEX_URL to .env.local
+npm run dev           # http://localhost:5173
 ```
 
-## 3. Start Local Supabase + Apply Migrations
+Sign up with email + password on the login gate (magic links need
+`AUTH_RESEND_KEY` set on the Convex deployment — see `.env.example`).
+
+## Everyday commands
 
 ```bash
-npm run supabase:setup
+npm run verify              # type-check + lint + tests + architecture guard + build
+npm run new:module <id>     # scaffold a new square tool
+npm run convex:codegen      # regenerate Convex types after editing convex/*
 ```
 
-This script:
-
-- starts local Supabase
-- applies migrations with `supabase db push --local`
-- prints your local `API_URL` and `PUBLISHABLE_KEY`
-
-## 4. Configure Local Environment
-
-```bash
-cp .env.example .env.local
-```
-
-Set the values in `.env.local`:
-
-- `VITE_SUPABASE_URL=http://127.0.0.1:54321`
-- `VITE_SUPABASE_ANON_KEY=<local publishable key from supabase status>`
-- `VITE_PERPLEXITY_API_KEY=<optional local key>`
-
-## 5. Start Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
-## 6. Run Full Quality Gates
-
-```bash
-npm run verify
-```
-
-## Notes
-
-- The app uses a single local anonymous user ID: `00000000-0000-0000-0000-000000000000`.
-- Content generation order is `Supabase cache -> Perplexity -> local fallback`.
-- Never commit `.env.local` or real API keys/tokens.
-
-For deeper setup details, see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md).
+Deploys: pushes to `prod` build on Vercel (`npm run vercel:deploy` for a
+manual production deploy).

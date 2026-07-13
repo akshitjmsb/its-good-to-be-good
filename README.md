@@ -10,43 +10,52 @@ Live → **[its-good-to-be-good.vercel.app](https://its-good-to-be-good.vercel.a
 
 ## What This Is
 
-A private dashboard I built as my own abstract space — curated entirely around the things that matter to me. Not a product. Not a showcase. A place to be.
+A private space built around one idea, taken from the drawing at its
+centre — da Vinci's Vitruvian Man, inscribed in a circle and a square:
 
-Every module reflects something I actually use: daily practices I track, things I want to learn, tasks I'm working through. It's opinionated by design — these are my abstraction layers.
+> **The circle holds the soul. The square holds the work.**
+
+The home page is the orbit. Soul practices ride the circle and act in
+place — Breathe, OM, Sleep, Stretch, Weights. Purpose tools sit on the
+square's corners and open their own page — each one accumulates a record.
+
+Not a product. Not a showcase. A place to be.
 
 ---
 
-## Modules
+## The Tools
 
-### Journey
-Personal growth tracking built around the things I do daily.
-
-- **Being** — Seven daily practices visualized as an orbital mandala (Vitruvian Man motif). Practices: Breathe, OM, Sleep, Stretch, Weights, Tennis, Guided. Each practice is toggleable; the mandala reflects your streak.
-- **Todo** — Task management with subtasks, drag-to-reorder, and full persistence. 13 persistence tests cover all core interactions.
-
-### Learn
-AI-powered learning modules pulling from live sources. Built with Perplexity AI for real-time knowledge grounding.
+- **To do** — the day's task list. Crash-safe and offline-tolerant: every
+  mutation hits a localStorage write-ahead log before the network, and
+  saves only count when the server confirms.
+- **Khyaali Bhoot** — write to the fear that's haunting you, let it go,
+  watch it dissolve. Deliberately keeps nothing.
+- **Tennis** — the cradle-to-centre-court roadmap.
+- **Food** — a curated meal calendar with per-meal check-offs.
 
 ---
 
 ## How It's Built — AI Agents
 
-This project is built almost entirely with AI coding agents. I act as the Product Owner: I define the spec, own the architecture decisions, and review every change. The agents write the code.
+This project is built almost entirely with AI coding agents. I act as the
+Product Owner: I define the spec, own the architecture decisions, and
+review every change. The agents write the code.
 
-**Agent stack:** Claude Code · Codex · Antigravity
-
-The repo ships with a full agent governance layer so any AI agent can safely contribute without breaking the product's invariants:
+The repo ships with an agent governance layer, and the interesting part is
+that the philosophy is machine-checked: `npm run check:architecture` fails
+the build if a circle practice tries to navigate or a square tool loses
+its page.
 
 | File | Purpose |
 |------|---------|
-| `AGENTS.md` | Agent contract — locked invariants, layer map, migration protocol |
-| `docs/agent-architecture.md` | Layer boundaries (app / components / domains / infra), AI content safety, canonical data flow |
-| `docs/agent-playbook.md` | Builder / Reviewer / QA roles, safe change workflow, pre-PR checklist |
-| `docs/architecture.md` | Local-first design, single anonymous user, module taxonomy |
+| `CLAUDE.md` | Design system + conventions — the two rings, tokens, module contract |
+| `AGENTS.md` | Agent contract — locked invariants, layering, data safety |
+| `docs/architecture.md` | The orbit, the layers, the resilience pattern |
+| `src/modules/<id>/AGENT.md` | Per-module guide |
 
-The home page has a **vintage lock** — agents are contractually forbidden from touching its aesthetic (Special Elite font, black-and-white, January 2025 baseline). Everything else is in play.
-
-> Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+The home has a **vintage lock** — Special Elite type, monochrome paper, no
+dashboard chrome. Agents are contractually forbidden from touching the
+aesthetic. Everything else is in play.
 
 ---
 
@@ -54,10 +63,11 @@ The home page has a **vintage lock** — agents are contractually forbidden from
 
 | Layer | Tech |
 |-------|------|
-| Frontend | TypeScript · React · Vite · Tailwind CSS |
-| Backend / DB | Supabase |
-| AI | Perplexity AI |
+| Frontend | Vanilla TypeScript · Vite · Tailwind CSS (PWA) |
+| Backend / DB | Convex (with @convex-dev/auth) |
 | Hosting | Vercel |
+
+No frameworks. ~10k lines of source, five modules, one contract.
 
 ---
 
@@ -67,17 +77,7 @@ The home page has a **vintage lock** — agents are contractually forbidden from
 git clone https://github.com/akshitjmsb/its-good-to-be-good
 cd its-good-to-be-good
 npm install
-```
-
-Create a `.env.local` file:
-
-```
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_PERPLEXITY_API_KEY=your_perplexity_api_key
-```
-
-```bash
+npx convex dev   # provisions the backend, writes .env.local
 npm run dev
 ```
 
@@ -85,8 +85,11 @@ npm run dev
 
 ## For AI Agents
 
-If you're an AI agent working on this repo, read `AGENTS.md` first. It defines the contract you must operate within — locked invariants, layer boundaries, and the change protocol. Run `npm run agent:prepr` before any PR.
+Read `CLAUDE.md` and `AGENTS.md` first. Run `npm run verify` before any
+commit; `npm run agent:prepr` before a PR.
 
 ---
 
-*This is version 1 of a longer arc. The vision: a platform where anyone can build their own abstract space — their own modules, their own abstraction layers, uniquely theirs.*
+*This is version 2 — the orbit. Version 1 was a dashboard of sixteen
+modules; the reorg of July 2026 kept the five that mattered and made the
+geometry of the drawing the architecture of the app.*

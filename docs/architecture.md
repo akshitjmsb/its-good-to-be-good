@@ -1,66 +1,79 @@
 # Architecture Overview
 
-## Runtime Context
+## The idea
 
-The application is a local-first personal dashboard with a single local anonymous user model.
+The app is the orbit: da Vinci's Vitruvian Man at the centre of the home,
+with two rings around him —
 
-- User ID: `00000000-0000-0000-0000-000000000000`
-- Data backend: local Supabase
-- AI backend: browser-side Perplexity client (fallback-safe)
+- **Circle (soul)** — practices that act in place and leave nothing
+  behind: Breathe, OM, Sleep, Stretch, Weights. They never navigate.
+- **Square (purpose)** — tools that open their own page and accumulate a
+  record: To do, Khyaali Bhoot, Tennis, Food.
 
-## Request and Data Flow
+The membership test: *does using it leave something behind?*
 
-1. User triggers feature from UI (`src/components/*`, `src/apps/*`).
-2. Domain services resolve typed requests (`src/domains/*`).
-3. Infra adapters handle external I/O (`src/infra/supabase/*`, `src/infra/ai/*`).
-4. Cache-first sequence is enforced where applicable:
+## Runtime
 
-- Supabase cache
-- Perplexity generation
-- local fallback
+- Multi-page Vite PWA (one HTML entry per square tool + the home),
+  vanilla TypeScript, no frameworks.
+- Backend: Convex (`convex/`) with real auth via `@convex-dev/auth`.
+  Identity is taken from the authenticated Convex context server-side.
+- The service worker precaches the shell; To Do additionally survives
+  crash/offline via a localStorage WAL (see Resilience).
 
-## Layer Responsibilities
+## Layers
 
-### `src/app`
+```
+modules/<id>/   the feature: manifest.json (the registry), entry.ts,
+                views, data, css, icon, AGENT.md, __tests__/
+home/           shell: entry, bootstrap (auth gate, chip, clock, timer,
+                orbit init)
+platform/       foundation: convex client/persistence, auth, timers,
+                store, time
+sdk/            module contract: storage, timer, events, ui, user,
+                durable (WAL + SaveController)
+styles/         shared tokens + home lock
+utils/          escapeHtml, date, error handling
+```
 
-- Owns app bootstrap and scheduling.
-- Wires UI events to domain/infra functions.
-- Keeps orchestration logic out of infra.
+Rules (enforced by `npm run check:architecture`):
 
-### `src/domains`
+- `platform/`, `sdk/`, `utils/` never import `home/` or `modules/`.
+- Modules import only their own folder, `sdk/`, `platform/`, `utils/`,
+  `types` — never `home/`, never each other.
+- Circle manifests have no `routeHref`; square manifests must have one,
+  the page must exist, the home must link it, and the page must load the
+  module's `entry.ts`.
+- The five soul-practice hooks must exist in the home markup.
 
-- Owns domain DTOs and business rules.
-- Must not import raw DOM APIs.
-- May depend on infra through explicit functions.
+## The manifest is the registry
 
-### `src/infra`
+There is no separate registry file. `src/modules/<id>/manifest.json`
+declares `id`, `displayName`, `ring`, `routeHref` (square only), `icon`,
+`version`, `renderer`, `permissions`. The expected module set lives in
+`EXPECTED_MODULES` in `scripts/check-architecture.mjs` and changes only
+on purpose.
 
-- Owns API clients, persistence, and adapter details.
-- No UI decisions.
-- Must return typed responses or typed errors.
+## Resilience
 
-## Module vs Tool
+`src/sdk/durable.ts` is the standard pattern for server-synced records
+(extracted from To Do, where each piece maps to a real data-loss bug):
 
-| Term   | Meaning | Examples |
-| --- | --- | --- |
-| Module | User-facing feature | `analytics`, `food`, `todo`, `french` |
-| Tool | Internal reusable capability | `src/infra/supabase/*`, `src/utils/*`, modal helper utilities |
+1. **WAL** — every mutation writes a full snapshot to localStorage
+   *before* the network save. Corrupt WALs read as absent. Missing
+   localStorage degrades to safe no-ops.
+2. **SaveController** — serialized saves; dirty is derived
+   (`mutationSeq > savedSeq`) and only cleared by a confirmed success;
+   failures retry with backoff then park in `offline` with the work still
+   queued; sign-out pauses, re-auth flushes.
 
-### Module Taxonomy
+Local-only state (Food's meal check-offs, practice toggles) uses plain
+guarded localStorage.
 
-| Module Category | IDs | Surface |
-| --- | --- | --- |
-| Journey | `todo`, `quantum`, `meditate`, `money`, `health`, `travel` | Page |
-| Learn | `world-order`, `tennis`, `coffee`, `guitar`, `poetry`, `french`, `food`, `analytics`, `curious`, `exercise` | Modal or page |
+## Anti-patterns
 
-Notes:
-- `french` is a Learn Module by entry-point rule (it appears in Learn), even though its surface is a dedicated page.
-- Canonical module metadata lives in `src/domains/modules/registry.ts`.
-- `npm run check:architecture` enforces registry and layer-boundary guardrails.
-
-## Anti-Patterns to Avoid
-
-1. Adding new feature logic directly into `src/index.tsx`.
-2. Broad `any` in domain or infra modules.
-3. Re-adding dead runtime branches (archive/night/history) without scope approval.
-4. Silent script placeholders that always pass quality gates.
+1. Dashboard chrome — carousels, tile grids, in-app module editors.
+2. Feature code outside its module folder.
+3. Clearing a dirty flag before the server confirms the save.
+4. Trusting a client-supplied user id.
+5. Broad `any` in platform or sdk code.
