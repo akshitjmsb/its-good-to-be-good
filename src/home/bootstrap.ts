@@ -46,17 +46,44 @@ export async function bootstrapApp(): Promise<void> {
     if (!session) window.location.reload();
   });
 
-  const chipHost = document.getElementById('user-chip');
-  if (chipHost) mountUserChip(chipHost);
+  // Each step is guarded so one failure can't silently deaden the rest of
+  // the home (the orbit especially). Failures are named in the console and
+  // surfaced as a quiet banner instead of a dead page.
+  const failures: string[] = [];
+  const attempt = (name: string, step: () => void): void => {
+    try {
+      step();
+    } catch (error) {
+      failures.push(name);
+      console.error(`[home] ${name} failed to initialize:`, error);
+    }
+  };
+
+  attempt('user chip', () => {
+    const chipHost = document.getElementById('user-chip');
+    if (chipHost) mountUserChip(chipHost);
+  });
 
   // PWA users on the home screen have no browser refresh button.
-  document
-    .getElementById('header-refresh-btn')
-    ?.addEventListener('click', () => window.location.reload());
+  attempt('refresh button', () => {
+    document
+      .getElementById('header-refresh-btn')
+      ?.addEventListener('click', () => window.location.reload());
+  });
 
-  updateTimeDisplay();
-  setInterval(updateTimeDisplay, 1000);
+  attempt('clock', () => {
+    updateTimeDisplay();
+    setInterval(updateTimeDisplay, 1000);
+  });
 
-  initializeQuantumTimer();
-  initBeingOrbit();
+  attempt('quantum timer', () => initializeQuantumTimer());
+  attempt('orbit', () => initBeingOrbit());
+
+  if (failures.length > 0) {
+    const note = document.createElement('p');
+    note.className = 'text-xs text-center';
+    note.style.color = 'var(--home-muted, #6b7280)';
+    note.textContent = `⚠ ${failures.join(', ')} failed to load — pull down to refresh.`;
+    document.getElementById('app-container')?.prepend(note);
+  }
 }
