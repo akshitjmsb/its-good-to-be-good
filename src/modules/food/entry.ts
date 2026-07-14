@@ -8,6 +8,9 @@
 
 import './food.css';
 import { renderFoodView } from './view';
+import { registerServiceWorker } from '../../platform/registerServiceWorker';
+
+registerServiceWorker();
 
 document.addEventListener('DOMContentLoaded', () => {
   const host = document.getElementById('food-view-host');

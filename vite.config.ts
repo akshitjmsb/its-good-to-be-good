@@ -9,9 +9,11 @@ export default defineConfig(() => {
           // Auto-update the service worker in the background; existing tabs
           // pick up the new shell on next navigation without a prompt.
           registerType: 'autoUpdate',
-          // Inject SW registration into every HTML entry so the home, journey
-          // pages, and modal-host pages all participate in the same cache.
-          injectRegister: 'auto',
+          // We register the SW ourselves (src/home/registerServiceWorker.ts)
+          // so we can reload the page when a new worker takes control. The
+          // plugin's injected script only registers — it never reloads, which
+          // left returning PWA users pinned to whatever shell they'd cached.
+          injectRegister: false,
           // We already ship a hand-tuned manifest at /public/manifest.json
           // (linked from index.html); don't let the plugin overwrite it.
           manifest: false,

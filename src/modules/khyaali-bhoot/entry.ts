@@ -1,4 +1,5 @@
 import './khyaali-bhoot.css';
+import { registerServiceWorker } from '../../platform/registerServiceWorker';
 
 /**
  * Khyaali Bhoot -- talk to your imaginary ghosts.
@@ -87,3 +88,5 @@ function init(): void {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+registerServiceWorker();
