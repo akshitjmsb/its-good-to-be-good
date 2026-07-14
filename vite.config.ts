@@ -1,105 +1,35 @@
 import path from 'path';
 import { defineConfig } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
 
+// No service worker is generated. The app previously precached its shell via
+// vite-plugin-pwa, but on installed iOS/Safari PWAs a stale precached shell
+// repeatedly stranded devices on old, broken code that no update could reach
+// (the shell JS that drives a worker update can't run while the old worker is
+// still serving the old shell). We ship a self-destroying `public/sw.js`
+// instead — it unregisters any previously-installed worker and wipes its
+// caches — and register nothing new, so every launch loads current code
+// straight from the CDN. Installability (manifest + icons) is unaffected: the
+// manifest is linked statically from each HTML head and the icons live in
+// public/.
 export default defineConfig(() => {
-    return {
-      plugins: [
-        VitePWA({
-          // Auto-update the service worker in the background; existing tabs
-          // pick up the new shell on next navigation without a prompt.
-          registerType: 'autoUpdate',
-          // We register the SW ourselves (src/home/registerServiceWorker.ts)
-          // so we can reload the page when a new worker takes control. The
-          // plugin's injected script only registers — it never reloads, which
-          // left returning PWA users pinned to whatever shell they'd cached.
-          injectRegister: false,
-          // We already ship a hand-tuned manifest at /public/manifest.json
-          // (linked from index.html); don't let the plugin overwrite it.
-          manifest: false,
-          // Keep the existing manifest + icons reachable from the SW.
-          includeAssets: [
-            'manifest.json',
-            'vitruvian-logo.svg',
-            'vitruvian-man-mono.png',
-            'apple-touch-icon.png',
-            'icon-192.png',
-            'icon-512.png',
-          ],
-          workbox: {
-            // Precache the built shell — HTML, hashed JS/CSS, fonts shipped
-            // by Vite, plus the static icons above.
-            globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,json}'],
-            // The home is added to the iOS home screen; serve it from the
-            // precache when navigating offline.
-            navigateFallback: '/index.html',
-            // Multi-page app: never let the SW return index.html for the
-            // other entries' asset URLs.
-            navigateFallbackDenylist: [
-              /^\/api\//,
-              /\.[a-z0-9]+$/i,
-            ],
-            cleanupOutdatedCaches: true,
-            // Activate a new worker the moment it installs and let it take
-            // control of already-open pages — WITHOUT waiting for a client to
-            // post SKIP_WAITING. This is what rescues a device stranded on an
-            // old shell: the rescue can only live in sw.js (which the browser
-            // fetches directly), because the shell JS that would post the
-            // message never loads while the old worker is still serving it.
-            // (See src/platform/registerServiceWorker.ts for the reload half.)
-            skipWaiting: true,
-            clientsClaim: true,
-            runtimeCaching: [
-              // Note: Convex talks to the backend over a WebSocket and keeps
-              // data fresh via live subscriptions, so there's no REST endpoint
-              // to runtime-cache here (the old Supabase rule is gone). The
-              // localStorage WAL still provides offline/crash resilience.
-              {
-                // Google Fonts CSS — small, changes rarely.
-                urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
-                handler: 'StaleWhileRevalidate',
-                options: {
-                  cacheName: 'google-fonts-css',
-                  expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 30 },
-                  cacheableResponse: { statuses: [0, 200] },
-                },
-              },
-              {
-                // Google Fonts files — versioned URLs, cache-first is safe.
-                urlPattern: ({ url }) => url.origin === 'https://fonts.gstatic.com',
-                handler: 'CacheFirst',
-                options: {
-                  cacheName: 'google-fonts-files',
-                  expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                  cacheableResponse: { statuses: [0, 200] },
-                },
-              },
-            ],
-          },
-          devOptions: {
-            // Don't run the SW during `vite dev` — it causes confusing
-            // stale-shell behaviour while iterating.
-            enabled: false,
-          },
-        }),
-      ],
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
+  return {
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '.'),
       },
-      build: {
-        rollupOptions: {
-          input: {
-            main: path.resolve(__dirname, 'index.html'),
-            todo: path.resolve(__dirname, 'todo.html'),
-            // being.html is a redirect stub — Being was promoted to the home.
-            being: path.resolve(__dirname, 'being.html'),
-            tennis: path.resolve(__dirname, 'tennis.html'),
-            'khyaali-bhoot': path.resolve(__dirname, 'khyaali-bhoot.html'),
-            food: path.resolve(__dirname, 'food.html'),
-          }
-        }
-      }
-    };
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+          todo: path.resolve(__dirname, 'todo.html'),
+          // being.html is a redirect stub — Being was promoted to the home.
+          being: path.resolve(__dirname, 'being.html'),
+          tennis: path.resolve(__dirname, 'tennis.html'),
+          'khyaali-bhoot': path.resolve(__dirname, 'khyaali-bhoot.html'),
+          food: path.resolve(__dirname, 'food.html'),
+        },
+      },
+    },
+  };
 });

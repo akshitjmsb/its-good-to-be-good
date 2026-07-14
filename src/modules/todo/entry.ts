@@ -23,7 +23,6 @@
  * CSS transitions) survives, with FLIP animation on reorder.
  */
 
-import { registerServiceWorker } from '../../platform/registerServiceWorker';
 import { loadTasks, saveTasks } from '../../platform/convex/persistence';
 import { initAuthStore, getAuthState, subscribeAuth } from '../../platform/auth/store';
 import { sanitizeTaskInput, createSafeHtml } from '../../utils/escapeHtml';
@@ -577,8 +576,6 @@ function showSubtaskInput(
 }
 
 /* ── main ────────────────────────────────────────────────────────── */
-
-registerServiceWorker();
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initAuthStore();
