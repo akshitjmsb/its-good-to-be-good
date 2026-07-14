@@ -40,6 +40,15 @@ export default defineConfig(() => {
               /\.[a-z0-9]+$/i,
             ],
             cleanupOutdatedCaches: true,
+            // Activate a new worker the moment it installs and let it take
+            // control of already-open pages — WITHOUT waiting for a client to
+            // post SKIP_WAITING. This is what rescues a device stranded on an
+            // old shell: the rescue can only live in sw.js (which the browser
+            // fetches directly), because the shell JS that would post the
+            // message never loads while the old worker is still serving it.
+            // (See src/platform/registerServiceWorker.ts for the reload half.)
+            skipWaiting: true,
+            clientsClaim: true,
             runtimeCaching: [
               // Note: Convex talks to the backend over a WebSocket and keeps
               // data fresh via live subscriptions, so there's no REST endpoint
