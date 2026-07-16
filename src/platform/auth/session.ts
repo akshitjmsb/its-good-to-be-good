@@ -129,10 +129,52 @@ async function emitFromServer(event: AuthChangeEvent): Promise<void> {
 
 /* ── public API (mirrors the old Supabase session helpers) ───────────── */
 
+/**
+ * How long the boot-path session probe may wait before the device is treated
+ * as signed out. A stale token can deadlock the Convex client's auth
+ * handshake — the `currentUser` query never settles (it neither resolves nor
+ * rejects), and the home used to await it forever with every control dead
+ * (the frozen-orbit "vegetable state" of July 2026).
+ */
+export const GET_SESSION_TIMEOUT_MS = 5_000;
+
+/** `false` only when the browser positively reports being offline. */
+function reportsOffline(): boolean {
+  try {
+    return typeof navigator !== 'undefined' && navigator.onLine === false;
+  } catch {
+    return false;
+  }
+}
+
 export async function getSession(): Promise<AuthSession | null> {
   ensureConfigured();
   if (!lsGet(TOKEN_KEY)) return null;
-  return fetchSession();
+
+  const timedOut = Symbol('getSession timeout');
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<typeof timedOut>(resolve => {
+    timer = setTimeout(() => resolve(timedOut), GET_SESSION_TIMEOUT_MS);
+  });
+  try {
+    const session = await Promise.race([fetchSession(), timeout]);
+    if (session !== timedOut) return session;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  console.error(
+    `[auth] getSession did not settle within ${GET_SESSION_TIMEOUT_MS}ms — treating as signed out`
+  );
+  // Self-heal: a hang while online means the stored tokens are wedging the
+  // auth handshake — drop them so the next launch goes straight to the login
+  // gate instead of hanging again. An offline launch times out too, but
+  // there the tokens may be fine, so keep them.
+  if (!reportsOffline()) {
+    console.error('[auth] clearing stored tokens so the next launch can sign in cleanly');
+    storeTokens(null);
+  }
+  return null;
 }
 
 async function passwordFlow(

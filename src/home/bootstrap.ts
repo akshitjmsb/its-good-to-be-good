@@ -27,25 +27,6 @@ function updateTimeDisplay(): void {
 }
 
 export async function bootstrapApp(): Promise<void> {
-  await initAuthStore();
-  const authedUser = getAuthState().user;
-
-  if (!authedUser) {
-    const host = document.getElementById('app-container');
-    if (host) mountLoginGate(host);
-    // Once the user signs in, Convex Auth fires SIGNED_IN — reload so the
-    // full app boots cleanly with the new session.
-    onAuthStateChange((_event, session) => {
-      if (session) window.location.reload();
-    });
-    return;
-  }
-
-  // After sign-out, reload to drop module state cleanly and re-mount the gate.
-  onAuthStateChange((_event, session) => {
-    if (!session) window.location.reload();
-  });
-
   // Each step is guarded so one failure can't silently deaden the rest of
   // the home (the orbit especially). Failures are named in the console and
   // surfaced as a quiet banner instead of a dead page.
@@ -59,10 +40,10 @@ export async function bootstrapApp(): Promise<void> {
     }
   };
 
-  attempt('user chip', () => {
-    const chipHost = document.getElementById('user-chip');
-    if (chipHost) mountUserChip(chipHost);
-  });
+  // Wire the auth-independent surface FIRST. The soul practices, the quantum
+  // timer, and the clock need no session, so a slow or wedged auth probe must
+  // never be able to take them down (the frozen-orbit "vegetable state":
+  // the static markup paints, but nothing responds).
 
   // PWA users on the home screen have no browser refresh button.
   attempt('refresh button', () => {
@@ -86,4 +67,35 @@ export async function bootstrapApp(): Promise<void> {
     note.textContent = `⚠ ${failures.join(', ')} failed to load — pull down to refresh.`;
     document.getElementById('app-container')?.prepend(note);
   }
+
+  // Only now resolve auth. getSession() bounds the probe with a timeout, and
+  // this await is guarded too — an auth failure degrades to the login gate,
+  // never to a dead page.
+  try {
+    await initAuthStore();
+  } catch (error) {
+    console.error('[home] auth bootstrap failed — treating as signed out:', error);
+  }
+  const authedUser = getAuthState().user;
+
+  if (!authedUser) {
+    const host = document.getElementById('app-container');
+    if (host) mountLoginGate(host);
+    // Once the user signs in, Convex Auth fires SIGNED_IN — reload so the
+    // full app boots cleanly with the new session.
+    onAuthStateChange((_event, session) => {
+      if (session) window.location.reload();
+    });
+    return;
+  }
+
+  // After sign-out, reload to drop module state cleanly and re-mount the gate.
+  onAuthStateChange((_event, session) => {
+    if (!session) window.location.reload();
+  });
+
+  attempt('user chip', () => {
+    const chipHost = document.getElementById('user-chip');
+    if (chipHost) mountUserChip(chipHost);
+  });
 }
