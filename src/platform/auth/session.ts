@@ -173,6 +173,7 @@ export async function getSession(): Promise<AuthSession | null> {
   if (!reportsOffline()) {
     console.error('[auth] clearing stored tokens so the next launch can sign in cleanly');
     storeTokens(null);
+    arm(); // re-arm so the Convex client picks up the cleared tokens
   }
   return null;
 }
