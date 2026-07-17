@@ -10,6 +10,7 @@
 
 import { convex } from './client';
 import { api } from '../../../convex/_generated/api';
+import { ensureFreshAuth } from '../auth/session';
 import { Task } from '../../types';
 
 interface ConvexTask {
@@ -32,6 +33,8 @@ interface ConvexTask {
  */
 export async function loadTasks(_userId: string): Promise<Task[]> {
   try {
+    // The HTTP client holds no session — attach a fresh JWT per call.
+    await ensureFreshAuth();
     const rows = (await convex.query(api.tasks.list, {})) as ConvexTask[];
     return rows.map((t) => ({
       id: t.id,
@@ -75,6 +78,8 @@ export async function saveTasks(
   }));
 
   try {
+    // The HTTP client holds no session — attach a fresh JWT per call.
+    await ensureFreshAuth();
     await convex.mutation(api.tasks.save, { tasks: rows, deletedIds });
   } catch (error) {
     console.error('Error saving tasks:', error);

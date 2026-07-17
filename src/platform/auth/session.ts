@@ -4,15 +4,22 @@
  * store, which keeps the call sites identical to the old Supabase ones.
  *
  * Token model: Convex Auth's `signIn` action returns `{ token, refreshToken }`.
- * We persist both in localStorage and feed them to `convex.setAuth()` via a
- * token fetcher that transparently refreshes when Convex asks for a fresh JWT.
+ * We persist both in localStorage. The Convex client is the *HTTP* client —
+ * stateless request/response, no socket, no server-driven auth handshake — so
+ * this module owns token freshness explicitly: `ensureFreshAuth()` attaches
+ * the stored JWT via `convex.setAuth(token)`, refreshing it first through the
+ * stored refresh token when it is expired or about to expire.
+ *
+ * Auth events (SIGNED_IN / SIGNED_OUT) are likewise emitted from here — from
+ * the sign-in and sign-out flows themselves — since with the HTTP client
+ * there is no client-driven auth callback. The home's bootstrap listens for
+ * these to reload into / out of the full app.
  *
  * Magic-link sign-in and password reset require an email provider (Resend)
  * configured in `convex/auth.ts`; until then those two helpers throw a clear,
  * descriptive error. Email + password works with no email service.
  */
 
-import { type AuthTokenFetcher } from 'convex/browser';
 import { convex } from '../convex/client';
 import { api } from '../../../convex/_generated/api';
 
@@ -61,54 +68,107 @@ function storeTokens(tokens: { token: string; refreshToken: string } | null): vo
   lsSet(REFRESH_KEY, tokens?.refreshToken ?? null);
 }
 
-/* ── client auth wiring ──────────────────────────────────────────────── */
+/* ── token freshness ─────────────────────────────────────────────────── */
 
-const fetchToken: AuthTokenFetcher = async ({ forceRefreshToken }) => {
-  const token = lsGet(TOKEN_KEY);
-  if (!forceRefreshToken) return token;
+/**
+ * Refresh the JWT this long before its actual expiry, so a request never
+ * leaves with a token that dies in flight.
+ */
+const EXPIRY_SKEW_MS = 60_000;
 
+/** Decode a JWT's `exp` claim (ms since epoch), or null if unreadable. */
+function jwtExpiryMs(token: string): number | null {
+  try {
+    const payload = token.split('.')[1];
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const exp = (JSON.parse(json) as { exp?: number }).exp;
+    return typeof exp === 'number' ? exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `true` when the stored JWT should be refreshed before use. Unreadable
+ * tokens are optimistically treated as fresh — if the server disagrees, the
+ * call fails and is handled at its call site — so a malformed value can't
+ * trigger a refresh loop.
+ */
+function needsRefresh(token: string): boolean {
+  const expiry = jwtExpiryMs(token);
+  return expiry != null && expiry - EXPIRY_SKEW_MS <= Date.now();
+}
+
+/** `true` only when the browser positively reports being offline. */
+function reportsOffline(): boolean {
+  try {
+    return typeof navigator !== 'undefined' && navigator.onLine === false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Exchange the stored refresh token for fresh tokens. Returns the new JWT,
+ * or null when it couldn't. Convex Auth *throws* on a dead refresh token, so
+ * the catch has to split on connectivity: offline, the failure is the
+ * network's and the tokens may be fine — keep them, signing the device out
+ * would trade a blip for a forced re-login. Online, the failure means the
+ * refresh token is dead — clear both so the next launch goes straight to the
+ * login gate instead of retrying a doomed refresh forever.
+ */
+async function refreshTokens(): Promise<string | null> {
   const refreshToken = lsGet(REFRESH_KEY);
   if (!refreshToken) {
     storeTokens(null);
     return null;
   }
   try {
+    // Don't send the expired JWT along with the refresh call.
+    convex.clearAuth();
     const result = await convex.action(api.auth.signIn, { refreshToken });
     if (result?.tokens) {
       storeTokens(result.tokens);
       return result.tokens.token as string;
     }
   } catch (error) {
-    console.error('[auth] token refresh failed:', error);
+    if (reportsOffline()) {
+      console.error('[auth] token refresh failed offline (keeping tokens):', error);
+      return null;
+    }
+    console.error('[auth] token refresh rejected — clearing stored tokens:', error);
   }
   storeTokens(null);
   return null;
-};
+}
+
+/**
+ * Attach a fresh JWT to the client (refreshing first if needed), or clear
+ * auth when there is none. Never throws — a client construction failure
+ * (e.g. missing VITE_CONVEX_URL) degrades to unauthenticated calls, which
+ * every call site already treats as "no session / offline".
+ */
+export async function ensureFreshAuth(): Promise<void> {
+  try {
+    const token = lsGet(TOKEN_KEY);
+    if (!token) {
+      convex.clearAuth();
+      return;
+    }
+    const fresh = needsRefresh(token) ? await refreshTokens() : token;
+    if (fresh) convex.setAuth(fresh);
+    else convex.clearAuth();
+  } catch (error) {
+    console.error('[auth] could not attach auth:', error);
+  }
+}
+
+/* ── auth events ─────────────────────────────────────────────────────── */
 
 const listeners = new Set<Listener>();
-let configured = false;
 
-function onAuthChange(isAuthenticated: boolean): void {
-  void emitFromServer(isAuthenticated ? 'SIGNED_IN' : 'SIGNED_OUT');
-}
-
-/** (Re)attach the token fetcher so the client picks up token changes. */
-function arm(): void {
-  convex.setAuth(fetchToken, onAuthChange);
-  configured = true;
-}
-
-function ensureConfigured(): void {
-  if (configured) return;
-  try {
-    arm();
-  } catch (error) {
-    // The Convex client couldn't be constructed (e.g. VITE_CONVEX_URL not set
-    // on this build). Don't let that reject the boot — leave `configured`
-    // false so callers fall through to the "no session" path and the app
-    // still renders (login gate / offline shell) instead of a dead page.
-    console.error('[auth] Convex client unavailable:', error);
-  }
+function emit(event: AuthChangeEvent, session: AuthSession | null): void {
+  for (const listener of listeners) listener(event, session);
 }
 
 async function fetchSession(): Promise<AuthSession | null> {
@@ -122,33 +182,17 @@ async function fetchSession(): Promise<AuthSession | null> {
   }
 }
 
-async function emitFromServer(event: AuthChangeEvent): Promise<void> {
-  const session = event === 'SIGNED_OUT' ? null : await fetchSession();
-  for (const listener of listeners) listener(event, session);
-}
-
 /* ── public API (mirrors the old Supabase session helpers) ───────────── */
 
 /**
  * How long the boot-path session probe may wait before the device is treated
- * as signed out. A stale token can deadlock the Convex client's auth
- * handshake — the `currentUser` query never settles (it neither resolves nor
- * rejects), and the home used to await it forever with every control dead
- * (the frozen-orbit "vegetable state" of July 2026).
+ * as signed out for this launch. With the HTTP client a slow probe means a
+ * slow network — not the WebSocket-era wedged handshake — so the timeout
+ * bounds the boot without touching the stored tokens.
  */
 export const GET_SESSION_TIMEOUT_MS = 5_000;
 
-/** `false` only when the browser positively reports being offline. */
-function reportsOffline(): boolean {
-  try {
-    return typeof navigator !== 'undefined' && navigator.onLine === false;
-  } catch {
-    return false;
-  }
-}
-
 export async function getSession(): Promise<AuthSession | null> {
-  ensureConfigured();
   if (!lsGet(TOKEN_KEY)) return null;
 
   const timedOut = Symbol('getSession timeout');
@@ -156,25 +200,17 @@ export async function getSession(): Promise<AuthSession | null> {
   const timeout = new Promise<typeof timedOut>(resolve => {
     timer = setTimeout(() => resolve(timedOut), GET_SESSION_TIMEOUT_MS);
   });
+  const probe = ensureFreshAuth().then(fetchSession);
   try {
-    const session = await Promise.race([fetchSession(), timeout]);
+    const session = await Promise.race([probe, timeout]);
     if (session !== timedOut) return session;
   } finally {
     clearTimeout(timer);
   }
 
   console.error(
-    `[auth] getSession did not settle within ${GET_SESSION_TIMEOUT_MS}ms — treating as signed out`
+    `[auth] getSession did not settle within ${GET_SESSION_TIMEOUT_MS}ms — treating as signed out for this launch`
   );
-  // Self-heal: a hang while online means the stored tokens are wedging the
-  // auth handshake — drop them so the next launch goes straight to the login
-  // gate instead of hanging again. An offline launch times out too, but
-  // there the tokens may be fine, so keep them.
-  if (!reportsOffline()) {
-    console.error('[auth] clearing stored tokens so the next launch can sign in cleanly');
-    storeTokens(null);
-    arm(); // re-arm so the Convex client picks up the cleared tokens
-  }
   return null;
 }
 
@@ -183,14 +219,16 @@ async function passwordFlow(
   password: string,
   flow: 'signIn' | 'signUp'
 ): Promise<AuthResult> {
-  ensureConfigured();
+  // Sign in from a clean slate — never send a stale JWT with the sign-in call.
+  convex.clearAuth();
   const result = await convex.action(api.auth.signIn, {
     provider: 'password',
     params: { email, password, flow },
   });
   if (result?.tokens) storeTokens(result.tokens);
-  arm(); // re-fetch the token now that it changed
+  await ensureFreshAuth();
   const session = await fetchSession();
+  if (session) emit('SIGNED_IN', session);
   return { user: session?.user ?? null, session };
 }
 
@@ -223,19 +261,22 @@ export async function resetPasswordForEmail(_email: string): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
-  ensureConfigured();
   try {
+    await ensureFreshAuth();
     await convex.action(api.auth.signOut, {});
   } catch (error) {
     console.error('[auth] signOut failed:', error);
   }
   storeTokens(null);
-  arm();
-  for (const listener of listeners) listener('SIGNED_OUT', null);
+  try {
+    convex.clearAuth();
+  } catch {
+    /* client unavailable — nothing to clear */
+  }
+  emit('SIGNED_OUT', null);
 }
 
 export function onAuthStateChange(callback: Listener): () => void {
-  ensureConfigured();
   listeners.add(callback);
   return () => {
     listeners.delete(callback);

@@ -10,6 +10,11 @@ vi.mock('./client', () => ({
   convex: { query, mutation },
 }));
 
+// The persistence wrappers attach a fresh JWT before each call; stub that out.
+vi.mock('../auth/session', () => ({
+  ensureFreshAuth: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../../../convex/_generated/api', () => ({
   api: {
     tasks: { list: 'tasks.list', save: 'tasks.save' },

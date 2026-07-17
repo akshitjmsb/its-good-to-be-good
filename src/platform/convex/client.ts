@@ -1,17 +1,20 @@
-import { ConvexClient } from 'convex/browser';
+import { ConvexHttpClient } from 'convex/browser';
 
 const convexUrl = import.meta.env.VITE_CONVEX_URL;
 
 /**
  * The single browser-side Convex client, created lazily on first use.
  *
- * `new ConvexClient(url)` opens a WebSocket immediately, so we defer
- * construction until something actually reads a property off `convex`. That
- * keeps modules which merely *import* a Convex-backed helper (without calling
- * it) from opening a socket — notably the AI generators, which import the
- * content cache at module load.
+ * This is the HTTP client, not the WebSocket one — a deliberate downgrade.
+ * The app uses Convex strictly request/response (no live queries), and the
+ * WebSocket client's stateful auth handshake was the app's main bug factory
+ * on iOS: a standalone PWA is suspended rather than closed, iOS kills the
+ * socket, and the re-auth handshake could wedge so that queries neither
+ * resolved nor rejected (the frozen-orbit "vegetable state" of July 2026).
+ * With plain HTTPS requests there is no connection to lose and no handshake
+ * to deadlock — each call independently succeeds or fails.
  *
- * The missing-URL check is also deferred to `getClient()` — never thrown at
+ * The missing-URL check is deferred to `getClient()` — never thrown at
  * module-evaluation time. A top-level throw here would take down the *entire*
  * app bundle (this module is in the boot import graph), blanking even the
  * backend-independent UI like the quote-of-the-day and the login gate. By
@@ -20,13 +23,12 @@ const convexUrl = import.meta.env.VITE_CONVEX_URL;
  * persistence call sites already treat a thrown client as "no session /
  * offline" and fall back to localStorage.
  *
- * Auth is wired in `src/platform/auth/session.ts`, which calls
- * `convex.setAuth(...)` with a token fetcher backed by localStorage + the
- * Convex Auth refresh flow.
+ * Auth is wired in `src/platform/auth/session.ts`, which attaches a fresh
+ * JWT via `convex.setAuth(token)` before authenticated calls.
  */
-let instance: ConvexClient | null = null;
+let instance: ConvexHttpClient | null = null;
 
-function getClient(): ConvexClient {
+function getClient(): ConvexHttpClient {
   if (!convexUrl) {
     throw new Error(
       'Missing VITE_CONVEX_URL. Run `npx convex dev` to provision a deployment ' +
@@ -34,11 +36,11 @@ function getClient(): ConvexClient {
         'set VITE_CONVEX_URL in your hosting provider (e.g. Vercel) for builds.'
     );
   }
-  if (!instance) instance = new ConvexClient(convexUrl);
+  if (!instance) instance = new ConvexHttpClient(convexUrl);
   return instance;
 }
 
-export const convex: ConvexClient = new Proxy({} as ConvexClient, {
+export const convex: ConvexHttpClient = new Proxy({} as ConvexHttpClient, {
   get(_target, prop, receiver) {
     const client = getClient();
     const value = Reflect.get(client as object, prop, receiver);

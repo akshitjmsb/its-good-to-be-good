@@ -1,14 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the Convex client + generated api so getSession runs against spies.
-const { query, action, setAuth } = vi.hoisted(() => ({
+const { query, action, setAuth, clearAuth } = vi.hoisted(() => ({
   query: vi.fn(),
   action: vi.fn(),
   setAuth: vi.fn(),
+  clearAuth: vi.fn(),
 }));
 
 vi.mock('../convex/client', () => ({
-  convex: { query, action, setAuth },
+  convex: { query, action, setAuth, clearAuth },
 }));
 
 vi.mock('../../../convex/_generated/api', () => ({
@@ -38,11 +39,20 @@ function makeLocalStorage(): Storage {
   } as Storage;
 }
 
+/** Build a structurally-valid JWT whose `exp` is `secondsFromNow` away. */
+function makeJwt(secondsFromNow: number): string {
+  const payload = Buffer.from(
+    JSON.stringify({ exp: Math.floor(Date.now() / 1000) + secondsFromNow })
+  ).toString('base64url');
+  return `header.${payload}.signature`;
+}
+
 beforeEach(() => {
   vi.stubGlobal('localStorage', makeLocalStorage());
-  vi.stubGlobal('navigator', { onLine: true });
   query.mockReset();
   action.mockReset();
+  setAuth.mockReset();
+  clearAuth.mockReset();
   vi.useFakeTimers();
 });
 
@@ -57,7 +67,9 @@ describe('getSession', () => {
     expect(query).not.toHaveBeenCalled();
   });
 
-  it('returns the session when currentUser resolves', async () => {
+  it('attaches the stored token and returns the session when currentUser resolves', async () => {
+    // An unreadable token is optimistically treated as fresh — the server is
+    // the arbiter, and its rejection surfaces at the query call site.
     localStorage.setItem(TOKEN_KEY, 'tok');
     localStorage.setItem(REFRESH_KEY, 'ref');
     query.mockResolvedValue({ id: 'u1', email: 'u1@example.com' });
@@ -65,38 +77,73 @@ describe('getSession', () => {
     await expect(getSession()).resolves.toEqual({
       user: { id: 'u1', email: 'u1@example.com' },
     });
+    expect(setAuth).toHaveBeenCalledWith('tok');
+    expect(action).not.toHaveBeenCalled();
     // A healthy probe must not touch the stored tokens.
     expect(localStorage.getItem(TOKEN_KEY)).toBe('tok');
   });
 
-  it('gives up after the timeout and clears tokens when the probe hangs online', async () => {
-    localStorage.setItem(TOKEN_KEY, 'stale');
-    localStorage.setItem(REFRESH_KEY, 'stale-refresh');
-    query.mockReturnValue(new Promise(() => {})); // never settles (wedged handshake)
+  it('proactively refreshes an expired JWT before querying', async () => {
+    localStorage.setItem(TOKEN_KEY, makeJwt(-10));
+    localStorage.setItem(REFRESH_KEY, 'ref');
+    action.mockResolvedValue({ tokens: { token: 'fresh-tok', refreshToken: 'fresh-ref' } });
+    query.mockResolvedValue({ id: 'u1', email: 'u1@example.com' });
 
-    const pending = getSession();
-    await vi.advanceTimersByTimeAsync(GET_SESSION_TIMEOUT_MS);
-
-    await expect(pending).resolves.toBeNull();
-    // Self-heal: the wedging tokens are gone, so the next launch mounts the
-    // login gate instead of hanging again.
-    expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
-    expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
+    await expect(getSession()).resolves.toEqual({
+      user: { id: 'u1', email: 'u1@example.com' },
+    });
+    expect(action).toHaveBeenCalledWith('auth.signIn', { refreshToken: 'ref' });
+    expect(setAuth).toHaveBeenCalledWith('fresh-tok');
+    expect(localStorage.getItem(TOKEN_KEY)).toBe('fresh-tok');
+    expect(localStorage.getItem(REFRESH_KEY)).toBe('fresh-ref');
   });
 
-  it('keeps tokens when the probe times out offline', async () => {
+  it('keeps tokens when the refresh fails while offline', async () => {
+    // Offline the tokens may be perfectly fine — signing the device out
+    // would trade a connectivity blip for a forced re-login.
     vi.stubGlobal('navigator', { onLine: false });
+    localStorage.setItem(TOKEN_KEY, makeJwt(-10));
+    localStorage.setItem(REFRESH_KEY, 'ref');
+    action.mockRejectedValue(new Error('network down'));
+    query.mockResolvedValue(null);
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(getSession()).resolves.toBeNull();
+    expect(localStorage.getItem(TOKEN_KEY)).not.toBeNull();
+    expect(localStorage.getItem(REFRESH_KEY)).toBe('ref');
+    spy.mockRestore();
+  });
+
+  it('clears tokens when the refresh is rejected while online', async () => {
+    // Convex Auth throws on a dead refresh token; online, retrying is doomed —
+    // clear so the next launch goes straight to the login gate.
+    vi.stubGlobal('navigator', { onLine: true });
+    localStorage.setItem(TOKEN_KEY, makeJwt(-10));
+    localStorage.setItem(REFRESH_KEY, 'dead-ref');
+    action.mockRejectedValue(new Error('Invalid refresh token'));
+    query.mockResolvedValue(null);
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(getSession()).resolves.toBeNull();
+    expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
+    expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
+    spy.mockRestore();
+  });
+
+  it('gives up after the timeout but keeps the stored tokens', async () => {
+    // With the HTTP client a hang is just a slow network — not the
+    // WebSocket-era wedged handshake — so bound the boot, keep the tokens.
     localStorage.setItem(TOKEN_KEY, 'tok');
     localStorage.setItem(REFRESH_KEY, 'ref');
-    query.mockReturnValue(new Promise(() => {}));
+    query.mockReturnValue(new Promise(() => {})); // never settles
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const pending = getSession();
     await vi.advanceTimersByTimeAsync(GET_SESSION_TIMEOUT_MS);
 
     await expect(pending).resolves.toBeNull();
-    // Offline the tokens may be perfectly fine — signing the device out
-    // would trade a connectivity blip for a forced re-login.
     expect(localStorage.getItem(TOKEN_KEY)).toBe('tok');
     expect(localStorage.getItem(REFRESH_KEY)).toBe('ref');
+    spy.mockRestore();
   });
 });
