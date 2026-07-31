@@ -64,9 +64,12 @@ export const list = query({
 export const save = mutation({
   args: {
     tasks: v.array(taskInput),
-    deleted: v.array(deleteInput),
+    // Keep the old field for one release so an already-open production tab
+    // can still save safely while the new rich-note client rolls out.
+    deleted: v.optional(v.array(deleteInput)),
+    deletedIds: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { tasks, deleted }) => {
+  handler: async (ctx, { tasks, deleted, deletedIds }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
@@ -83,10 +86,23 @@ export const save = mutation({
     const tasksByClient = new Map(rows.map(row => [row.clientId, row]));
     const tombstonesByClient = new Map(tombstoneRows.map(row => [row.clientId, row]));
 
+    // A pre-rich-text client sends only deletedIds. Give those deletes a
+    // server-side revision so they participate in the same conflict policy.
+    const legacyDeleted = (deletedIds ?? []).map((clientId) => ({
+      clientId,
+      deletedAt: new Date().toISOString(),
+    }));
+
     // Delete exactly the explicit records, plus a deleted parent's existing
     // children. Every removed id gets a revisioned tombstone, preventing an
     // old offline full snapshot from bringing a note back unexpectedly.
-    const deleteByClient = new Map(deleted.map(record => [record.clientId, record]));
+    const deleteByClient = new Map<string, { clientId: string; deletedAt: string }>();
+    for (const deletion of [...(deleted ?? []), ...legacyDeleted]) {
+      const prior = deleteByClient.get(deletion.clientId);
+      if (!prior || isStrictlyNewer(deletion.deletedAt, prior.deletedAt)) {
+        deleteByClient.set(deletion.clientId, deletion);
+      }
+    }
     for (const row of rows) {
       const parentDelete = row.parentId ? deleteByClient.get(row.parentId) : undefined;
       if (parentDelete && !deleteByClient.has(row.clientId)) {
@@ -150,7 +166,6 @@ export const save = mutation({
       const existing = tasksByClient.get(task.clientId);
       const update = {
         text: task.text,
-        note: task.note ?? "",
         completed: task.completed,
         position: task.position,
         parentId: task.parentId,
@@ -159,13 +174,23 @@ export const save = mutation({
 
       if (existing) {
         if (!isStrictlyNewer(task.updatedAt, existing.updatedAt)) continue;
-        await ctx.db.patch(existing._id, update);
+        // Old clients do not send note at all. Preserve the server copy in
+        // that case; an explicit empty string from the new editor still
+        // intentionally clears it.
+        await ctx.db.patch(existing._id, task.note === undefined ? update : {
+          ...update,
+          note: task.note,
+        });
       } else {
+        const insert = {
+          ...update,
+          note: task.note ?? "",
+        };
         const taskId = await ctx.db.insert("tasks", {
           userId,
           clientId: task.clientId,
           createdAt: task.createdAt,
-          ...update,
+          ...insert,
         });
         tasksByClient.set(task.clientId, {
           _id: taskId,
@@ -173,7 +198,7 @@ export const save = mutation({
           userId,
           clientId: task.clientId,
           createdAt: task.createdAt,
-          ...update,
+          ...insert,
         });
       }
     }
