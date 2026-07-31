@@ -4,7 +4,8 @@
  * Everything that decides *what the data should become* lives here so it can
  * be unit-tested without a browser: ordering, the parent/child completion
  * cascade, position normalisation, and the non-destructive sync merge. The
- * page entry (`src/todo.tsx`) is a thin DOM layer that calls into these.
+ * page entry (`src/modules/todo/entry.ts`) is a thin DOM layer that calls
+ * into these.
  */
 
 import type { Task } from '../../types';
@@ -126,17 +127,23 @@ export function applyCompletion(
  *    `updated_at` (last-writer-wins); ties favour the local copy so an
  *    in-flight optimistic edit is never thrown away.
  *  - A task only on the server was added on another device → adopt it.
- *  - A task only local is a pending add not yet confirmed → keep it.
+ *  - A task only local is a pending add not yet confirmed → keep it during
+ *    recovery; a clean background sync can opt out so a remotely deleted task
+ *    does not linger in the local UI.
  *  - Any id in `deletedIds` (a local tombstone awaiting flush) is dropped from
  *    both sides so a deleted task is never resurrected by a stale server row.
  *
- * The result is re-indexed for stable ordering.
+ * The result is re-indexed for stable ordering. `keepLocalOnly` defaults to
+ * true for WAL recovery, and is false once a clean session knows the server
+ * is authoritative for non-pending rows.
  */
 export function mergeTasks(
   local: Task[],
   server: Task[],
-  deletedIds: Iterable<string> = []
+  deletedIds: Iterable<string> = [],
+  options: { keepLocalOnly?: boolean } = {}
 ): Task[] {
+  const keepLocalOnly = options.keepLocalOnly ?? true;
   const deleted = new Set(deletedIds);
   const localById = new Map(local.map(t => [t.id, t]));
   const serverById = new Map(server.map(t => [t.id, t]));
@@ -150,7 +157,7 @@ export function mergeTasks(
     const s = serverById.get(id);
     if (l && s) {
       merged.push(updatedMs(l) >= updatedMs(s) ? l : s);
-    } else if (l) {
+    } else if (l && keepLocalOnly) {
       merged.push(l);
     } else if (s) {
       merged.push(s);
@@ -163,6 +170,7 @@ export function mergeTasks(
 /** State the auto-sync consults before touching local tasks. */
 export interface SyncGuardState {
   editingId: string | null;
+  noteEditorActive: boolean;
   subtaskInputActive: boolean;
   isDragging: boolean;
   saving: boolean;
@@ -180,6 +188,7 @@ export interface SyncGuardState {
 export function canSync(s: SyncGuardState): boolean {
   return (
     !s.editingId &&
+    !s.noteEditorActive &&
     !s.subtaskInputActive &&
     !s.isDragging &&
     !s.saving &&

@@ -25,13 +25,18 @@
 
 import { loadTasks, saveTasks } from '../../platform/convex/persistence';
 import { initAuthStore, getAuthState, subscribeAuth } from '../../platform/auth/store';
-import { sanitizeTaskInput, createSafeHtml } from '../../utils/escapeHtml';
+import {
+  sanitizeTaskInput,
+  createSafeHtml,
+  escapeHtmlAttribute,
+} from '../../utils/escapeHtml';
 import {
   topLevel,
   childrenOf,
   reindex,
   applyCompletion,
   mergeTasks,
+  canSync,
 } from './model';
 import { SaveController, type SaveStatus } from './save-controller';
 import {
@@ -41,12 +46,21 @@ import {
   type Wal,
   type WalSnapshot,
 } from './wal';
-import type { Task } from '../../types';
+import {
+  isNoteWithinLimit,
+  noteHasContent,
+  notePlainText,
+  plainTextToNoteHtml,
+  sanitizeNoteHtml,
+} from './rich-text';
+import type { Task, TaskDeletion } from '../../types';
+import './todo.css';
 
 const LIST_ID = 'tasks-list-todo';
 const SYNC_INTERVAL_MS = 30_000;
 const FLIP_MS = 220;
 const SAVED_FLASH_MS = 1_500;
+const NOTE_SAVE_DEBOUNCE_MS = 350;
 
 /* ── helpers ─────────────────────────────────────────────────────── */
 
@@ -62,7 +76,29 @@ function makeId(): string {
   });
 }
 
-const nowIso = (): string => new Date().toISOString();
+/**
+ * A single page can generate several edits within one millisecond. Keeping
+ * revisions strictly monotonic lets the server reject genuinely stale device
+ * snapshots without ever mistaking two local edits for the same version.
+ */
+function createMutationClock() {
+  let lastMs = 0;
+
+  return {
+    observe(timestamp: string | undefined): void {
+      if (!timestamp) return;
+      const parsed = Date.parse(timestamp);
+      if (!Number.isNaN(parsed)) lastMs = Math.max(lastMs, parsed);
+    },
+    next(): string {
+      lastMs = Math.max(Date.now(), lastMs + 1);
+      return new Date(lastMs).toISOString();
+    },
+  };
+}
+
+const mutationClock = createMutationClock();
+const nowIso = (): string => mutationClock.next();
 
 const prefersReducedMotion = (): boolean =>
   typeof matchMedia === 'function' &&
@@ -91,11 +127,13 @@ function rowSignature(task: Task, tasks: Task[], isSubtask: boolean): string {
     kids.length,
     done,
     task.text,
+    noteHasContent(task.note) ? 'n' : '-',
   ].join('|');
 }
 
 function rowInnerHtml(task: Task, tasks: Task[], isSubtask: boolean): string {
   const safeText = createSafeHtml(task.text, { maxLength: 200 });
+  const safeTaskId = escapeHtmlAttribute(task.id);
   const kids = childrenOf(tasks, task.id);
   const hasChildren = kids.length > 0;
   const isCollapsed = collapsedParents.has(task.id);
@@ -103,11 +141,11 @@ function rowInnerHtml(task: Task, tasks: Task[], isSubtask: boolean): string {
   const dragHandle = `<span class="todo-row__drag" aria-label="Drag to reorder" title="Drag to reorder">⠿</span>`;
 
   const toggle = hasChildren
-    ? `<button type="button" class="todo-row__toggle" data-task-id="${task.id}" aria-label="${isCollapsed ? 'Expand' : 'Collapse'}" title="${isCollapsed ? 'Expand' : 'Collapse'}">${isCollapsed ? '▸' : '▾'}</button>`
+    ? `<button type="button" class="todo-row__toggle" data-task-id="${safeTaskId}" aria-label="${isCollapsed ? 'Expand' : 'Collapse'}" title="${isCollapsed ? 'Expand' : 'Collapse'}">${isCollapsed ? '▸' : '▾'}</button>`
     : '';
 
   const addSubBtn = (!isSubtask && !task.completed)
-    ? `<button type="button" class="todo-row__add-sub" data-task-id="${task.id}" aria-label="Add subtask" title="Add subtask">+</button>`
+    ? `<button type="button" class="todo-row__add-sub" data-task-id="${safeTaskId}" aria-label="Add subtask" title="Add subtask">+</button>`
     : '';
 
   const badge = (hasChildren && !isSubtask)
@@ -122,12 +160,12 @@ function rowInnerHtml(task: Task, tasks: Task[], isSubtask: boolean): string {
     <input
       type="checkbox"
       class="todo-row__checkbox"
-      data-task-id="${task.id}"
+      data-task-id="${safeTaskId}"
       aria-label="Mark task complete"${checked}
     >
     <label
       class="todo-row__label"
-      data-task-id="${task.id}"
+      data-task-id="${safeTaskId}"
       role="button"
       tabindex="0"
       title="Click to edit"
@@ -136,8 +174,15 @@ function rowInnerHtml(task: Task, tasks: Task[], isSubtask: boolean): string {
     ${addSubBtn}
     <button
       type="button"
+      class="todo-row__note${noteHasContent(task.note) ? ' has-note' : ''}"
+      data-task-id="${safeTaskId}"
+      aria-label="${noteHasContent(task.note) ? 'Edit note' : 'Add note'}"
+      title="${noteHasContent(task.note) ? 'Edit note' : 'Add note'}"
+    >Note</button>
+    <button
+      type="button"
       class="todo-row__delete"
-      data-task-id="${task.id}"
+      data-task-id="${safeTaskId}"
       aria-label="Delete task"
       title="Delete"
     >&times;</button>
@@ -305,19 +350,23 @@ const STATUS_TEXT: Record<SaveStatus, string> = {
 };
 
 let savedFlashTimer: ReturnType<typeof setTimeout> | null = null;
+let localJournalUnavailable = false;
 
 function renderStatus(status: SaveStatus): void {
   const el = document.getElementById('todo-status');
   if (!el) return;
-  el.textContent = STATUS_TEXT[status] ?? '';
-  el.dataset.state = status;
+  const visibleStatus = localJournalUnavailable ? 'local-error' : status;
+  el.textContent = localJournalUnavailable
+    ? 'Local backup unavailable — wait for Saved before leaving'
+    : STATUS_TEXT[status] ?? '';
+  el.dataset.state = visibleStatus;
 
   // "Saved" is a brief confirmation flash, then fades back to nothing.
   if (savedFlashTimer) {
     clearTimeout(savedFlashTimer);
     savedFlashTimer = null;
   }
-  if (status === 'saved') {
+  if (status === 'saved' && !localJournalUnavailable) {
     savedFlashTimer = setTimeout(() => {
       if (el.dataset.state === 'saved') {
         el.textContent = '';
@@ -587,29 +636,45 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ── shared mutable state ─────────────────────────────────────── */
   let tasks: Task[] = [];
-  const deletedIds = new Set<string>();
+  const deleted = new Map<string, string>();
   let loadedSuccessfully = false;
 
   // Interaction guards — the sync must never run while any of these is active.
   let editingId: string | null = null;
+  let noteEditorId: string | null = null;
   let subtaskInputActive = false;
   let isDragging = false;
   let signedOut = false;
   let syncPending = false;
 
-  const wal: Wal = createWal(getBrowserStorage(), walKeyFor(userId));
+  const browserStorage = getBrowserStorage();
+  const wal: Wal = createWal(browserStorage, walKeyFor(userId));
+  localJournalUnavailable = browserStorage === null;
+  const deletedSnapshot = (): TaskDeletion[] =>
+    [...deleted].map(([id, deleted_at]) => ({ id, deleted_at }));
+  const writeWal = () => {
+    const didWrite = wal.write({ tasks, deleted: deletedSnapshot() });
+    if (localJournalUnavailable !== !didWrite) {
+      localJournalUnavailable = !didWrite;
+      renderStatus(saveController.status);
+    }
+    return didWrite;
+  };
 
   /* ── save controller ──────────────────────────────────────────── */
   const saveController = new SaveController({
     save: (snapshot: WalSnapshot) =>
-      saveTasks(userId, snapshot.tasks, snapshot.deletedIds),
+      saveTasks(userId, snapshot.tasks, snapshot.deleted),
     getSnapshot: (): WalSnapshot => ({
       tasks: tasks.map(t => ({ ...t })),
-      deletedIds: [...deletedIds],
+      deleted: deletedSnapshot(),
     }),
     onPersisted: (snapshot) => {
-      // Drop the tombstones we just flushed (re-deletes during the save stay).
-      snapshot.deletedIds.forEach(id => deletedIds.delete(id));
+      // Drop just the tombstones this confirmed snapshot carried. A second
+      // delete of the same id while the request was in flight stays queued.
+      snapshot.deleted.forEach(record => {
+        if (deleted.get(record.id) === record.deleted_at) deleted.delete(record.id);
+      });
     },
     onStatus: (status) => {
       renderStatus(status);
@@ -620,16 +685,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const refresh = () => {
     // Don't repaint the list out from under an in-progress interaction.
-    if (!editingId && !subtaskInputActive && !isDragging) renderList(tasks);
+    if (!editingId && !noteEditorId && !subtaskInputActive && !isDragging) renderList(tasks);
     renderCounter(tasks);
   };
 
   /** Optimistic: normalise + WAL + render immediately, queue the save. */
-  const persist = () => {
-    tasks = reindex(tasks);
-    wal.write({ tasks, deletedIds: [...deletedIds] });
+  const persist = (saveDelayMs = 0) => {
+    const priorPositions = new Map(tasks.map(task => [task.id, task.position]));
+    tasks = reindex(tasks).map(task =>
+      priorPositions.get(task.id) !== task.position
+        ? { ...task, updated_at: nowIso() }
+        : task
+    );
+    writeWal();
     refresh();
-    saveController.notifyMutation();
+    saveController.notifyMutation(saveDelayMs);
   };
 
   /* ── boot: WAL + server load, merged (never clobbered) ───────────
@@ -637,43 +707,64 @@ document.addEventListener('DOMContentLoaded', async () => {
      crash/close/offline). We merge it with whatever the server returns so
      nothing is lost. */
   const walSnap = wal.read();
-  if (walSnap) walSnap.deletedIds.forEach(id => deletedIds.add(id));
+  if (walSnap) {
+    walSnap.deleted.forEach(record => {
+      const previous = deleted.get(record.id);
+      if (!previous || Date.parse(record.deleted_at) > Date.parse(previous)) {
+        deleted.set(record.id, record.deleted_at);
+      }
+    });
+  }
 
   let server: Task[] | null = null;
   try {
     server = await loadTasks(userId);
-    loadedSuccessfully = true;
   } catch {
     console.error('Initial task load failed — running on the local WAL; saves stay locked until a load succeeds.');
   }
 
   if (server) {
-    tasks = walSnap ? mergeTasks(walSnap.tasks, server, deletedIds) : reindex(server);
+    tasks = walSnap ? mergeTasks(walSnap.tasks, server, deleted.keys()) : reindex(server);
+    tasks.forEach(task => mutationClock.observe(task.updated_at));
+    loadedSuccessfully = true;
     saveController.setLoaded(true);
     // If the WAL carried unsaved work, flush it now that we're unlocked.
-    if (walSnap && (walSnap.tasks.length > 0 || walSnap.deletedIds.length > 0)) {
-      wal.write({ tasks, deletedIds: [...deletedIds] });
+    if (walSnap && (walSnap.tasks.length > 0 || walSnap.deleted.length > 0)) {
+      writeWal();
       saveController.notifyMutation();
     }
   } else {
     // Load failed — keep the WAL's optimistic state on screen, saves locked.
     tasks = walSnap ? reindex(walSnap.tasks) : [];
+    tasks.forEach(task => mutationClock.observe(task.updated_at));
     renderStatus('offline');
   }
 
   refresh();
+  if (localJournalUnavailable) renderStatus(saveController.status);
 
   /* ── background sync (merge, never replace) ─────────────────────── */
-  const interactionBusy = () => !!editingId || subtaskInputActive || isDragging;
+  const interactionBusy = () =>
+    !!editingId || !!noteEditorId || subtaskInputActive || isDragging;
+
+  const syncGuardsClear = () => {
+    if (!loadedSuccessfully) return !interactionBusy() && !signedOut;
+    return canSync({
+      editingId,
+      noteEditorActive: !!noteEditorId,
+      subtaskInputActive,
+      isDragging,
+      saving: saveController.inFlight,
+      dirty: saveController.dirty,
+      saveError: saveController.saveError,
+      signedOut,
+    });
+  };
 
   const runSync = async () => {
     if (signedOut) return;
-    if (interactionBusy()) { syncPending = true; return; }
-    // In normal operation, never race a pending/failed/in-flight save. While
-    // still recovering from a failed initial load we DO sync (the merge is
-    // non-destructive) — that's how saves get unlocked again.
-    if (loadedSuccessfully &&
-        (saveController.dirty || saveController.saveError || saveController.inFlight)) {
+    if (!syncGuardsClear()) {
+      if (interactionBusy()) syncPending = true;
       return;
     }
 
@@ -684,9 +775,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       return; // offline — keep local state, try again next tick
     }
     // Re-check guards after the await; an interaction may have started.
-    if (signedOut || interactionBusy()) { syncPending = true; return; }
+    if (!syncGuardsClear()) {
+      if (interactionBusy()) syncPending = true;
+      return;
+    }
 
-    tasks = mergeTasks(tasks, fresh, deletedIds);
+    const hadLoadedSuccessfully = loadedSuccessfully;
+    tasks = mergeTasks(tasks, fresh, deleted.keys(), {
+      // During recovery, a local-only row is a WAL-backed offline addition.
+      // Once cleanly loaded, a local-only row means another device deleted it
+      // and should disappear instead of lingering forever.
+      keepLocalOnly: !hadLoadedSuccessfully,
+    });
+    tasks.forEach(task => mutationClock.observe(task.updated_at));
     refresh();
 
     if (!loadedSuccessfully) {
@@ -694,7 +795,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       saveController.setLoaded(true); // unlocks + flushes any pending local work
     }
     if (saveController.dirty) {
-      wal.write({ tasks, deletedIds: [...deletedIds] });
+      writeWal();
     }
   };
 
@@ -789,6 +890,241 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const findTask = (taskId: string): Task | undefined => tasks.find(t => t.id === taskId);
   const findTaskIdx = (taskId: string): number => tasks.findIndex(t => t.id === taskId);
+
+  /* ── rich task note ──────────────────────────────────────────── */
+
+  const noteDialog = document.getElementById('todo-note-dialog') as HTMLDialogElement | null;
+  const noteTitleInput = document.getElementById('todo-note-title') as HTMLInputElement | null;
+  const noteEditor = document.getElementById('todo-note-editor') as HTMLElement | null;
+  const noteToolbar = noteDialog?.querySelector('.todo-note-toolbar') as HTMLElement | null;
+  const noteMeta = document.getElementById('todo-note-meta');
+  const noteClose = document.getElementById('todo-note-close') as HTMLButtonElement | null;
+  let noteLastValidHtml = '';
+  let noteReturnFocus: HTMLElement | null = null;
+
+  const placeCaretAtEnd = (el: HTMLElement) => {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  };
+
+  const renderNoteMeta = (message?: string) => {
+    if (!noteMeta) return;
+    if (message) {
+      noteMeta.textContent = message;
+      return;
+    }
+    const task = noteEditorId ? findTask(noteEditorId) : undefined;
+    const characters = notePlainText(task?.note).length;
+    noteMeta.textContent = characters
+      ? `${characters.toLocaleString()} characters · saved locally first`
+      : 'Empty note · saved locally first';
+  };
+
+  const saveActiveNote = () => {
+    if (!noteEditorId || !noteEditor) return;
+    const task = findTask(noteEditorId);
+    if (!task) return;
+
+    const sanitized = sanitizeNoteHtml(noteEditor.innerHTML);
+    const nextNote = noteHasContent(sanitized) ? sanitized : '';
+    if (!isNoteWithinLimit(nextNote)) {
+      // Do not truncate. Restore the last durable draft so an oversized paste
+      // cannot erase the user's note, then explain exactly what happened.
+      noteEditor.innerHTML = noteLastValidHtml;
+      placeCaretAtEnd(noteEditor);
+      renderNoteMeta('Note limit reached — your previous draft is still safe.');
+      return;
+    }
+
+    noteLastValidHtml = nextNote;
+    if ((task.note ?? '') === nextNote) {
+      renderNoteMeta();
+      return;
+    }
+
+    tasks = tasks.map(item =>
+      item.id === task.id
+        ? { ...item, note: nextNote, updated_at: nowIso() }
+        : item
+    );
+    persist(NOTE_SAVE_DEBOUNCE_MS); // WAL before the save controller ever sees this edit.
+    renderNoteMeta();
+  };
+
+  const saveActiveNoteTitle = () => {
+    if (!noteEditorId || !noteTitleInput) return;
+    const task = findTask(noteEditorId);
+    if (!task) return;
+    const text = sanitizeTaskInput(noteTitleInput.value);
+    if (!text) {
+      renderNoteMeta('A task needs a title; the existing title is safe.');
+      return;
+    }
+    if (text === task.text) return;
+    tasks = tasks.map(item =>
+      item.id === task.id
+        ? { ...item, text, updated_at: nowIso() }
+        : item
+    );
+    persist(NOTE_SAVE_DEBOUNCE_MS);
+  };
+
+  const finishNoteEditor = () => {
+    if (!noteEditorId) return;
+    saveActiveNote();
+    if (noteTitleInput && !sanitizeTaskInput(noteTitleInput.value)) {
+      const task = findTask(noteEditorId);
+      if (task) noteTitleInput.value = task.text;
+    }
+    saveActiveNoteTitle();
+    saveController.flushNow();
+    noteEditorId = null;
+    noteLastValidHtml = '';
+    if (noteDialog?.open) noteDialog.close();
+    refresh();
+    flushDeferredSync();
+    noteReturnFocus?.focus();
+    noteReturnFocus = null;
+  };
+
+  const openNoteEditor = (taskId: string, opener?: HTMLElement) => {
+    if (!noteDialog || !noteTitleInput || !noteEditor || editingId) return;
+    const task = findTask(taskId);
+    if (!task) return;
+
+    noteEditorId = task.id;
+    noteReturnFocus = opener ?? (document.activeElement as HTMLElement | null);
+    noteLastValidHtml = sanitizeNoteHtml(task.note);
+    noteTitleInput.value = task.text;
+    noteEditor.innerHTML = noteLastValidHtml;
+    renderNoteMeta();
+
+    try {
+      if (!noteDialog.open) noteDialog.showModal();
+    } catch {
+      // Current Safari supports <dialog>; this small fallback keeps the paper
+      // sheet usable in an older installed PWA instead of losing the editor.
+      noteDialog.setAttribute('open', '');
+    }
+
+    requestAnimationFrame(() => {
+      noteEditor.focus();
+      placeCaretAtEnd(noteEditor);
+    });
+  };
+
+  const insertSanitizedNoteHtml = (html: string) => {
+    if (!noteEditor) return;
+    const safe = sanitizeNoteHtml(html);
+    if (!safe) return;
+    noteEditor.focus();
+    if (document.execCommand('insertHTML', false, safe)) return;
+
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) {
+      noteEditor.insertAdjacentHTML('beforeend', safe);
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+    const fragment = range.createContextualFragment(safe);
+    const last = fragment.lastChild;
+    range.insertNode(fragment);
+    if (last) {
+      range.setStartAfter(last);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  };
+
+  const executeNoteCommand = (command: string) => {
+    if (!noteEditor) return;
+    noteEditor.focus();
+    switch (command) {
+      case 'bold':
+        document.execCommand('bold');
+        break;
+      case 'italic':
+        document.execCommand('italic');
+        break;
+      case 'underline':
+        document.execCommand('underline');
+        break;
+      case 'heading':
+        document.execCommand('formatBlock', false, 'h2');
+        break;
+      case 'unordered-list':
+        document.execCommand('insertUnorderedList');
+        break;
+      case 'ordered-list':
+        document.execCommand('insertOrderedList');
+        break;
+      case 'quote':
+        document.execCommand('formatBlock', false, 'blockquote');
+        break;
+      case 'clear':
+        document.execCommand('removeFormat');
+        document.execCommand('formatBlock', false, 'p');
+        break;
+      default:
+        return;
+    }
+    saveActiveNote();
+  };
+
+  noteClose?.addEventListener('click', finishNoteEditor);
+  noteDialog?.addEventListener('cancel', event => {
+    event.preventDefault();
+    finishNoteEditor();
+  });
+  noteDialog?.addEventListener('close', () => {
+    // Escape/native close bypasses the Done button; finalise the already-WAL'd
+    // draft before allowing the list to paint again.
+    if (noteEditorId) finishNoteEditor();
+  });
+  noteTitleInput?.addEventListener('input', saveActiveNoteTitle);
+  noteTitleInput?.addEventListener('blur', () => {
+    if (!noteTitleInput || sanitizeTaskInput(noteTitleInput.value)) return;
+    const task = noteEditorId ? findTask(noteEditorId) : undefined;
+    if (task) noteTitleInput.value = task.text;
+    renderNoteMeta();
+  });
+  noteEditor?.addEventListener('input', saveActiveNote);
+  noteEditor?.addEventListener('paste', event => {
+    event.preventDefault();
+    const richHtml = event.clipboardData?.getData('text/html') ?? '';
+    const plainText = event.clipboardData?.getData('text/plain') ?? '';
+    const html = richHtml ? sanitizeNoteHtml(richHtml) : plainTextToNoteHtml(plainText);
+    insertSanitizedNoteHtml(html);
+    saveActiveNote();
+  });
+  noteEditor?.addEventListener('drop', event => {
+    event.preventDefault();
+    insertSanitizedNoteHtml(plainTextToNoteHtml(event.dataTransfer?.getData('text/plain') ?? ''));
+    saveActiveNote();
+  });
+  noteEditor?.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      finishNoteEditor();
+    } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      saveActiveNote();
+      renderNoteMeta('Saved locally first.');
+    }
+  });
+  noteToolbar?.addEventListener('mousedown', event => event.preventDefault());
+  noteToolbar?.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-note-command]');
+    const command = button?.dataset.noteCommand;
+    if (command) executeNoteCommand(command);
+  });
 
   /* ── inline edit ─────────────────────────────────────────────── */
 
@@ -905,6 +1241,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    // Focused note sheet
+    const noteBtn = target.closest('.todo-row__note') as HTMLElement | null;
+    if (noteBtn) {
+      const taskId = getTaskId(noteBtn);
+      if (taskId) openNoteEditor(taskId, noteBtn);
+      return;
+    }
+
     // Delete
     const deleteBtn = target.closest('.todo-row__delete') as HTMLElement | null;
     if (deleteBtn) {
@@ -914,8 +1258,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!task) return;
       // Drop the task and any of its children, and tombstone them so the next
       // save deletes exactly these ids on the server (never "delete the rest").
+      const deletedAt = nowIso();
       for (const t of tasks) {
-        if (t.id === task.id || t.parent_id === task.id) deletedIds.add(t.id);
+        if (t.id === task.id || t.parent_id === task.id) deleted.set(t.id, deletedAt);
       }
       tasks = tasks.filter(t => t.id !== task.id && t.parent_id !== task.id);
       persist();

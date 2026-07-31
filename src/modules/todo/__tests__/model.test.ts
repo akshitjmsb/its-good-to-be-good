@@ -163,10 +163,23 @@ describe('mergeTasks — non-destructive sync', () => {
     expect(mergeTasks(local, server, [])[0].text).toBe('my unsaved edit');
   });
 
+  it('keeps a rich note with the record that wins a conflict', () => {
+    const local = [task({ id: 'x', note: '<p>older</p>', updated_at: T })];
+    const server = [task({ id: 'x', note: '<p>newer note</p>', updated_at: LATER })];
+    expect(mergeTasks(local, server)[0]?.note).toBe('<p>newer note</p>');
+  });
+
   it('never resurrects a tombstoned id, even if the server still has it', () => {
     const local: Task[] = [];
     const server = [task({ id: 'deleted', updated_at: T })];
     const merged = mergeTasks(local, server, ['deleted']);
+    expect(merged).toEqual([]);
+  });
+
+  it('drops a local-only record during a clean background sync', () => {
+    const merged = mergeTasks([task({ id: 'deleted-remotely', updated_at: T })], [], [], {
+      keepLocalOnly: false,
+    });
     expect(merged).toEqual([]);
   });
 });
@@ -174,6 +187,7 @@ describe('mergeTasks — non-destructive sync', () => {
 describe('canSync guard', () => {
   const ok: SyncGuardState = {
     editingId: null,
+    noteEditorActive: false,
     subtaskInputActive: false,
     isDragging: false,
     saving: false,
@@ -188,6 +202,7 @@ describe('canSync guard', () => {
 
   it.each([
     ['editingId', { editingId: 'x' }],
+    ['noteEditorActive', { noteEditorActive: true }],
     ['subtaskInputActive', { subtaskInputActive: true }],
     ['isDragging', { isDragging: true }],
     ['saving', { saving: true }],

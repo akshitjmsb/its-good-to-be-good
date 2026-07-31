@@ -2,7 +2,7 @@
  * Convex persistence for tasks.
  *
  * The exported signatures are unchanged from the old Supabase module so the
- * caller (`src/todo.tsx`) doesn't change. The `userId` parameter is now
+ * caller (`src/modules/todo/entry.ts`) doesn't change. The `userId` parameter is now
  * vestigial — identity is taken from the authenticated Convex client context
  * server-side — but it is kept so call sites stay identical. It is
  * intentionally unused here (prefixed `_userId`).
@@ -11,11 +11,12 @@
 import { convex } from './client';
 import { api } from '../../../convex/_generated/api';
 import { ensureFreshAuth } from '../auth/session';
-import { Task } from '../../types';
+import type { Task, TaskDeletion } from '../../types';
 
 interface ConvexTask {
   id: string;
   text: string;
+  note?: string;
   completed: boolean;
   position: number;
   parentId: string | null;
@@ -39,6 +40,7 @@ export async function loadTasks(_userId: string): Promise<Task[]> {
     return rows.map((t) => ({
       id: t.id,
       text: t.text,
+      note: t.note ?? '',
       completed: t.completed,
       position: t.position ?? 0,
       parent_id: t.parentId ?? null,
@@ -55,21 +57,22 @@ export async function loadTasks(_userId: string): Promise<Task[]> {
  * Persist the task list for a user.
  *
  * Every task carries a stable client-generated `id`. The save is an upsert
- * keyed on that id plus explicit delete tombstones — never "delete everything
- * not in my local list" — so a partial/empty local list can never wipe the
- * server. Children of a deleted task are removed server-side.
+ * keyed on that id plus revisioned delete tombstones — never "delete
+ * everything not in my local list" — so a partial/empty local list can never
+ * wipe the server. Children of a deleted task are removed server-side.
  */
 export async function saveTasks(
   _userId: string,
   tasks: Task[],
-  deletedIds: string[] = []
+  deleted: TaskDeletion[] = []
 ): Promise<void> {
-  if (tasks.length === 0 && deletedIds.length === 0) return;
+  if (tasks.length === 0 && deleted.length === 0) return;
 
   const nowIso = new Date().toISOString();
   const rows = tasks.map((task, i) => ({
     clientId: task.id,
     text: task.text,
+    note: task.note ?? '',
     completed: task.completed,
     position: task.position ?? i,
     parentId: task.parent_id ?? null,
@@ -80,10 +83,15 @@ export async function saveTasks(
   try {
     // The HTTP client holds no session — attach a fresh JWT per call.
     await ensureFreshAuth();
-    await convex.mutation(api.tasks.save, { tasks: rows, deletedIds });
+    await convex.mutation(api.tasks.save, {
+      tasks: rows,
+      deleted: deleted.map(record => ({
+        clientId: record.id,
+        deletedAt: record.deleted_at,
+      })),
+    });
   } catch (error) {
     console.error('Error saving tasks:', error);
     throw error;
   }
 }
-
