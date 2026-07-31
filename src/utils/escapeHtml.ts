@@ -72,25 +72,10 @@ export function sanitizeInput(input: string, maxLength: number = 1000): string {
  * @returns Sanitized task text or empty string if invalid
  */
 export function sanitizeTaskInput(input: string): string {
-    const sanitized = sanitizeInput(input, 200); // Max 200 chars for tasks
-    
-    // Check for potentially dangerous patterns
-    const dangerousPatterns = [
-        /<script/i,
-        /javascript:/i,
-        /on\w+\s*=/i, // Event handlers like onclick=
-        /data:/i,
-        /vbscript:/i
-    ];
-    
-    for (const pattern of dangerousPatterns) {
-        if (pattern.test(sanitized)) {
-            console.warn('Potentially dangerous input detected and removed:', sanitized);
-            return '';
-        }
-    }
-    
-    return sanitized;
+    // Task titles are rendered with createSafeHtml/escapeHtml. Rejecting a
+    // perfectly ordinary title such as "Read javascript: the good parts"
+    // silently was a data-loss footgun, not an XSS defence.
+    return sanitizeInput(input, 200);
 }
 
 /**

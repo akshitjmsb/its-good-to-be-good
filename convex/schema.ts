@@ -28,11 +28,24 @@ export default defineSchema({
     userId: v.id("users"),
     clientId: v.string(), // client-generated UUID — load-bearing
     text: v.string(),
+    // Optional preserves existing tasks while the note editor rolls out.
+    note: v.optional(v.string()),
     completed: v.boolean(),
     position: v.number(),
     parentId: v.union(v.string(), v.null()),
     updatedAt: v.string(), // ISO, client-authoritative (last-writer-wins)
     createdAt: v.string(), // ISO
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_client", ["userId", "clientId"]),
+
+  // Delete tombstones stop a stale offline snapshot from recreating a task
+  // that was intentionally removed on another device. They are cheap and
+  // retain only the id + deletion revision, never the note content itself.
+  taskTombstones: defineTable({
+    userId: v.id("users"),
+    clientId: v.string(),
+    deletedAt: v.string(),
   })
     .index("by_user", ["userId"])
     .index("by_user_client", ["userId", "clientId"]),

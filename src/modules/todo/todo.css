@@ -1,0 +1,302 @@
+/*
+ * The task note is a quiet editorial sheet: a single column, generous rules,
+ * and typewriter ink. It deliberately uses the home lock's grey ramp rather
+ * than introducing a separate product surface.
+ */
+
+.todo-row__note {
+    flex-shrink: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: var(--home-muted, #6b7280);
+    cursor: pointer;
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    min-height: 32px;
+    padding: 0.35rem 0.4rem;
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.todo-row__note:hover,
+.todo-row__note:focus-visible,
+.todo-row__note.has-note {
+    border-color: var(--home-border, #e5e7eb);
+    color: var(--home-text, #374151);
+}
+
+.todo-row__note:hover {
+    background-color: var(--home-surface, #ffffff);
+}
+
+.todo-row__note:focus-visible,
+.todo-note-toolbar button:focus-visible,
+.todo-note-sheet__done:focus-visible {
+    outline: 2px solid var(--home-text, #374151);
+    outline-offset: 2px;
+}
+
+.todo-row__note.has-note::before {
+    content: '•';
+    margin-right: 0.2rem;
+}
+
+.todo-status[data-state="local-error"] {
+    color: #a05a4a;
+    opacity: 1;
+}
+
+.todo-note-dialog {
+    box-sizing: border-box;
+    width: min(calc(100% - 1rem), 46rem);
+    max-width: 46rem;
+    max-height: calc(100dvh - 1rem);
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.5rem;
+    background: var(--home-surface, #ffffff);
+    color: var(--home-text, #374151);
+    box-shadow: 0 10px 32px rgba(17, 17, 17, 0.16);
+}
+
+.todo-note-dialog::backdrop {
+    background: rgba(17, 17, 17, 0.28);
+}
+
+.todo-note-sheet {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: min(37rem, calc(100dvh - 1rem));
+    max-height: calc(100dvh - 1rem);
+    overflow: hidden;
+    padding: clamp(1rem, 4vw, 2rem);
+}
+
+.todo-note-sheet__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--home-border, #e5e7eb);
+}
+
+.todo-note-sheet__eyebrow {
+    margin: 0 0 0.3rem;
+    color: var(--home-muted, #6b7280);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.todo-note-sheet__heading {
+    margin: 0;
+    color: var(--home-ink, #111111);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 1.35rem;
+    line-height: 1.15;
+}
+
+.todo-note-sheet__done {
+    flex-shrink: 0;
+    min-height: 38px;
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.25rem;
+    background: transparent;
+    color: var(--home-text, #374151);
+    cursor: pointer;
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    padding: 0.4rem 0.65rem;
+}
+
+.todo-note-sheet__done:hover {
+    border-color: var(--home-text, #374151);
+    background: var(--home-card-bg, #f8f9fa);
+}
+
+.todo-note-sheet__title-label {
+    margin-bottom: 0.35rem;
+    color: var(--home-muted, #6b7280);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.todo-note-sheet__title {
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.1rem 0 0.55rem;
+    border: 0;
+    border-bottom: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0;
+    background: transparent;
+    color: var(--home-ink, #111111);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: clamp(1.05rem, 3vw, 1.35rem);
+    line-height: 1.35;
+}
+
+.todo-note-sheet__title:focus {
+    outline: none;
+    border-bottom-color: var(--home-text, #374151);
+}
+
+.todo-note-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow-x: auto;
+    margin: 0 -0.1rem;
+    padding: 0.25rem 0.1rem 0.7rem;
+    border-bottom: 1px solid var(--home-border, #e5e7eb);
+    scrollbar-width: thin;
+}
+
+.todo-note-toolbar button {
+    flex: 0 0 auto;
+    min-width: 32px;
+    min-height: 32px;
+    border: 1px solid transparent;
+    border-radius: 0.2rem;
+    background: transparent;
+    color: var(--home-text, #374151);
+    cursor: pointer;
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.82rem;
+    line-height: 1;
+    padding: 0.25rem 0.42rem;
+}
+
+.todo-note-toolbar button:hover {
+    border-color: var(--home-border, #e5e7eb);
+    background: var(--home-card-bg, #f8f9fa);
+}
+
+.todo-note-toolbar__rule {
+    flex: 0 0 1px;
+    width: 1px;
+    height: 1.25rem;
+    margin: 0 0.15rem;
+    background: var(--home-border, #e5e7eb);
+}
+
+.todo-note-sheet__help,
+.todo-note-sheet__meta {
+    margin: 0;
+    color: var(--home-muted, #6b7280);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 0.72rem;
+    letter-spacing: 0.025em;
+    line-height: 1.5;
+}
+
+.todo-note-sheet__help {
+    padding: 0.75rem 0 0.5rem;
+}
+
+.todo-note-sheet__meta {
+    min-height: 1.5em;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--home-border, #e5e7eb);
+}
+
+.todo-note-editor {
+    flex: 1 1 auto;
+    min-height: 13rem;
+    overflow: auto;
+    padding: 0.75rem 0.1rem;
+    color: var(--home-text, #374151);
+    caret-color: var(--home-ink, #111111);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-size: 1rem;
+    line-height: 1.72;
+    outline: none;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+.todo-note-editor:empty::before {
+    content: attr(data-placeholder);
+    color: var(--home-muted, #6b7280);
+    pointer-events: none;
+}
+
+.todo-note-editor p,
+.todo-note-editor h2,
+.todo-note-editor h3,
+.todo-note-editor blockquote,
+.todo-note-editor ul,
+.todo-note-editor ol {
+    margin-top: 0;
+    margin-bottom: 0.95rem;
+}
+
+.todo-note-editor h2,
+.todo-note-editor h3 {
+    color: var(--home-ink, #111111);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
+    font-weight: normal;
+    line-height: 1.3;
+}
+
+.todo-note-editor h2 {
+    font-size: 1.25rem;
+}
+
+.todo-note-editor h3 {
+    font-size: 1.08rem;
+}
+
+.todo-note-editor ul,
+.todo-note-editor ol {
+    padding-left: 1.5rem;
+}
+
+.todo-note-editor li + li {
+    margin-top: 0.3rem;
+}
+
+.todo-note-editor blockquote {
+    margin-left: 0;
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--home-border, #e5e7eb);
+    color: var(--home-muted, #6b7280);
+}
+
+@media (max-width: 640px) {
+    .todo-row__note {
+        min-height: 34px;
+        padding-inline: 0.3rem;
+    }
+
+    .todo-note-dialog {
+        width: 100%;
+        max-width: none;
+        max-height: 100dvh;
+        border-radius: 0;
+        border-inline: 0;
+    }
+
+    .todo-note-sheet {
+        min-height: 100dvh;
+        max-height: 100dvh;
+        padding: 1rem;
+    }
+
+    .todo-note-editor {
+        min-height: 0;
+        font-size: 1rem;
+    }
+}
