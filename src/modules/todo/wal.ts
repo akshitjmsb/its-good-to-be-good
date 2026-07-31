@@ -4,7 +4,7 @@
  * absent, safe no-ops without localStorage) lives in `src/sdk/durable.ts`.
  */
 
-import type { Task } from '../../types';
+import type { Task, TaskDeletion } from '../../types';
 import {
   createWal as createGenericWal,
   walKey,
@@ -16,7 +16,8 @@ export { getBrowserStorage, type StorageLike } from '../../sdk/durable';
 
 export interface WalSnapshot {
   tasks: Task[];
-  deletedIds: string[];
+  /** Explicit delete records survive reloads and are sent to the server. */
+  deleted: TaskDeletion[];
 }
 
 export type Wal = GenericWal<WalSnapshot>;
@@ -27,11 +28,30 @@ export function walKeyFor(userId: string): string {
 
 export function createWal(storage: StorageLike | null, key: string): Wal {
   return createGenericWal<WalSnapshot>(storage, key, parsed => {
-    const candidate = parsed as Partial<WalSnapshot> | null;
+    const candidate = parsed as Partial<WalSnapshot> & { deletedIds?: unknown } | null;
     if (!candidate || !Array.isArray(candidate.tasks)) return null;
+
+    const deleted = Array.isArray(candidate.deleted)
+      ? candidate.deleted.flatMap(item => {
+        if (!item || typeof item !== 'object') return [];
+        const record = item as { id?: unknown; deleted_at?: unknown };
+        return typeof record.id === 'string' && typeof record.deleted_at === 'string'
+          ? [{ id: record.id, deleted_at: record.deleted_at }]
+          : [];
+      })
+      : [];
+
+    // Version 1 WALs used bare ids. Preserve that deletion intent during the
+    // upgrade rather than allowing an old local snapshot to revive a task.
+    const legacyDeleted = Array.isArray(candidate.deletedIds)
+      ? candidate.deletedIds.flatMap(id =>
+        typeof id === 'string' ? [{ id, deleted_at: new Date().toISOString() }] : []
+      )
+      : [];
+
     return {
       tasks: candidate.tasks as Task[],
-      deletedIds: Array.isArray(candidate.deletedIds) ? candidate.deletedIds : [],
+      deleted: [...deleted, ...legacyDeleted],
     };
   });
 }

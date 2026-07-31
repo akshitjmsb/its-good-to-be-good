@@ -19,7 +19,7 @@ describe('SaveController', () => {
   let controller: SaveController;
 
   beforeEach(() => {
-    snapshot = { tasks: [makeTask('a')], deletedIds: [] };
+    snapshot = { tasks: [makeTask('a')], deleted: [] };
     saveImpl = async () => {};
     saveSpy = vi.fn((snap: WalSnapshot) => saveImpl(snap));
     delaySpy = vi.fn(async () => {});
@@ -89,6 +89,28 @@ describe('SaveController', () => {
     await settle();
 
     expect(saveSpy).toHaveBeenCalledTimes(2);
+    expect(controller.dirty).toBe(false);
+  });
+
+  it('marks a debounced mutation dirty immediately, then batches the network save', async () => {
+    vi.useFakeTimers();
+    controller.setLoaded(true);
+    controller.notifyMutation(300);
+    expect(controller.dirty).toBe(true);
+    expect(saveSpy).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(300);
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(controller.dirty).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('flushNow commits a debounced mutation when the editor is closed', async () => {
+    controller.setLoaded(true);
+    controller.notifyMutation(10_000);
+    controller.flushNow();
+    await settle();
+    expect(saveSpy).toHaveBeenCalledTimes(1);
     expect(controller.dirty).toBe(false);
   });
 

@@ -32,7 +32,8 @@ export function walKey(moduleId: string, userId: string): string {
 
 export interface Wal<Snapshot> {
   read(): Snapshot | null;
-  write(snapshot: Snapshot): void;
+  /** True only when the snapshot reached durable local storage. */
+  write(snapshot: Snapshot): boolean;
   clear(): void;
 }
 
@@ -58,13 +59,15 @@ export function createWal<Snapshot>(
       }
     },
 
-    write(snapshot: Snapshot): void {
-      if (!storage) return;
+    write(snapshot: Snapshot): boolean {
+      if (!storage) return false;
       try {
         storage.setItem(key, JSON.stringify(snapshot));
+        return true;
       } catch {
-        // Quota / serialization failure — losing the WAL is acceptable; the
-        // in-memory state and the network save are still in play.
+        // The caller must surface this; proceeding silently would falsely
+        // promise crash safety when quota/private-mode storage rejected us.
+        return false;
       }
     },
 
@@ -132,6 +135,7 @@ export class SaveController<Snapshot> {
   private savedSeq = 0;
   private loaded = false;
   private authed = true;
+  private scheduledKick: ReturnType<typeof setTimeout> | null = null;
 
   /** True after the retry budget is exhausted; cleared by the next success. */
   saveError = false;
@@ -177,9 +181,36 @@ export class SaveController<Snapshot> {
     }
   }
 
-  /** Record a local mutation and (re)start the flush loop. */
-  notifyMutation(): void {
+  /**
+   * Record a local mutation and (re)start the flush loop. A caller may defer
+   * network traffic briefly (useful for continuous rich-text typing) while
+   * `dirty` flips immediately, so the WAL is still authoritative and sync is
+   * still blocked from racing the local draft.
+   */
+  notifyMutation(delayMs = 0): void {
     this.mutationSeq++;
+    if (delayMs <= 0) {
+      if (this.scheduledKick) {
+        clearTimeout(this.scheduledKick);
+        this.scheduledKick = null;
+      }
+      this.kick();
+      return;
+    }
+
+    if (this.scheduledKick) clearTimeout(this.scheduledKick);
+    this.scheduledKick = setTimeout(() => {
+      this.scheduledKick = null;
+      this.kick();
+    }, delayMs);
+  }
+
+  /** Flush any deliberately debounced local work now (for example, Done). */
+  flushNow(): void {
+    if (this.scheduledKick) {
+      clearTimeout(this.scheduledKick);
+      this.scheduledKick = null;
+    }
     this.kick();
   }
 

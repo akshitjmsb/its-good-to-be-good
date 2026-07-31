@@ -49,6 +49,60 @@
         <p id="todo-status" class="todo-status" data-state="idle" role="status" aria-live="polite"></p>
     </div>
 
+    <!-- One focused sheet per task: title stays succinct in the list while
+         the note can hold the thinking behind it. The editor is wired in
+         entry.ts and journaled before every network save. -->
+    <dialog id="todo-note-dialog" class="todo-note-dialog" aria-labelledby="todo-note-heading">
+        <section class="todo-note-sheet">
+            <header class="todo-note-sheet__header">
+                <div>
+                    <p class="todo-note-sheet__eyebrow">Task note</p>
+                    <h2 id="todo-note-heading" class="todo-note-sheet__heading">Notes</h2>
+                </div>
+                <button id="todo-note-close" type="button" class="todo-note-sheet__done">Done</button>
+            </header>
+
+            <label class="todo-note-sheet__title-label" for="todo-note-title">Task</label>
+            <input
+                id="todo-note-title"
+                class="todo-note-sheet__title"
+                type="text"
+                maxlength="200"
+                autocomplete="off"
+                autocapitalize="sentences"
+                spellcheck="true"
+                aria-describedby="todo-note-help"
+            >
+
+            <div class="todo-note-toolbar" role="toolbar" aria-label="Text formatting">
+                <button type="button" data-note-command="bold" aria-label="Bold" title="Bold"><strong>B</strong></button>
+                <button type="button" data-note-command="italic" aria-label="Italic" title="Italic"><em>I</em></button>
+                <button type="button" data-note-command="underline" aria-label="Underline" title="Underline"><u>U</u></button>
+                <span class="todo-note-toolbar__rule" aria-hidden="true"></span>
+                <button type="button" data-note-command="heading" aria-label="Heading" title="Heading">H</button>
+                <button type="button" data-note-command="unordered-list" aria-label="Bulleted list" title="Bulleted list">•</button>
+                <button type="button" data-note-command="ordered-list" aria-label="Numbered list" title="Numbered list">1.</button>
+                <button type="button" data-note-command="quote" aria-label="Quote" title="Quote">“</button>
+                <span class="todo-note-toolbar__rule" aria-hidden="true"></span>
+                <button type="button" data-note-command="clear" aria-label="Clear formatting" title="Clear formatting">Tx</button>
+            </div>
+
+            <p id="todo-note-help" class="todo-note-sheet__help">Write freely. Formatting and every change are saved locally first.</p>
+            <div
+                id="todo-note-editor"
+                class="todo-note-editor"
+                contenteditable="true"
+                role="textbox"
+                aria-multiline="true"
+                aria-label="Task note"
+                data-placeholder="Write the details, the plan, or the thought you do not want to lose…"
+                spellcheck="true"
+            ></div>
+
+            <p id="todo-note-meta" class="todo-note-sheet__meta" aria-live="polite"></p>
+        </section>
+    </dialog>
+
     <script type="module" src="src/modules/todo/entry.ts"></script>
 </body>
 </html>

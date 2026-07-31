@@ -47,8 +47,8 @@ describe('sanitizeTaskInput', () => {
     expect(sanitizeTaskInput('Buy groceries')).toBe('Buy groceries');
   });
 
-  it('rejects script tags', () => {
-    expect(sanitizeTaskInput('<script>alert(1)</script>')).toBe('');
+  it('preserves text-like markup for the escaped renderer', () => {
+    expect(sanitizeTaskInput('<script>alert(1)</script>')).toBe('<script>alert(1)</script>');
   });
 });
 

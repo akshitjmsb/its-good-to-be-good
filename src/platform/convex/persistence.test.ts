@@ -39,6 +39,7 @@ describe('loadTasks', () => {
       {
         id: 'a',
         text: 'a',
+        note: '<p>detail</p>',
         completed: false,
         position: 0,
         parentId: 'p',
@@ -52,6 +53,7 @@ describe('loadTasks', () => {
       {
         id: 'a',
         text: 'a',
+        note: '<p>detail</p>',
         completed: false,
         position: 0,
         parent_id: 'p',
@@ -75,6 +77,7 @@ describe('saveTasks', () => {
       {
         id: 'id-1',
         text: 'one',
+        note: '<p>detail</p>',
         completed: false,
         position: 0,
         parent_id: null,
@@ -84,6 +87,7 @@ describe('saveTasks', () => {
       {
         id: 'child',
         text: 'c',
+        note: '',
         completed: false,
         position: 0,
         parent_id: 'id-1',
@@ -96,6 +100,7 @@ describe('saveTasks', () => {
         {
           clientId: 'id-1',
           text: 'one',
+          note: '<p>detail</p>',
           completed: false,
           position: 0,
           parentId: null,
@@ -105,6 +110,7 @@ describe('saveTasks', () => {
         {
           clientId: 'child',
           text: 'c',
+          note: '',
           completed: false,
           position: 0,
           parentId: 'id-1',
@@ -112,15 +118,15 @@ describe('saveTasks', () => {
           createdAt: '2026-01-02T00:00:00.000Z',
         },
       ],
-      deletedIds: [],
+      deleted: [],
     });
   });
 
   it('can flush a tombstone-only save (delete with nothing to upsert)', async () => {
-    await saveTasks('u', [], ['removed-1']);
+    await saveTasks('u', [], [{ id: 'removed-1', deleted_at: '2026-01-02T00:00:00.000Z' }]);
     expect(mutation).toHaveBeenCalledWith('tasks.save', {
       tasks: [],
-      deletedIds: ['removed-1'],
+      deleted: [{ clientId: 'removed-1', deletedAt: '2026-01-02T00:00:00.000Z' }],
     });
   });
 
@@ -140,6 +146,7 @@ describe('saveTasks', () => {
           completed: false,
           position: 0,
           parent_id: null,
+          note: '',
           updated_at: '2026-01-01T00:00:00.000Z',
           created_at: '2026-01-01T00:00:00.000Z',
         },
@@ -148,4 +155,3 @@ describe('saveTasks', () => {
     spy.mockRestore();
   });
 });
-
