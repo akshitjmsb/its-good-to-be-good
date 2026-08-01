@@ -851,12 +851,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const form = document.getElementById('add-task-form-todo') as HTMLFormElement | null;
   const input = document.getElementById('todo-input') as HTMLInputElement | null;
+  const addSubmit = document.getElementById('todo-add-submit') as HTMLButtonElement | null;
+
+  const syncAddSubmit = () => {
+    if (!input || !addSubmit) return;
+    addSubmit.disabled = !sanitizeTaskInput(input.value).length;
+  };
 
   const submitTask = () => {
     if (!input) return;
     const sanitized = sanitizeTaskInput(input.value.trim());
     if (!sanitized) {
       input.value = '';
+      syncAddSubmit();
+      input.focus();
       return;
     }
     const maxPos = tasks.filter(t => !t.parent_id).reduce((m, t) => Math.max(m, t.position), -1);
@@ -871,7 +879,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       created_at: ts,
     }];
     input.value = '';
+    syncAddSubmit();
     persist();
+    // A tapped Add button normally takes focus for itself. Put it straight
+    // back on the line so capture stays as fluid as pressing Return.
+    input.focus();
   };
 
   form?.addEventListener('submit', event => {
@@ -884,6 +896,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     event.preventDefault();
     submitTask();
   });
+
+  input?.addEventListener('input', syncAddSubmit);
+  syncAddSubmit();
 
   const getTaskId = (el: HTMLElement | null): string | null =>
     el?.dataset.taskId || el?.closest('[data-task-id]')?.getAttribute('data-task-id') || null;
