@@ -956,6 +956,7 @@ button.preview-card {
 }
 
 .todo-add-form {
+    position: relative;
     margin-bottom: 0.75rem;
 }
 
@@ -965,7 +966,7 @@ button.preview-card {
     font-family: 'Special Elite', monospace;
     font-size: 1rem;
     line-height: 1.4;
-    padding: 0.875rem 1rem;
+    padding: 0.875rem 5.5rem 0.875rem 1rem;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 0.75rem;
@@ -983,6 +984,43 @@ button.preview-card {
     outline: none;
     border-color: #374151;
     box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
+}
+
+.todo-add-submit {
+    position: absolute;
+    top: 50%;
+    right: 0.35rem;
+    min-width: 4.5rem;
+    min-height: 38px;
+    padding: 0.35rem 0.55rem;
+    transform: translateY(-50%);
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid #374151;
+    border-radius: 0.45rem;
+    background: #374151;
+    color: #ffffff;
+    cursor: pointer;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.todo-add-submit:hover:not(:disabled) {
+    border-color: #111111;
+    background: #111111;
+}
+
+.todo-add-submit:focus-visible {
+    outline: 2px solid #374151;
+    outline-offset: 2px;
+}
+
+.todo-add-submit:disabled {
+    cursor: default;
+    opacity: 0.32;
 }
 
 @media (min-width: 640px) {
@@ -1191,7 +1229,7 @@ button.preview-card {
 
     #todo-input {
         font-size: 1rem;
-        padding: 0.875rem;
+        padding: 0.875rem 5.25rem 0.875rem 0.875rem;
     }
 
     .todo-row {

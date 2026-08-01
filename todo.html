@@ -36,10 +36,10 @@
                 placeholder="Add a task and press return"
                 aria-label="Add a task"
             >
-            <!-- Mobile Safari needs an explicit submit control to fire the
-                 form's submit event reliably when Return is pressed in a
-                 single-field form. Hidden visually but kept in the form. -->
-            <button type="submit" class="sr-only" tabindex="-1" aria-hidden="true">Add task</button>
+            <button id="todo-add-submit" class="todo-add-submit" type="submit" disabled>
+                <span aria-hidden="true">↵</span>
+                <span>Add</span>
+            </button>
         </form>
 
         <p id="todo-counter" class="todo-counter" aria-live="polite"></p>
