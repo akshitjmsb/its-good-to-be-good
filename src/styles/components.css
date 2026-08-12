@@ -1932,7 +1932,7 @@ button.preview-card {
     gap: 0.5rem;
 }
 
-/* Five-pillar reading layer: one law, one move, then optional depth. */
+/* Five-pillar Gyaan layer: one law, one move, then optional depth. */
 .pillar-copy {
     max-width: 32rem;
     margin: 0 auto;
@@ -2055,6 +2055,43 @@ button.preview-card {
     line-height: 1;
 }
 
+.pillar-cues {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.pillar-cue {
+    min-height: 4.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem;
+    background: var(--home-surface, #ffffff);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.5rem;
+}
+
+.pillar-cue__copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.pillar-cue__copy strong {
+    color: var(--home-text, #374151);
+    font-size: 0.76rem;
+    font-weight: normal;
+}
+
+.pillar-cue__copy small {
+    color: var(--home-muted, #6b7280);
+    font-size: 0.64rem;
+    line-height: 1.35;
+}
+
 .pillar-action[aria-pressed='true'] .pillar-action__glyph {
     color: var(--home-text, #374151);
 }
@@ -2117,6 +2154,12 @@ button.preview-card {
     margin: 1.25rem auto 0;
     padding-top: 1.25rem;
     border-top: 1px solid var(--home-border, #e5e7eb);
+}
+
+.pillar-embedded-view--action {
+    margin-top: 1rem;
+    padding-top: 0;
+    border-top: 0;
 }
 
 /* A second titled block in the same panel (e.g. Watch & learn under the

@@ -40,6 +40,22 @@ interface PillarCopy {
   why: string;
 }
 
+interface ActionCue {
+  label: string;
+  detail: string;
+  icon: string;
+}
+
+const ACTION_ICONS = {
+  sunrise: '<path d="M4 18h16"></path><path d="M6 14a6 6 0 0 1 12 0"></path><path d="M12 3v3"></path><path d="m4.9 7.9 2.1 2.1"></path><path d="m19.1 7.9-2.1 2.1"></path>',
+  moon: '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z"></path>',
+  soften: '<path d="M7 9h10"></path><path d="M8 14c1.2 1.3 2.5 2 4 2s2.8-.7 4-2"></path><circle cx="12" cy="12" r="9"></circle>',
+  breath: '<path d="M5 8h8.5a2.5 2.5 0 1 0-2.5-2.5"></path><path d="M3 12h15a3 3 0 1 1-3 3"></path><path d="M4 16h6.5a2 2 0 1 1-2 2"></path>',
+  connect: '<circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3 19c.6-3.3 2.6-5 6-5s5.4 1.7 6 5"></path><path d="M15 14c3.1 0 5 1.7 5.5 5"></path>',
+  stretch: '<path d="M8 4v6l-3 4"></path><path d="m8 10 4 3 4-5"></path><path d="m12 13-1 7"></path><circle cx="8" cy="3" r="1.5"></circle>',
+  weights: '<path d="M6 9v6"></path><path d="M3 10v4"></path><path d="M18 9v6"></path><path d="M21 10v4"></path><path d="M6 12h12"></path>',
+} as const;
+
 const PILLAR_COPY: Record<
   Exclude<PillarName, 'food' | 'movement'>,
   PillarCopy
@@ -55,7 +71,7 @@ const PILLAR_COPY: Record<
     title: 'Mindfulness',
     kicker: 'The direct control knob',
     law: 'The exhale is the brake.',
-    move: 'Breathe through the nose and let the belly move: in for 4, out for 6. Choose Breathe, OM, or Focus below.',
+    move: 'Breathe through the nose and let the belly move: in for 4, out for 6. Choose Breathe, OM, or Focus above.',
     why: 'Breath can run automatically or manually. Fast, shallow breathing is a danger signal the brain trusts; a longer exhale gives the nervous system evidence that the body is safe.',
   },
   rooh: {
@@ -132,19 +148,90 @@ export function initBeingOrbit({
     `;
   }
 
-  function movementOverview(): string {
+  function renderActionHeader(
+    title: string,
+    prompt: string,
+    titleId: string
+  ): string {
     return `
-      ${renderPillarCopy({
-        title: 'Movement',
-        kicker: 'Motion changes the signal',
-        law: 'Long sitting, then move.',
-        move: 'Use Stretch to close the tension signal, Weights to train the body, or take a low-stakes walk.',
-        why: 'Working muscles release messengers that support BDNF, the brain’s growth factor. Stretching restores muscle length and blood flow; walking gives the nervous system a gentle place to practise moving forward.',
-      })}
-      <div class="pillar-actions" role="group" aria-label="Movement practices">
-        <button type="button" class="pillar-action" data-movement="stretch">Stretch</button>
-        <button type="button" class="pillar-action" data-movement="weights">Weights</button>
-      </div>
+      <p class="pillar-copy__kicker">Action</p>
+      <h2 class="pillar-copy__title" id="${escapeHtml(titleId)}">${escapeHtml(title)}</h2>
+      <p class="pillar-action-layer__prompt">${escapeHtml(prompt)}</p>
+    `;
+  }
+
+  function renderGyaan(copy: PillarCopy): string {
+    return `
+      <section class="pillar-gyaan" aria-label="${escapeHtml(copy.title)} Gyaan">
+        <p class="pillar-gyaan__label">Gyaan</p>
+        ${renderPillarCopy(copy)}
+      </section>
+    `;
+  }
+
+  function renderActionCues(cues: ReadonlyArray<ActionCue>): string {
+    return `<div class="pillar-cues">${cues
+      .map(
+        cue => `
+          <div class="pillar-cue">
+            <span class="pillar-action__glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${cue.icon}</svg>
+            </span>
+            <span class="pillar-cue__copy">
+              <strong>${escapeHtml(cue.label)}</strong>
+              <small>${escapeHtml(cue.detail)}</small>
+            </span>
+          </div>
+        `
+      )
+      .join('')}</div>`;
+  }
+
+  function sleepOverview(): string {
+    const copy = PILLAR_COPY.sleep;
+    return `
+      <section class="pillar-action-layer" aria-labelledby="sleep-title">
+        ${renderActionHeader('Sleep', 'Anchor the clock at both ends of the day.', 'sleep-title')}
+        ${renderActionCues([
+          {
+            label: 'Morning light',
+            detail: 'Outside within one hour',
+            icon: ACTION_ICONS.sunrise,
+          },
+          {
+            label: 'Dim the night',
+            detail: 'Keep wake-ups warm and low',
+            icon: ACTION_ICONS.moon,
+          },
+        ])}
+      </section>
+      ${renderGyaan(copy)}
+    `;
+  }
+
+  function movementOverview(): string {
+    const copy: PillarCopy = {
+      title: 'Movement',
+      kicker: 'Motion changes the signal',
+      law: 'Long sitting, then move.',
+      move: 'Use Stretch to close the tension signal, Weights to train the body, or take a low-stakes walk.',
+      why: 'Working muscles release messengers that support BDNF, the brain’s growth factor. Stretching restores muscle length and blood flow; walking gives the nervous system a gentle place to practise moving forward.',
+    };
+    return `
+      <section class="pillar-action-layer" aria-labelledby="movement-title">
+        ${renderActionHeader('Movement', 'How do you want to move?', 'movement-title')}
+        <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Movement practices">
+          <button type="button" class="pillar-action pillar-action--icon" data-movement="stretch">
+            <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ACTION_ICONS.stretch}</svg></span>
+            <span>Stretch</span>
+          </button>
+          <button type="button" class="pillar-action pillar-action--icon" data-movement="weights">
+            <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ACTION_ICONS.weights}</svg></span>
+            <span>Weights</span>
+          </button>
+        </div>
+      </section>
+      ${renderGyaan(copy)}
     `;
   }
 
@@ -153,9 +240,7 @@ export function initBeingOrbit({
     const focusPressed = meditation?.isFocusPlaying() ?? false;
     return `
       <section class="pillar-action-layer" aria-labelledby="mindfulness-title">
-        <p class="pillar-copy__kicker">Action</p>
-        <h2 class="pillar-copy__title" id="mindfulness-title">Mindfulness</h2>
-        <p class="pillar-action-layer__prompt">What does your body need right now?</p>
+        ${renderActionHeader('Mindfulness', 'What does your body need right now?', 'mindfulness-title')}
         <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Mindfulness practices">
           <button type="button" class="pillar-action pillar-action--icon" data-mode="breathe">
             <span class="pillar-action__glyph" aria-hidden="true">
@@ -182,21 +267,45 @@ export function initBeingOrbit({
           </button>
         </div>
       </section>
-      <section class="pillar-gyaan" aria-label="Mindfulness Gyaan">
-        <p class="pillar-gyaan__label">Gyaan</p>
-        ${renderPillarCopy(PILLAR_COPY.mindfulness)}
-      </section>
+      ${renderGyaan(PILLAR_COPY.mindfulness)}
     `;
   }
 
-  function foodIntro(): string {
-    return renderPillarCopy({
+  function foodCopy(): PillarCopy {
+    return {
       title: 'Food',
       kicker: 'Fuel the body-budget',
       law: 'Never eat a naked carb.',
       move: 'Pair carbohydrate with protein, fat, or fibre. At lunch, eat protein and vegetables first and the carbohydrate last.',
       why: 'Glucose is fast cash, fat is slower stored energy, and protein repairs the machine. Pairing and ordering food steadies the fuel arriving in the bloodstream.',
-    });
+    };
+  }
+
+  function roohOverview(): string {
+    const copy = PILLAR_COPY.rooh;
+    return `
+      <section class="pillar-action-layer" aria-labelledby="rooh-title">
+        ${renderActionHeader('Rooh', 'Offer safety with your body first.', 'rooh-title')}
+        ${renderActionCues([
+          {
+            label: 'Soften',
+            detail: 'Jaw and shoulders',
+            icon: ACTION_ICONS.soften,
+          },
+          {
+            label: 'Slow one breath',
+            detail: 'Let the exhale lengthen',
+            icon: ACTION_ICONS.breath,
+          },
+          {
+            label: 'Connect',
+            detail: 'Meet them from calm',
+            icon: ACTION_ICONS.connect,
+          },
+        ])}
+      </section>
+      ${renderGyaan(copy)}
+    `;
   }
 
   function showPanel(name: PillarName): void {
@@ -206,17 +315,24 @@ export function initBeingOrbit({
     if (name === 'food') {
       // Food is a Sukoon practice: meal ticks last for this open panel only
       // and disappear when the user returns to stillness.
-      panel.innerHTML = foodIntro();
+      panel.innerHTML = `
+        <section class="pillar-action-layer" aria-labelledby="food-title">
+          ${renderActionHeader('Food', 'Choose today, then check off each meal.', 'food-title')}
+        </section>
+      `;
       const host = document.createElement('div');
-      host.className = 'pillar-embedded-view';
+      host.className = 'pillar-embedded-view pillar-embedded-view--action';
       panel.appendChild(host);
       renderFoodView(host, new Date());
+      panel.insertAdjacentHTML('beforeend', renderGyaan(foodCopy()));
     } else if (name === 'movement') {
       panel.innerHTML = movementOverview();
     } else if (name === 'mindfulness') {
       panel.innerHTML = mindfulnessOverview();
+    } else if (name === 'sleep') {
+      panel.innerHTML = sleepOverview();
     } else {
-      panel.innerHTML = renderPillarCopy(PILLAR_COPY[name]);
+      panel.innerHTML = roohOverview();
     }
   }
 

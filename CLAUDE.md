@@ -46,7 +46,8 @@ enforces the contract:
 - **`circle`** — a soul practice. Acts in place on the home, leaves
   nothing behind, **never navigates** (no `routeHref`). Sukoon has five
   pillars: Sleep, Food, Movement, Mindfulness, and Rooh. Breathe, OM, and
-  Focus appear inside Mindfulness.
+  Focus appear inside Mindfulness. Every pillar leads with its icon-led
+  Action layer and places its explanatory Gyaan afterward.
 - **`square`** — a purpose tool. Opens its own page (`routeHref`) from a
   corner tile on the home and accumulates a record. Current tools:
   `todo`, `khyaali-bhoot`, `tennis`.

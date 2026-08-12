@@ -19,6 +19,10 @@ with five Sukoon pillars riding the circle —
   Audio uses HTMLAudioElement for iOS autoplay reliability.
 - **Rooh** — relationships, safety, and co-regulation.
 
+Every pillar panel follows the same hierarchy: an icon-led **Action** layer
+first, followed by its explanatory **Gyaan** layer. Do not put teaching copy
+ahead of the immediate practice.
+
 ## Files
 
 - `manifest.json` — module metadata (ring: circle, so no routeHref).
