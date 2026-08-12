@@ -152,12 +152,40 @@ export function initBeingOrbit({
     const omPressed = meditation?.isOmPlaying() ?? false;
     const focusPressed = meditation?.isFocusPlaying() ?? false;
     return `
-      ${renderPillarCopy(PILLAR_COPY.mindfulness)}
-      <div class="pillar-actions" role="group" aria-label="Mindfulness practices">
-        <button type="button" class="pillar-action" data-mode="breathe">Breathe</button>
-        <button type="button" class="pillar-action" data-mode="om" aria-pressed="${omPressed}">OM</button>
-        <button type="button" class="pillar-action" data-mode="focus" aria-pressed="${focusPressed}">Focus</button>
-      </div>
+      <section class="pillar-action-layer" aria-labelledby="mindfulness-title">
+        <p class="pillar-copy__kicker">Action</p>
+        <h2 class="pillar-copy__title" id="mindfulness-title">Mindfulness</h2>
+        <p class="pillar-action-layer__prompt">What does your body need right now?</p>
+        <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Mindfulness practices">
+          <button type="button" class="pillar-action pillar-action--icon" data-mode="breathe">
+            <span class="pillar-action__glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.5 -2.5"></path>
+                <path d="M3 12h15a3 3 0 1 1 -3 3"></path>
+                <path d="M4 16h6.5a2 2 0 1 1 -2 2"></path>
+              </svg>
+            </span>
+            <span>Breathe</span>
+          </button>
+          <button type="button" class="pillar-action pillar-action--icon" data-mode="om" aria-pressed="${omPressed}">
+            <span class="pillar-action__glyph pillar-action__glyph--om" aria-hidden="true">ॐ</span>
+            <span>OM</span>
+          </button>
+          <button type="button" class="pillar-action pillar-action--icon" data-mode="focus" aria-pressed="${focusPressed}">
+            <span class="pillar-action__glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="8"></circle>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+            <span>Focus</span>
+          </button>
+        </div>
+      </section>
+      <section class="pillar-gyaan" aria-label="Mindfulness Gyaan">
+        <p class="pillar-gyaan__label">Gyaan</p>
+        ${renderPillarCopy(PILLAR_COPY.mindfulness)}
+      </section>
     `;
   }
 
