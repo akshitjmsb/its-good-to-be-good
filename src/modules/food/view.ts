@@ -5,7 +5,7 @@
  *   • Month calendar at top, nav with ‹ ›
  *   • Selected day's plan below: Breakfast / Lunch / Dinner / Snack
  *   • Veg days (Tue/Thu) get a muted-green cell variant
- *   • Per-meal check-off persisted in localStorage by ISO date
+ *   • Per-meal check-off lasts only for the open Food practice
  */
 
 import { createSafeHtml, escapeHtml } from '../../utils/escapeHtml';
@@ -31,6 +31,7 @@ interface ViewState {
   displayedMonth: Date;
   selectedDay: Date;
   today: Date;
+  checksByDate: Map<string, CheckMap>;
 }
 
 type CheckMap = Record<MealCategory, boolean>;
@@ -84,34 +85,15 @@ function parseDateAttr(value: string | null): Date | null {
   return new Date(y, m - 1, d);
 }
 
-/* ── Check-off persistence ─────────────────────────────────────────── */
+/* ── Session-only meal check-offs ──────────────────────────────────── */
 
-function checksStorageKey(date: Date): string {
-  return `food.checks.${dateAttr(date)}`;
-}
-
-function readChecks(date: Date): CheckMap {
-  try {
-    const raw = localStorage.getItem(checksStorageKey(date));
-    if (!raw) return { ...EMPTY_CHECKS };
-    const parsed = JSON.parse(raw) as Partial<CheckMap>;
-    return {
-      breakfast: Boolean(parsed.breakfast),
-      lunch: Boolean(parsed.lunch),
-      dinner: Boolean(parsed.dinner),
-      snack: Boolean(parsed.snack),
-    };
-  } catch {
-    return { ...EMPTY_CHECKS };
-  }
-}
-
-function writeChecks(date: Date, checks: CheckMap): void {
-  try {
-    localStorage.setItem(checksStorageKey(date), JSON.stringify(checks));
-  } catch {
-    // Quota / private mode — silently fall back to in-memory state.
-  }
+function checksFor(state: ViewState, date: Date): CheckMap {
+  const key = dateAttr(date);
+  const existing = state.checksByDate.get(key);
+  if (existing) return existing;
+  const checks = { ...EMPTY_CHECKS };
+  state.checksByDate.set(key, checks);
+  return checks;
 }
 
 /* ── Calendar ──────────────────────────────────────────────────────── */
@@ -141,12 +123,14 @@ function buildMonthCells(state: ViewState): string {
       veg ? 'food-cal__cell--veg' : 'food-cal__cell--regular',
       isToday ? 'is-today' : '',
       isSelected ? 'is-selected' : '',
-    ].filter(Boolean).join(' ');
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     cells.push(
       `<button type="button" class="${cls}" data-date="${dateAttr(cellDate)}" aria-pressed="${isSelected}">` +
         `<span class="food-cal__num">${cellDate.getDate()}</span>` +
-      `</button>`
+        `</button>`
     );
   }
   return cells.join('');
@@ -197,9 +181,11 @@ function renderMealCard(
 
 function renderPanel(state: ViewState): string {
   const plan: DayMealPlan = getDayMealPlan(state.selectedDay);
-  const checks = readChecks(state.selectedDay);
+  const checks = checksFor(state, state.selectedDay);
   const dateLabel = formatPanelDate(state.selectedDay);
-  const dayCls = plan.vegetarian ? 'food-panel__type food-panel__type--veg' : 'food-panel__type';
+  const dayCls = plan.vegetarian
+    ? 'food-panel__type food-panel__type--veg'
+    : 'food-panel__type';
   const dayLabel = plan.vegetarian ? 'Vegetarian' : 'Regular';
 
   const cards = MEAL_CATEGORIES.map(category =>
@@ -281,9 +267,8 @@ function attachListener(container: HTMLElement): void {
     if (checkBtn) {
       const category = checkBtn.dataset.meal as MealCategory | undefined;
       if (!category) return;
-      const checks = readChecks(state.selectedDay);
+      const checks = checksFor(state, state.selectedDay);
       checks[category] = !checks[category];
-      writeChecks(state.selectedDay, checks);
       paint();
       return;
     }
@@ -303,6 +288,7 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
     displayedMonth: startOfMonth(today),
     selectedDay: today,
     today,
+    checksByDate: new Map(),
   });
   attachListener(container);
   container.innerHTML = renderShell(STATE.get(container)!);

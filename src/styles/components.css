@@ -1559,7 +1559,7 @@ button.preview-card {
 /* ── Being page ──────────────────────────────────────────────────────────── */
 
 /* Being orbit — the resting state. The Vitruvian Man sits dead centre and the
-   seven practices orbit it as quiet captioned icons. Each icon is placed by a
+   five Sukoon pillars orbit it as quiet captioned icons. Each icon is placed by a
    per-icon angle (`--a`, set inline) carried out along the orbit radius with
    the classic rotate → translate → counter-rotate trick so the tokens stay
    upright. Nothing is "selected" until one is tapped. */
@@ -1577,7 +1577,7 @@ button.preview-card {
 }
 
 /* Faint guide ring through the icon centres — the orbital path made visible.
-   Drawn at the icon radius so the seven launchers sit on a perfect circle. */
+   Drawn at the icon radius so the five pillars sit on a perfect circle. */
 .being-orbit::before {
     content: '';
     position: absolute;
@@ -1609,6 +1609,79 @@ button.preview-card {
     opacity: 0.95;
     border: 1px solid var(--home-border, #e5e7eb);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Breathe / OM / Focus belong to Mindfulness but stay immediately usable.
+   Their compact cluster rests over the lower centre of the drawing, inside
+   the Sukoon circle and away from the five pillar launchers. */
+.mindfulness-quick-actions {
+    position: absolute;
+    top: calc(50% + 2.45rem);
+    left: 50%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    transform: translateX(-50%);
+}
+
+.mindfulness-quick {
+    width: 3rem;
+    min-height: 2.65rem;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.2rem;
+    background: var(--home-surface, #ffffff);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.4rem;
+    color: var(--home-muted, #6b7280);
+    font-family: 'Special Elite', monospace;
+    font-size: 0.52rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+        color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mindfulness-quick:hover,
+.mindfulness-quick[aria-pressed='true'] {
+    background: var(--home-card-bg, #f8f9fa);
+    border-color: #d1d5db;
+    color: var(--home-text, #374151);
+}
+
+.mindfulness-quick.is-open {
+    background: var(--home-text, #374151);
+    border-color: var(--home-text, #374151);
+    color: var(--home-surface, #ffffff);
+}
+
+.mindfulness-quick:focus-visible {
+    outline: 2px solid var(--home-text, #374151);
+    outline-offset: 2px;
+}
+
+.mindfulness-quick__glyph {
+    width: 1rem;
+    height: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mindfulness-quick__glyph svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.mindfulness-quick__glyph--om {
+    font-size: 1rem;
 }
 
 .orbit-icon {
@@ -1650,7 +1723,7 @@ button.preview-card {
     outline-offset: 2px;
 }
 
-/* Ambient loops (OM / Sleep) settle into a quiet grey while playing. */
+/* Ambient loops (OM / Focus) settle into a quiet grey while playing. */
 .orbit-icon[aria-pressed='true'] {
     background-color: #f3f4f6;
     border-color: #d1d5db;
@@ -1689,6 +1762,11 @@ button.preview-card {
     font-size: 0.625rem;
     letter-spacing: 0.04em;
     line-height: 1;
+}
+
+.orbit-icon__label--long {
+    font-size: 0.52rem;
+    letter-spacing: 0.01em;
 }
 
 /* Ring names — Sukoon inside the circle, Junoon in the square's margin.
@@ -1816,7 +1894,7 @@ button.preview-card {
 }
 
 /* Breath-chime toggle — the one ambient control that lives with the timer
-   (OM / Sleep live in the orbit). */
+   (OM / Focus stay in the centre quick actions). */
 .being-sounds {
     display: flex;
     justify-content: center;
@@ -1926,6 +2004,122 @@ button.preview-card {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+}
+
+/* Five-pillar reading layer: one law, one move, then optional depth. */
+.pillar-copy {
+    max-width: 32rem;
+    margin: 0 auto;
+}
+
+.pillar-copy__kicker {
+    margin: 0 0 0.25rem;
+    color: var(--home-muted, #6b7280);
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.pillar-copy__title {
+    margin: 0;
+    color: var(--home-text, #374151);
+    font-size: 1.35rem;
+    font-weight: normal;
+}
+
+.pillar-copy__law {
+    margin: 0.75rem 0 1rem;
+    color: var(--home-ink, #111111);
+    font-size: 1.05rem;
+    line-height: 1.55;
+}
+
+.pillar-copy__move {
+    padding: 0.8rem;
+    background: var(--home-surface, #ffffff);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.5rem;
+}
+
+.pillar-copy__move span {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: var(--home-muted, #6b7280);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.pillar-copy__move p,
+.pillar-copy__why p {
+    margin: 0;
+    color: var(--home-text, #374151);
+    font-size: 0.82rem;
+    line-height: 1.65;
+}
+
+.pillar-copy__why {
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--home-border, #e5e7eb);
+}
+
+.pillar-copy__why summary {
+    color: var(--home-muted, #6b7280);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+.pillar-copy__why p {
+    margin-top: 0.7rem;
+}
+
+.pillar-actions {
+    max-width: 32rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem auto 0;
+}
+
+.pillar-action,
+.pillar-back {
+    min-height: 44px;
+    padding: 0.45rem 0.8rem;
+    background: var(--home-surface, #ffffff);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.5rem;
+    color: var(--home-text, #374151);
+    font-family: 'Special Elite', monospace;
+    font-size: 0.76rem;
+    cursor: pointer;
+}
+
+.pillar-action:hover,
+.pillar-back:hover {
+    background: var(--home-card-bg, #f8f9fa);
+    border-color: #d1d5db;
+}
+
+.pillar-action:focus-visible,
+.pillar-back:focus-visible {
+    outline: 2px solid var(--home-text, #374151);
+    outline-offset: 2px;
+}
+
+.pillar-back {
+    margin-bottom: 0.85rem;
+    background: transparent;
+    border-color: transparent;
+    color: var(--home-muted, #6b7280);
+}
+
+.pillar-embedded-view {
+    max-width: 32rem;
+    margin: 1.25rem auto 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--home-border, #e5e7eb);
 }
 
 /* A second titled block in the same panel (e.g. Watch & learn under the

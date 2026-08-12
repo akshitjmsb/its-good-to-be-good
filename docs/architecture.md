@@ -5,10 +5,12 @@
 The app is the orbit: da Vinci's Vitruvian Man at the centre of the home,
 with two rings around him —
 
-- **Circle (soul)** — practices that act in place and leave nothing
-  behind: Breathe, OM, Sleep, Stretch, Weights. They never navigate.
+- **Circle (soul)** — five pillars that act in place and leave nothing
+  behind: Sleep, Food, Movement, Mindfulness, Rooh. Breathe, OM, and Focus
+  remain immediate actions inside Mindfulness. Circle experiences never
+  navigate.
 - **Square (purpose)** — tools that open their own page and accumulate a
-  record: To do, Khyaali Bhoot, Tennis, Food.
+  record: To do, Khyaali Bhoot, Tennis.
 
 The membership test: *does using it leave something behind?*
 
@@ -18,8 +20,8 @@ The membership test: *does using it leave something behind?*
   vanilla TypeScript, no frameworks.
 - Backend: Convex (`convex/`) with real auth via `@convex-dev/auth`.
   Identity is taken from the authenticated Convex context server-side.
-- The service worker precaches the shell; To Do additionally survives
-  crash/offline via a localStorage WAL (see Resilience).
+- No service worker is registered; launches load the current shell from the
+  CDN. To Do survives crash/offline via a localStorage WAL (see Resilience).
 
 ## Layers
 
@@ -44,7 +46,8 @@ Rules (enforced by `npm run check:architecture`):
 - Circle manifests have no `routeHref`; square manifests must have one,
   the page must exist, the home must link it, and the page must load the
   module's `entry.ts`.
-- The five soul-practice hooks must exist in the home markup.
+- The five pillar hooks and three zero-barrier Mindfulness actions must exist
+  in the home markup.
 
 ## The manifest is the registry
 
@@ -67,8 +70,8 @@ on purpose.
    failures retry with backoff then park in `offline` with the work still
    queued; sign-out pauses, re-auth flushes.
 
-Local-only state (Food's meal check-offs, practice toggles) uses plain
-guarded localStorage.
+Ephemeral practice state (such as Food's meal check-offs) stays in memory and
+clears when the practice closes.
 
 ## Anti-patterns
 

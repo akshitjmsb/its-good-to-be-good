@@ -29,7 +29,7 @@ function template(): string {
       <form class="auth-gate__card" id="auth-gate-form" novalidate>
         <div class="auth-gate__brand">
           ${VITRUVIAN_SVG}
-          <h1 class="auth-gate__title" id="auth-gate-title">It's Good To Be King</h1>
+          <h1 class="auth-gate__title" id="auth-gate-title">It's Good to Be Good</h1>
         </div>
 
         <div class="auth-gate__tabs" role="tablist">

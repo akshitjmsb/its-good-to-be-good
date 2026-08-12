@@ -5,15 +5,13 @@
  * orbit it on the circle as quiet captioned icons; the purpose tools sit
  * at the corners of the square as plain links to their own pages.
  *
- * Tapping a circle icon enters that practice on the activity stage below:
+ * Five pillars ride the Sukoon circle: Sleep, Food, Movement, Mindfulness,
+ * and Rooh. Tapping one opens its content on the activity stage below.
  *
- *   • Breathe / OM / Sleep reveal the meditation timer (`#being-meditate`).
- *     OM and Sleep additionally toggle their ambient loop — they keep the
- *     `meditate-om-toggle` / `meditate-sleep-toggle` ids that `initMeditate()`
- *     binds. The breath-chime toggle lives inside the timer panel.
- *   • Stretch / Weights open the practice panel (`#being-panel`). Stretch
- *     opens a YouTube routine in a new tab; Weights mounts the
- *     deterministic offline workout calendar inline.
+ * Breathe / OM / Focus remain one-tap controls beside the centre figure and
+ * belong conceptually to Mindfulness. Movement holds Stretch + Weights; Food
+ * mounts its deterministic meal calendar. Nothing navigates or leaves a
+ * durable record.
  *
  * One thing is on the stage at a time. The "Stillness" control (or
  * re-tapping the open icon) closes the stage and returns to the orbit.
@@ -30,20 +28,62 @@ interface PracticeLink {
   url: string;
 }
 
-type PanelName = 'stretch' | 'weights';
-type MeditateMode = 'breathe' | 'om' | 'sleep';
-type Mode = PanelName | MeditateMode;
+type PillarName = 'sleep' | 'food' | 'movement' | 'mindfulness' | 'rooh';
+type QuickMode = 'breathe' | 'om' | 'focus';
+type Mode = PillarName | QuickMode;
+type FoodRenderer = (container: HTMLElement, today: Date) => void;
 
-export function initBeingOrbit(): void {
-  // Timer + breath ring + ambient audio toggles (chime / OM / Sleep).
+interface PillarCopy {
+  title: string;
+  kicker: string;
+  law: string;
+  move: string;
+  why: string;
+}
+
+const PILLAR_COPY: Record<
+  Exclude<PillarName, 'food' | 'movement'>,
+  PillarCopy
+> = {
+  sleep: {
+    title: 'Sleep',
+    kicker: 'The master pillar',
+    law: 'Rest = refuel + flush.',
+    move: 'Circadian / light: get outside within an hour of waking. At night, keep feeds and wake-ups dim and warm so the clock stays anchored.',
+    why: 'Adenosine builds sleep pressure while the brain works. Deep sleep restores energy and runs the glymphatic flush. Morning light sets the circadian wave that guides temperature, hormones, alertness, and the natural afternoon dip.',
+  },
+  mindfulness: {
+    title: 'Mindfulness',
+    kicker: 'The direct control knob',
+    law: 'The exhale is the brake.',
+    move: 'Breathe through the nose and let the belly move: in for 4, out for 6. Breathe, OM, and Focus stay one tap away at the centre.',
+    why: 'Breath can run automatically or manually. Fast, shallow breathing is a danger signal the brain trusts; a longer exhale gives the nervous system evidence that the body is safe.',
+  },
+  rooh: {
+    title: 'Rooh',
+    kicker: 'We regulate one another',
+    law: 'Your calm becomes part of his calm.',
+    move: 'Before you connect, soften the jaw, lower the shoulders, and slow one breath. Offer safety with your own body first.',
+    why: 'Other people’s states enter the body-budget. A baby reads heartbeat, breath, voice, and muscle tension to answer one basic question: am I safe? Co-regulation teaches the nervous system what safety feels like.',
+  },
+};
+
+export function initBeingOrbit({
+  renderFoodView,
+}: {
+  renderFoodView: FoodRenderer;
+}): void {
+  // Timer + breath ring + ambient audio toggles (chime / OM / Focus).
   initMeditate();
 
   const stage = document.getElementById('being-stage');
   const meditate = document.getElementById('being-meditate');
   const panel = document.getElementById('being-panel');
   const closeBtn = document.getElementById('being-stage-close');
-  const icons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>('.orbit-icon')
+  const controls = Array.from(
+    document.querySelectorAll<HTMLButtonElement>(
+      '.orbit-icon, .mindfulness-quick'
+    )
   );
   if (!stage || !meditate || !panel) return;
 
@@ -54,11 +94,17 @@ export function initBeingOrbit(): void {
     return STRETCH_ROUTINES.flatMap(entry =>
       entry.urls.length === 1
         ? [{ label: entry.bodyPart, url: entry.urls[0] }]
-        : entry.urls.map((url, i) => ({ label: `${entry.bodyPart} ${i + 1}`, url }))
+        : entry.urls.map((url, i) => ({
+            label: `${entry.bodyPart} ${i + 1}`,
+            url,
+          }))
     );
   }
 
-  function renderLinks(title: string, links: ReadonlyArray<PracticeLink>): string {
+  function renderLinks(
+    title: string,
+    links: ReadonlyArray<PracticeLink>
+  ): string {
     const buttons = links
       .map(
         link =>
@@ -71,40 +117,123 @@ export function initBeingOrbit(): void {
     );
   }
 
-  function showPanel(name: PanelName): void {
+  function renderPillarCopy(copy: PillarCopy): string {
+    return `
+      <section class="pillar-copy">
+        <p class="pillar-copy__kicker">${escapeHtml(copy.kicker)}</p>
+        <h2 class="pillar-copy__title">${escapeHtml(copy.title)}</h2>
+        <p class="pillar-copy__law">${escapeHtml(copy.law)}</p>
+        <div class="pillar-copy__move">
+          <span>For today</span>
+          <p>${escapeHtml(copy.move)}</p>
+        </div>
+        <details class="pillar-copy__why">
+          <summary>Why this works</summary>
+          <p>${escapeHtml(copy.why)}</p>
+        </details>
+      </section>
+    `;
+  }
+
+  function movementOverview(): string {
+    return `
+      ${renderPillarCopy({
+        title: 'Movement',
+        kicker: 'Motion changes the signal',
+        law: 'Long sitting, then move.',
+        move: 'Use Stretch to close the tension signal, Weights to train the body, or take a low-stakes walk.',
+        why: 'Working muscles release messengers that support BDNF, the brain’s growth factor. Stretching restores muscle length and blood flow; walking gives the nervous system a gentle place to practise moving forward.',
+      })}
+      <div class="pillar-actions" role="group" aria-label="Movement practices">
+        <button type="button" class="pillar-action" data-movement="stretch">Stretch</button>
+        <button type="button" class="pillar-action" data-movement="weights">Weights</button>
+      </div>
+    `;
+  }
+
+  function mindfulnessOverview(): string {
+    return `
+      ${renderPillarCopy(PILLAR_COPY.mindfulness)}
+      <div class="pillar-actions" role="group" aria-label="Mindfulness practices">
+        <button type="button" class="pillar-action" data-quick-mode="breathe">Breathe</button>
+        <button type="button" class="pillar-action" data-quick-mode="om">OM</button>
+        <button type="button" class="pillar-action" data-quick-mode="focus">Focus</button>
+      </div>
+    `;
+  }
+
+  function foodIntro(): string {
+    return renderPillarCopy({
+      title: 'Food',
+      kicker: 'Fuel the body-budget',
+      law: 'Never eat a naked carb.',
+      move: 'Pair carbohydrate with protein, fat, or fibre. At lunch, eat protein and vegetables first and the carbohydrate last.',
+      why: 'Glucose is fast cash, fat is slower stored energy, and protein repairs the machine. Pairing and ordering food steadies the fuel arriving in the bloodstream.',
+    });
+  }
+
+  function showPanel(name: PillarName): void {
     if (!panel) return;
     panel.innerHTML = '';
 
-    if (name === 'weights') {
-      // Render into a fresh host so the exercise view's delegated listener is
-      // dropped with the node on the next panel swap (no listener build-up).
+    if (name === 'food') {
+      // Food is a Sukoon practice: meal ticks last for this open panel only
+      // and disappear when the user returns to stillness.
+      panel.innerHTML = foodIntro();
       const host = document.createElement('div');
+      host.className = 'pillar-embedded-view';
       panel.appendChild(host);
-      renderExerciseView(host, new Date());
-    } else if (name === 'stretch') {
-      panel.innerHTML = renderLinks('Stretch', stretchLinks());
+      renderFoodView(host, new Date());
+    } else if (name === 'movement') {
+      panel.innerHTML = movementOverview();
+    } else if (name === 'mindfulness') {
+      panel.innerHTML = mindfulnessOverview();
+    } else {
+      panel.innerHTML = renderPillarCopy(PILLAR_COPY[name]);
     }
+  }
+
+  function showMovementPractice(name: 'stretch' | 'weights'): void {
+    if (!panel) return;
+    panel.innerHTML = `
+      <button type="button" class="pillar-back" data-pillar-back="movement">← Movement</button>
+    `;
+
+    if (name === 'stretch') {
+      panel.insertAdjacentHTML(
+        'beforeend',
+        renderLinks('Stretch', stretchLinks())
+      );
+      return;
+    }
+
+    // Render into a fresh host so the exercise view's delegated listener is
+    // dropped with the node on the next panel swap (no listener build-up).
+    const host = document.createElement('div');
+    host.className = 'pillar-embedded-view';
+    panel.appendChild(host);
+    renderExerciseView(host, new Date());
   }
 
   // Reveal the stage with one face — the meditation timer or the practice
   // panel — and hide the other.
   function enter(mode: Mode): void {
     if (!stage || !meditate || !panel) return;
-    const isMeditate = mode === 'breathe' || mode === 'om' || mode === 'sleep';
+    const isMeditate = mode === 'breathe' || mode === 'om' || mode === 'focus';
 
     if (isMeditate) {
       meditate.removeAttribute('hidden');
       panel.setAttribute('hidden', '');
       panel.innerHTML = '';
     } else {
-      showPanel(mode as PanelName);
+      showPanel(mode as PillarName);
       panel.removeAttribute('hidden');
       meditate.setAttribute('hidden', '');
     }
 
     stage.removeAttribute('hidden');
     openMode = mode;
-    syncIcons(mode);
+    syncControls(mode);
     stage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -115,16 +244,22 @@ export function initBeingOrbit(): void {
     panel.setAttribute('hidden', '');
     panel.innerHTML = '';
     openMode = null;
-    syncIcons(null);
+    syncControls(null);
   }
 
   // Mark the active orbit icon. aria-expanded for panel launchers; the
   // meditation icons carry their own aria-pressed (audio state) so we use a
   // plain `is-open` class for them.
-  function syncIcons(active: Mode | null): void {
-    icons.forEach(btn => {
-      const mine = (btn.dataset.panel ?? btn.dataset.mode) as Mode | undefined;
-      const on = mine === active;
+  function syncControls(active: Mode | null): void {
+    const mindfulnessActive =
+      active === 'breathe' || active === 'om' || active === 'focus';
+    controls.forEach(btn => {
+      const panelName = btn.dataset.panel as PillarName | undefined;
+      const quickMode = btn.dataset.mode as QuickMode | undefined;
+      const on = quickMode
+        ? quickMode === active
+        : panelName === active ||
+          (panelName === 'mindfulness' && mindfulnessActive);
       if (btn.hasAttribute('aria-expanded')) {
         btn.setAttribute('aria-expanded', on ? 'true' : 'false');
       }
@@ -132,12 +267,12 @@ export function initBeingOrbit(): void {
     });
   }
 
-  icons.forEach(btn => {
+  controls.forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = (btn.dataset.panel ?? btn.dataset.mode) as Mode | undefined;
       if (!mode) return;
 
-      // Re-tapping the open practice closes the stage. (For OM / Sleep the
+      // Re-tapping the open practice closes the stage. (For OM / Focus the
       // ambient loop is toggled independently by initMeditate's own listener,
       // so a second tap reads as "stop and step back".)
       if (openMode === mode) {
@@ -154,6 +289,31 @@ export function initBeingOrbit(): void {
   // renders (data-link); the exercise view owns its own clicks separately.
   panel.addEventListener('click', event => {
     const target = event.target as HTMLElement | null;
+    const movement = target?.closest<HTMLButtonElement>('[data-movement]');
+    if (
+      movement?.dataset.movement === 'stretch' ||
+      movement?.dataset.movement === 'weights'
+    ) {
+      showMovementPractice(movement.dataset.movement);
+      return;
+    }
+
+    if (target?.closest<HTMLButtonElement>('[data-pillar-back="movement"]')) {
+      showPanel('movement');
+      return;
+    }
+
+    const quick = target?.closest<HTMLButtonElement>('[data-quick-mode]');
+    const quickMode = quick?.dataset.quickMode as QuickMode | undefined;
+    if (quickMode) {
+      document
+        .querySelector<HTMLButtonElement>(
+          `.mindfulness-quick[data-mode="${quickMode}"]`
+        )
+        ?.click();
+      return;
+    }
+
     const link = target?.closest<HTMLButtonElement>('.stretch-btn[data-link]');
     if (link?.dataset.link) {
       window.open(link.dataset.link, '_blank', 'noopener');

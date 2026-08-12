@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>It's Good To Be King</title>
+    <title>It's Good to Be Good</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="It's Good To Be King">
+    <meta name="apple-mobile-web-app-title" content="It's Good to Be Good">
     <meta name="theme-color" content="#111111">
 </head>
 <body class="home-vintage-lock">
@@ -36,7 +36,7 @@
         </div>
 
         <header class="text-center mb-6">
-            <h1>It's Good To Be King</h1>
+            <h1>It's Good to Be Good</h1>
             <!-- User chip — populated by src/auth/userChip.ts when signed in. -->
             <div id="user-chip" class="user-chip" hidden></div>
             <p id="current-datetime" class="text-xs mt-2"></p>
@@ -52,32 +52,43 @@
                      alt="" width="398" height="366" decoding="async" />
             </div>
 
+            <!-- Mindfulness quick actions stay one tap away. They belong to
+                 the Mindfulness pillar without being buried inside its panel. -->
+            <div class="mindfulness-quick-actions" role="group" aria-label="Mindfulness quick actions">
+                <button type="button" class="mindfulness-quick" data-mode="breathe" aria-label="Breathe — guided session">
+                    <span class="mindfulness-quick__glyph">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.5 -2.5"></path>
+                            <path d="M3 12h15a3 3 0 1 1 -3 3"></path>
+                            <path d="M4 16h6.5a2 2 0 1 1 -2 2"></path>
+                        </svg>
+                    </span>
+                    <span>Breathe</span>
+                </button>
+                <button id="meditate-om-toggle" type="button" class="mindfulness-quick" data-mode="om" aria-pressed="false" aria-label="OM chant">
+                    <span class="mindfulness-quick__glyph mindfulness-quick__glyph--om" aria-hidden="true">ॐ</span>
+                    <span>OM</span>
+                </button>
+                <button id="meditate-focus-toggle" type="button" class="mindfulness-quick" data-mode="focus" aria-pressed="false" aria-label="Focus music">
+                    <span class="mindfulness-quick__glyph">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <circle cx="12" cy="12" r="8"></circle>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </span>
+                    <span>Focus</span>
+                </button>
+            </div>
+
             <!-- The rings, named. Sukoon (سکون — tranquility) sits inside the
                  circle; Junoon (جنون — passion) sits outside it, inside the
                  square's edge. The ring line passes between the two words. -->
             <span class="orbit-ring-name orbit-ring-name--sukoon" aria-hidden="true">Sukoon</span>
             <span class="orbit-ring-name orbit-ring-name--junoon" aria-hidden="true">Junoon</span>
 
-            <!-- Circle — soul practices. Breathe / OM / Sleep reveal the
-                 meditation timer (OM & Sleep also toggle their ambient loop
-                 via meditate ids). Stretch / Weights open the practice panel. -->
-            <button type="button" class="orbit-icon" data-mode="breathe" style="--a:0deg" aria-label="Breathe — guided session">
-                <span class="orbit-icon__glyph">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                        <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.5 -2.5"></path>
-                        <path d="M3 12h15a3 3 0 1 1 -3 3"></path>
-                        <path d="M4 16h6.5a2 2 0 1 1 -2 2"></path>
-                    </svg>
-                </span>
-                <span class="orbit-icon__label">Breathe</span>
-            </button>
-
-            <button id="meditate-om-toggle" type="button" class="orbit-icon" data-mode="om" style="--a:72deg" aria-pressed="false" aria-label="OM chant">
-                <span class="orbit-icon__glyph orbit-icon__glyph--om" aria-hidden="true">ॐ</span>
-                <span class="orbit-icon__label">OM</span>
-            </button>
-
-            <button id="meditate-sleep-toggle" type="button" class="orbit-icon" data-mode="sleep" style="--a:144deg" aria-pressed="false" aria-label="Sleep music">
+            <!-- Sukoon's five pillars. Each opens quietly in place; the three
+                 Mindfulness actions above remain available in a single tap. -->
+            <button type="button" class="orbit-icon" data-panel="sleep" style="--a:0deg" aria-expanded="false" aria-controls="being-panel" aria-label="Sleep pillar">
                 <span class="orbit-icon__glyph">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                         <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"></path>
@@ -86,19 +97,19 @@
                 <span class="orbit-icon__label">Sleep</span>
             </button>
 
-            <button type="button" class="orbit-icon" data-panel="stretch" style="--a:216deg" aria-expanded="false" aria-controls="being-panel" aria-label="Stretch routines">
+            <button type="button" class="orbit-icon" data-panel="food" style="--a:72deg" aria-expanded="false" aria-controls="being-panel" aria-label="Food pillar">
                 <span class="orbit-icon__glyph">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                        <circle cx="9" cy="4.5" r="1.8"></circle>
-                        <path d="M9 6.5c0 4 3 5.5 6.5 5.5"></path>
-                        <path d="M9 8.5l-2.5 6"></path>
-                        <path d="M15 12l2 5"></path>
+                        <circle cx="12" cy="12" r="8"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M8 4l1 1 1-1"></path>
+                        <path d="M16 4l-1 1-1-1"></path>
                     </svg>
                 </span>
-                <span class="orbit-icon__label">Stretch</span>
+                <span class="orbit-icon__label">Food</span>
             </button>
 
-            <button type="button" class="orbit-icon" data-panel="weights" style="--a:288deg" aria-expanded="false" aria-controls="being-panel" aria-label="Weight training plan">
+            <button type="button" class="orbit-icon" data-panel="movement" style="--a:144deg" aria-expanded="false" aria-controls="being-panel" aria-label="Movement pillar">
                 <span class="orbit-icon__glyph">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                         <circle cx="6" cy="12" r="3"></circle>
@@ -108,7 +119,30 @@
                         <path d="M18 9v6"></path>
                     </svg>
                 </span>
-                <span class="orbit-icon__label">Weights</span>
+                <span class="orbit-icon__label">Movement</span>
+            </button>
+
+            <button type="button" class="orbit-icon" data-panel="mindfulness" style="--a:216deg" aria-expanded="false" aria-controls="being-panel" aria-label="Mindfulness pillar">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.5 -2.5"></path>
+                        <path d="M3 12h15a3 3 0 1 1 -3 3"></path>
+                        <path d="M4 16h6.5a2 2 0 1 1 -2 2"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label orbit-icon__label--long">Mindfulness</span>
+            </button>
+
+            <button type="button" class="orbit-icon" data-panel="rooh" style="--a:288deg" aria-expanded="false" aria-controls="being-panel" aria-label="Rooh pillar">
+                <span class="orbit-icon__glyph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <circle cx="8" cy="8" r="2.5"></circle>
+                        <circle cx="16" cy="8" r="2.5"></circle>
+                        <path d="M3.5 18c.7-3.1 2.2-4.7 4.5-4.7s3.8 1.6 4.5 4.7"></path>
+                        <path d="M11.5 18c.7-3.1 2.2-4.7 4.5-4.7s3.8 1.6 4.5 4.7"></path>
+                    </svg>
+                </span>
+                <span class="orbit-icon__label">Rooh</span>
             </button>
 
             <!-- Square — purpose tools. Plain links; each opens its own page
@@ -145,22 +179,10 @@
                 <span class="orbit-icon__label">Tennis</span>
             </a>
 
-            <a class="orbit-tool orbit-tool--br" href="food.html" data-module="food" aria-label="Food — meal calendar">
-                <span class="orbit-icon__glyph">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                        <circle cx="12" cy="12" r="8"></circle>
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M8 4l1 1 1-1"></path>
-                        <path d="M16 4l-1 1-1-1"></path>
-                    </svg>
-                </span>
-                <span class="orbit-icon__label">Food</span>
-            </a>
         </section>
 
-        <!-- Activity stage — hidden until a practice is tapped. Holds either the
-             meditation timer (Breathe / OM / Sleep) or the practice panel
-             (Stretch / Weights). One at a time. -->
+        <!-- Activity stage — hidden until a pillar or quick action is tapped.
+             One face is visible at a time. -->
         <section id="being-stage" class="being-stage" aria-live="polite" hidden>
             <button type="button" id="being-stage-close" class="being-stage__close" aria-label="Return to stillness">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -169,7 +191,7 @@
                 <span>Stillness</span>
             </button>
 
-            <!-- Meditation timer — revealed by Breathe / OM / Sleep. -->
+            <!-- Meditation timer — revealed by Breathe / OM / Focus. -->
             <div id="being-meditate" class="being-meditate" hidden>
                 <div class="meditate-stage">
                     <div id="meditate-display" class="meditate-display" role="timer" aria-live="polite">10:00</div>
@@ -192,7 +214,7 @@
                     </div>
                 </section>
 
-                <!-- Breath-chime toggle. OM & Sleep live in the orbit; the chime
+                <!-- Breath-chime toggle. OM & Focus stay in the quick actions; the chime
                      is the one ambient control that belongs with the timer. -->
                 <div class="being-sounds" role="group" aria-label="Ambient sound">
                     <button id="meditate-breathe-toggle" type="button" class="being-sound-toggle" aria-pressed="true" aria-label="Breath chime">
@@ -208,7 +230,7 @@
                 </div>
             </div>
 
-            <!-- Practice panel — Stretch / Weights. -->
+            <!-- Five-pillar content panel. -->
             <div id="being-panel" class="being-panel" hidden></div>
         </section>
 

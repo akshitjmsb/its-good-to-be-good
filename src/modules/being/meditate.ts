@@ -53,8 +53,8 @@ export function initMeditate(): void {
   const omToggle = document.getElementById(
     'meditate-om-toggle'
   ) as HTMLButtonElement | null;
-  const sleepToggle = document.getElementById(
-    'meditate-sleep-toggle'
+  const focusToggle = document.getElementById(
+    'meditate-focus-toggle'
   ) as HTMLButtonElement | null;
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
@@ -123,7 +123,7 @@ export function initMeditate(): void {
     });
   }
 
-  // OM chant + sleep music — independent looping audio toggles.
+  // OM chant + focus music — independent looping audio toggles.
   function makeLoopAudio(url: string, tag: string): HTMLAudioElement {
     const a = new Audio(url);
     a.loop = true;
@@ -137,12 +137,12 @@ export function initMeditate(): void {
   }
 
   const omAudio = makeLoopAudio('/audio/om.mp3', 'om');
-  const sleepAudio = makeLoopAudio('/audio/sleep-music.mp3', 'sleep');
+  const focusAudio = makeLoopAudio('/audio/sleep-music.mp3', 'focus');
   let omPlaying = false;
-  let sleepPlaying = false;
+  let focusPlaying = false;
 
   function setLoopPlaying(
-    tag: 'om' | 'sleep',
+    tag: 'om' | 'focus',
     audio: HTMLAudioElement,
     button: HTMLButtonElement | null,
     next: boolean,
@@ -172,10 +172,10 @@ export function initMeditate(): void {
     });
   }
 
-  function setSleepPlaying(next: boolean): void {
-    sleepPlaying = next;
-    setLoopPlaying('sleep', sleepAudio, sleepToggle, next, () => {
-      sleepPlaying = false;
+  function setFocusPlaying(next: boolean): void {
+    focusPlaying = next;
+    setLoopPlaying('focus', focusAudio, focusToggle, next, () => {
+      focusPlaying = false;
     });
   }
 
@@ -354,9 +354,9 @@ export function initMeditate(): void {
     });
   }
 
-  if (sleepToggle) {
-    sleepToggle.addEventListener('click', () => {
-      setSleepPlaying(!sleepPlaying);
+  if (focusToggle) {
+    focusToggle.addEventListener('click', () => {
+      setFocusPlaying(!focusPlaying);
     });
   }
 
@@ -392,6 +392,6 @@ export function initMeditate(): void {
     window.clearInterval(intervalId);
     stopBreathChimes();
     omAudio.pause();
-    sleepAudio.pause();
+    focusAudio.pause();
   });
 }

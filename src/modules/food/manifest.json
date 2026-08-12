@@ -1,12 +1,9 @@
 {
   "id": "food",
   "displayName": "Food",
-  "ring": "square",
-  "routeHref": "food.html",
+  "ring": "circle",
   "icon": "./icon.svg",
   "version": "0.1.0",
   "renderer": "dom",
-  "permissions": [
-    "storage"
-  ]
+  "permissions": []
 }

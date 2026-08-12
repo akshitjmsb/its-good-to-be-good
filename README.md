@@ -15,9 +15,10 @@ centre — da Vinci's Vitruvian Man, inscribed in a circle and a square:
 
 > **The circle holds the soul. The square holds the work.**
 
-The home page is the orbit. Soul practices ride the circle and act in
-place — Breathe, OM, Sleep, Stretch, Weights. Purpose tools sit on the
-square's corners and open their own page — each one accumulates a record.
+The home page is the orbit. Sukoon's five pillars ride the circle and act in
+place — Sleep, Food, Movement, Mindfulness, and Rooh. Breathe, OM, and Focus
+remain one-tap Mindfulness actions. Purpose tools sit on the square's corners
+and open their own page — each one accumulates a record.
 
 Not a product. Not a showcase. A place to be.
 
@@ -31,7 +32,7 @@ Not a product. Not a showcase. A place to be.
 - **Khyaali Bhoot** — write to the fear that's haunting you, let it go,
   watch it dissolve. Deliberately keeps nothing.
 - **Tennis** — the cradle-to-centre-court roadmap.
-- **Food** — a curated meal calendar with per-meal check-offs.
+- **Food** — a calm, in-place meal calendar for the week ahead.
 
 ---
 

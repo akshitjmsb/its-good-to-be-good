@@ -93,7 +93,7 @@ const pageHtml = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${displayName} — It's Good To Be King</title>
+    <title>${displayName} — It's Good to Be Good</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
@@ -104,7 +104,7 @@ const pageHtml = `<!DOCTYPE html>
     <link rel="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="It's Good To Be King">
+    <meta name="apple-mobile-web-app-title" content="It's Good to Be Good">
     <meta name="theme-color" content="#111111">
 </head>
 <body class="home-vintage-lock">
