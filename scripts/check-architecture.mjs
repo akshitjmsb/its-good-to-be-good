@@ -34,14 +34,16 @@ const EXPECTED_MODULES = {
   tennis: 'square',
 };
 
-// The five Sukoon pillars and three zero-barrier Mindfulness actions act in
-// place on the home; these markup hooks are their registration.
+// The five Sukoon pillars act on the home; the three practices are rendered
+// only after Mindfulness opens.
 const EXPECTED_SOUL_HOOKS = [
   'data-panel="sleep"',
   'data-panel="food"',
   'data-panel="movement"',
   'data-panel="mindfulness"',
   'data-panel="rooh"',
+];
+const EXPECTED_MINDFULNESS_HOOKS = [
   'data-mode="breathe"',
   'data-mode="om"',
   'data-mode="focus"',
@@ -239,6 +241,18 @@ async function validateModules() {
   for (const hook of EXPECTED_SOUL_HOOKS) {
     if (indexHtml && !indexHtml.includes(hook)) {
       fail(`Soul practice hook ${hook} is missing from the home orbit.`);
+    }
+  }
+
+  let orbitSource = '';
+  try {
+    orbitSource = await readText('src/modules/being/orbit.ts');
+  } catch {
+    fail('src/modules/being/orbit.ts is missing.');
+  }
+  for (const hook of EXPECTED_MINDFULNESS_HOOKS) {
+    if (orbitSource && !orbitSource.includes(hook)) {
+      fail(`Mindfulness practice hook ${hook} is missing from its panel.`);
     }
   }
 }

@@ -8,10 +8,9 @@
  * Five pillars ride the Sukoon circle: Sleep, Food, Movement, Mindfulness,
  * and Rooh. Tapping one opens its content on the activity stage below.
  *
- * Breathe / OM / Focus remain one-tap controls beside the centre figure and
- * belong conceptually to Mindfulness. Movement holds Stretch + Weights; Food
- * mounts its deterministic meal calendar. Nothing navigates or leaves a
- * durable record.
+ * Breathe / OM / Focus live inside Mindfulness. Movement holds Stretch +
+ * Weights; Food mounts its deterministic meal calendar. Nothing navigates or
+ * leaves a durable record.
  *
  * One thing is on the stage at a time. The "Stillness" control (or
  * re-tapping the open icon) closes the stage and returns to the orbit.
@@ -56,7 +55,7 @@ const PILLAR_COPY: Record<
     title: 'Mindfulness',
     kicker: 'The direct control knob',
     law: 'The exhale is the brake.',
-    move: 'Breathe through the nose and let the belly move: in for 4, out for 6. Breathe, OM, and Focus stay one tap away at the centre.',
+    move: 'Breathe through the nose and let the belly move: in for 4, out for 6. Choose Breathe, OM, or Focus below.',
     why: 'Breath can run automatically or manually. Fast, shallow breathing is a danger signal the brain trusts; a longer exhale gives the nervous system evidence that the body is safe.',
   },
   rooh: {
@@ -73,17 +72,15 @@ export function initBeingOrbit({
 }: {
   renderFoodView: FoodRenderer;
 }): void {
-  // Timer + breath ring + ambient audio toggles (chime / OM / Focus).
-  initMeditate();
+  // Timer + breath ring + ambient audio used by the Mindfulness practices.
+  const meditation = initMeditate();
 
   const stage = document.getElementById('being-stage');
   const meditate = document.getElementById('being-meditate');
   const panel = document.getElementById('being-panel');
   const closeBtn = document.getElementById('being-stage-close');
   const controls = Array.from(
-    document.querySelectorAll<HTMLButtonElement>(
-      '.orbit-icon, .mindfulness-quick'
-    )
+    document.querySelectorAll<HTMLButtonElement>('.orbit-icon')
   );
   if (!stage || !meditate || !panel) return;
 
@@ -152,12 +149,14 @@ export function initBeingOrbit({
   }
 
   function mindfulnessOverview(): string {
+    const omPressed = meditation?.isOmPlaying() ?? false;
+    const focusPressed = meditation?.isFocusPlaying() ?? false;
     return `
       ${renderPillarCopy(PILLAR_COPY.mindfulness)}
       <div class="pillar-actions" role="group" aria-label="Mindfulness practices">
-        <button type="button" class="pillar-action" data-quick-mode="breathe">Breathe</button>
-        <button type="button" class="pillar-action" data-quick-mode="om">OM</button>
-        <button type="button" class="pillar-action" data-quick-mode="focus">Focus</button>
+        <button type="button" class="pillar-action" data-mode="breathe">Breathe</button>
+        <button type="button" class="pillar-action" data-mode="om" aria-pressed="${omPressed}">OM</button>
+        <button type="button" class="pillar-action" data-mode="focus" aria-pressed="${focusPressed}">Focus</button>
       </div>
     `;
   }
@@ -255,11 +254,9 @@ export function initBeingOrbit({
       active === 'breathe' || active === 'om' || active === 'focus';
     controls.forEach(btn => {
       const panelName = btn.dataset.panel as PillarName | undefined;
-      const quickMode = btn.dataset.mode as QuickMode | undefined;
-      const on = quickMode
-        ? quickMode === active
-        : panelName === active ||
-          (panelName === 'mindfulness' && mindfulnessActive);
+      const on =
+        panelName === active ||
+        (panelName === 'mindfulness' && mindfulnessActive);
       if (btn.hasAttribute('aria-expanded')) {
         btn.setAttribute('aria-expanded', on ? 'true' : 'false');
       }
@@ -303,14 +300,12 @@ export function initBeingOrbit({
       return;
     }
 
-    const quick = target?.closest<HTMLButtonElement>('[data-quick-mode]');
-    const quickMode = quick?.dataset.quickMode as QuickMode | undefined;
+    const quick = target?.closest<HTMLButtonElement>('[data-mode]');
+    const quickMode = quick?.dataset.mode as QuickMode | undefined;
     if (quickMode) {
-      document
-        .querySelector<HTMLButtonElement>(
-          `.mindfulness-quick[data-mode="${quickMode}"]`
-        )
-        ?.click();
+      if (quickMode === 'om') meditation?.toggleOm();
+      if (quickMode === 'focus') meditation?.toggleFocus();
+      enter(quickMode);
       return;
     }
 

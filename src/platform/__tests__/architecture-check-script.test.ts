@@ -22,6 +22,9 @@ const SOUL_HOOKS = [
   'data-panel="movement"',
   'data-panel="mindfulness"',
   'data-panel="rooh"',
+];
+
+const MINDFULNESS_HOOKS = [
   'data-mode="breathe"',
   'data-mode="om"',
   'data-mode="focus"',
@@ -44,6 +47,16 @@ function homeHtml(): string {
 
 function createFixture(root: string) {
   writeFixtureFile(root, 'index.html', homeHtml());
+  writeFixtureFile(
+    root,
+    'src/modules/being/orbit.ts',
+    MINDFULNESS_HOOKS.map(hook => `<button ${hook}></button>`).join('\n')
+  );
+  writeFixtureFile(
+    root,
+    'src/modules/being/__tests__/orbit.test.ts',
+    'export {};\n'
+  );
 
   for (const [id, ring] of Object.entries(MODULES)) {
     const baseDir = `src/modules/${id}`;

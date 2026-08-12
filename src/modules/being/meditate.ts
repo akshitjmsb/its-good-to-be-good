@@ -42,7 +42,14 @@ const LEGACY_SOUND_KEY = 'meditate.soundEnabled';
 type SoundMode = 'bell' | 'off';
 const SOUND_MODES: readonly SoundMode[] = ['bell', 'off'];
 
-export function initMeditate(): void {
+export interface MeditateAudioControls {
+  isOmPlaying(): boolean;
+  isFocusPlaying(): boolean;
+  toggleOm(): void;
+  toggleFocus(): void;
+}
+
+export function initMeditate(): MeditateAudioControls | null {
   const display = document.getElementById('meditate-display');
   const button = document.getElementById(
     'meditate-toggle'
@@ -50,19 +57,13 @@ export function initMeditate(): void {
   const breatheToggle = document.getElementById(
     'meditate-breathe-toggle'
   ) as HTMLButtonElement | null;
-  const omToggle = document.getElementById(
-    'meditate-om-toggle'
-  ) as HTMLButtonElement | null;
-  const focusToggle = document.getElementById(
-    'meditate-focus-toggle'
-  ) as HTMLButtonElement | null;
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
   const presets = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.meditate-preset')
   );
 
-  if (!display || !button) return;
+  if (!display || !button) return null;
 
   const timer = getMeditateTimer();
 
@@ -167,14 +168,14 @@ export function initMeditate(): void {
 
   function setOmPlaying(next: boolean): void {
     omPlaying = next;
-    setLoopPlaying('om', omAudio, omToggle, next, () => {
+    setLoopPlaying('om', omAudio, null, next, () => {
       omPlaying = false;
     });
   }
 
   function setFocusPlaying(next: boolean): void {
     focusPlaying = next;
-    setLoopPlaying('focus', focusAudio, focusToggle, next, () => {
+    setLoopPlaying('focus', focusAudio, null, next, () => {
       focusPlaying = false;
     });
   }
@@ -348,18 +349,6 @@ export function initMeditate(): void {
     });
   }
 
-  if (omToggle) {
-    omToggle.addEventListener('click', () => {
-      setOmPlaying(!omPlaying);
-    });
-  }
-
-  if (focusToggle) {
-    focusToggle.addEventListener('click', () => {
-      setFocusPlaying(!focusPlaying);
-    });
-  }
-
   presets.forEach(preset => {
     preset.addEventListener('click', () => {
       const min = Number(preset.dataset.duration);
@@ -394,4 +383,11 @@ export function initMeditate(): void {
     omAudio.pause();
     focusAudio.pause();
   });
+
+  return {
+    isOmPlaying: () => omPlaying,
+    isFocusPlaying: () => focusPlaying,
+    toggleOm: () => setOmPlaying(!omPlaying),
+    toggleFocus: () => setFocusPlaying(!focusPlaying),
+  };
 }

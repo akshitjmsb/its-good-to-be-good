@@ -17,7 +17,7 @@ centre — da Vinci's Vitruvian Man, inscribed in a circle and a square:
 
 The home page is the orbit. Sukoon's five pillars ride the circle and act in
 place — Sleep, Food, Movement, Mindfulness, and Rooh. Breathe, OM, and Focus
-remain one-tap Mindfulness actions. Purpose tools sit on the square's corners
+live inside Mindfulness. Purpose tools sit on the square's corners
 and open their own page — each one accumulates a record.
 
 Not a product. Not a showcase. A place to be.

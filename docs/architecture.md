@@ -7,7 +7,7 @@ with two rings around him —
 
 - **Circle (soul)** — five pillars that act in place and leave nothing
   behind: Sleep, Food, Movement, Mindfulness, Rooh. Breathe, OM, and Focus
-  remain immediate actions inside Mindfulness. Circle experiences never
+  appear only inside Mindfulness. Circle experiences never
   navigate.
 - **Square (purpose)** — tools that open their own page and accumulate a
   record: To do, Khyaali Bhoot, Tennis.
@@ -46,8 +46,8 @@ Rules (enforced by `npm run check:architecture`):
 - Circle manifests have no `routeHref`; square manifests must have one,
   the page must exist, the home must link it, and the page must load the
   module's `entry.ts`.
-- The five pillar hooks and three zero-barrier Mindfulness actions must exist
-  in the home markup.
+- The five pillar hooks must exist in the home markup; Breathe, OM, and Focus
+  must exist inside the rendered Mindfulness panel.
 
 ## The manifest is the registry
 
