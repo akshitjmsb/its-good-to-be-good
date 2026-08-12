@@ -32,7 +32,7 @@ Not a product. Not a showcase. A place to be.
 - **Khyaali Bhoot** — write to the fear that's haunting you, let it go,
   watch it dissolve. Deliberately keeps nothing.
 - **Tennis** — the cradle-to-centre-court roadmap.
-- **Food** — a calm, in-place meal calendar for the week ahead.
+- **Food** — a next-meal body-budget cue built around dressing every carb.
 
 ---
 

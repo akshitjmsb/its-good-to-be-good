@@ -11,7 +11,7 @@ Being IS the home page's resting state: the Vitruvian Man at the centre
 with five Sukoon pillars riding the circle —
 
 - **Sleep** — the master pillar, including circadian/light guidance.
-- **Food** — a session-only meal calendar rendered by the shell from the Food
+- **Food** — a session-only next-meal cue rendered by the shell from the Food
   module, keeping the module boundary intact.
 - **Movement** — Stretch links plus the deterministic, fully-offline Weights
   calendar.

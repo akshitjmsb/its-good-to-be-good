@@ -317,7 +317,7 @@ export function initBeingOrbit({
       // and disappear when the user returns to stillness.
       panel.innerHTML = `
         <section class="pillar-action-layer" aria-labelledby="food-title">
-          ${renderActionHeader('Food', 'Choose today, then check off each meal.', 'food-title')}
+          ${renderActionHeader('Food', 'What will steady your next meal?', 'food-title')}
         </section>
       `;
       const host = document.createElement('div');

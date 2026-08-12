@@ -6,16 +6,17 @@
 
 ## Purpose
 
-A calm meal-planning practice, opened in the home activity stage. Calendar at
-top, one-day plan below — Breakfast, Lunch, Dinner, Snack. Tuesdays and
+A calm body-budget practice opened in the home activity stage. It leads with
+the meal relevant to the current time and the rule "never eat a naked carb."
+The user can move one day backward or forward, reveal the rest of the day's
+Breakfast, Lunch, Snack, and Dinner, and check meals off. Tuesdays and
 Thursdays are vegetarian-only; other days draw from the combined veg + non-veg
-pool. Meal check-offs last only for the open practice and clear when the user
-returns to stillness.
+pool. Check-offs last only for the open practice and clear on stillness.
 
 ## Files
 
 - `manifest.json` — module metadata (the manifest IS the registry).
-- `view.ts` — calendar grid, day panel, meal cards, click handling; mounted
+- `view.ts` — next-meal cue, compact day navigation, meal cards, click handling; mounted
   by `src/modules/being/orbit.ts` into the home activity stage.
 - `data.ts` — meal pool and the deterministic per-week shuffle.
 - `types.ts` — re-exports the public types from `data.ts`.
