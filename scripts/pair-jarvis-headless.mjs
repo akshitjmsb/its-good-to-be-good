@@ -22,6 +22,7 @@ const deployment = option('deployment', 'judicious-firefly-107');
 const jarvisDir = resolve(option('jarvis-dir', '../jarvis'));
 const explicitUserId = option('user-id', '');
 const apiUrl = `https://${deployment}.convex.site/api/jarvis/todos`;
+const jarvisEnvPath = resolve(jarvisDir, '.env.local');
 
 function convexRun(args) {
   const result = spawnSync('npx', ['convex', 'run', '--deployment', deployment, ...args], {
@@ -76,6 +77,16 @@ async function replaceEnv(path, values) {
   await chmod(path, 0o600);
 }
 
+async function existingTodoToken(path) {
+  try {
+    const source = await readFile(path, 'utf8');
+    return /^JARVIS_TODO_API_TOKEN=(jtd_[^\r\n]+)$/m.exec(source)?.[1] ?? '';
+  } catch (error) {
+    if (error?.code === 'ENOENT') return '';
+    throw error;
+  }
+}
+
 const users = parseJson(
   convexRun([
     '--inline-query',
@@ -97,6 +108,7 @@ if (!owner) {
   throw new Error('More than one owner exists. Rerun with --user-id <id>.');
 }
 
+const previousToken = await existingTodoToken(jarvisEnvPath);
 const token = `jtd_${randomBytes(32).toString('base64url')}`;
 const tokenHash = createHash('sha256').update(token, 'utf8').digest('hex');
 convexRun([
@@ -104,9 +116,17 @@ convexRun([
   JSON.stringify({ userId: owner.id, tokenHash, label: 'Jarvis on headless Mac mini' }),
 ]);
 
-await replaceEnv(resolve(jarvisDir, '.env.local'), {
+await replaceEnv(jarvisEnvPath, {
   JARVIS_TODO_API_URL: apiUrl,
   JARVIS_TODO_API_TOKEN: token,
 });
 
-console.log(`Paired Jarvis with ${owner.email || owner.id}. The credential was not printed.`);
+convexRun([
+  'jarvisTodoCredentials:revokeAllExceptForOwner',
+  JSON.stringify({ userId: owner.id, keepTokenHash: tokenHash }),
+]);
+
+console.log(
+  `${previousToken ? 'Rotated' : 'Paired'} Jarvis for ${owner.email || owner.id}. ` +
+    'No credential was printed.'
+);
