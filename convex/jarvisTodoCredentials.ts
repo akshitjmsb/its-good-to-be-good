@@ -1,11 +1,51 @@
 /** Authenticated owner controls for Jarvis's revocable To-Do credential. */
 
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
+import { internalMutation, mutation, query, type MutationCtx } from './_generated/server';
+import type { Id } from './_generated/dataModel';
 import { getAuthUserId } from '@convex-dev/auth/server';
 
 const TOKEN_HASH = /^[a-f0-9]{64}$/;
 const SCOPES = ['todo.read', 'todo.write', 'todo.delete'];
+
+async function issueCredential(
+  ctx: MutationCtx,
+  userId: Id<'users'>,
+  tokenHash: string,
+  label: string
+) {
+  const normalizedHash = tokenHash.trim().toLowerCase();
+  const normalizedLabel = label.trim().slice(0, 80) || 'Jarvis on Mac mini';
+  if (!TOKEN_HASH.test(normalizedHash))
+    throw new Error('Invalid credential digest');
+
+  const user = await ctx.db.get(userId);
+  if (!user) throw new Error('Owner not found');
+
+  const duplicate = await ctx.db
+    .query('jarvisTodoCredentials')
+    .withIndex('by_token_hash', q => q.eq('tokenHash', normalizedHash))
+    .unique();
+  if (duplicate) throw new Error('Credential already registered');
+
+  const credentials = await ctx.db
+    .query('jarvisTodoCredentials')
+    .withIndex('by_user', q => q.eq('userId', userId))
+    .collect();
+  const active = credentials.filter(item => item.revokedAt === undefined);
+  if (active.length >= 5)
+    throw new Error('Revoke an old Jarvis credential before adding another');
+
+  const createdAt = Date.now();
+  const credentialId = await ctx.db.insert('jarvisTodoCredentials', {
+    userId,
+    tokenHash: normalizedHash,
+    label: normalizedLabel,
+    scopes: SCOPES,
+    createdAt,
+  });
+  return { credentialId, label: normalizedLabel, scopes: SCOPES, createdAt };
+}
 
 export const issue = mutation({
   args: {
@@ -15,35 +55,23 @@ export const issue = mutation({
   handler: async (ctx, { tokenHash, label }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
-    const normalizedHash = tokenHash.trim().toLowerCase();
-    const normalizedLabel = label.trim().slice(0, 80) || 'Jarvis on Mac mini';
-    if (!TOKEN_HASH.test(normalizedHash))
-      throw new Error('Invalid credential digest');
-
-    const duplicate = await ctx.db
-      .query('jarvisTodoCredentials')
-      .withIndex('by_token_hash', q => q.eq('tokenHash', normalizedHash))
-      .unique();
-    if (duplicate) throw new Error('Credential already registered');
-
-    const credentials = await ctx.db
-      .query('jarvisTodoCredentials')
-      .withIndex('by_user', q => q.eq('userId', userId))
-      .collect();
-    const active = credentials.filter(item => item.revokedAt === undefined);
-    if (active.length >= 5)
-      throw new Error('Revoke an old Jarvis credential before adding another');
-
-    const createdAt = Date.now();
-    const credentialId = await ctx.db.insert('jarvisTodoCredentials', {
-      userId,
-      tokenHash: normalizedHash,
-      label: normalizedLabel,
-      scopes: SCOPES,
-      createdAt,
-    });
-    return { credentialId, label: normalizedLabel, scopes: SCOPES, createdAt };
+    return issueCredential(ctx, userId, tokenHash, label);
   },
+});
+
+/**
+ * Headless Mac provisioning path. Internal functions are callable only by
+ * trusted Convex functions and deployment administrators (for example the
+ * authenticated Convex CLI), never by the public browser API.
+ */
+export const issueForOwner = internalMutation({
+  args: {
+    userId: v.id('users'),
+    tokenHash: v.string(),
+    label: v.string(),
+  },
+  handler: async (ctx, { userId, tokenHash, label }) =>
+    issueCredential(ctx, userId, tokenHash, label),
 });
 
 export const list = query({
