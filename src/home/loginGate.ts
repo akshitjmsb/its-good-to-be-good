@@ -59,8 +59,19 @@ function template(): string {
   `;
 }
 
-function readableError(err: unknown): string {
-  if (err instanceof Error) return err.message.replace(/^AuthApiError:\s*/i, '');
+export function readableAuthError(err: unknown): string {
+  const message =
+    err instanceof Error ? err.message.replace(/^AuthApiError:\s*/i, '') : '';
+  if (message.includes('InvalidAccountId'))
+    return 'No account exists for this email yet. Choose Sign up above.';
+  if (message.includes('InvalidSecret')) return 'Incorrect password. Try again.';
+  if (message.includes('TooManyFailedAttempts'))
+    return 'Too many failed attempts. Wait a few minutes, then try again.';
+  if (/Account .+ already exists/i.test(message))
+    return 'This account already exists. Choose Sign in above.';
+  if (message.includes('Invalid password'))
+    return 'Choose a password with at least 8 characters.';
+  if (message) return message.replace(/^\*?\s*\[Request ID:[^\]]+\]\s*/i, '');
   return 'Something went wrong. Try again.';
 }
 
@@ -122,7 +133,7 @@ export function mountLoginGate(host: HTMLElement): void {
       await resetPasswordForEmail(email);
       setFeedback('Reset link sent. Check your inbox.');
     } catch (err) {
-      setFeedback(readableError(err));
+      setFeedback(readableAuthError(err));
     } finally {
       setBusy(false);
     }
@@ -157,7 +168,7 @@ export function mountLoginGate(host: HTMLElement): void {
       await signInWithPassword(email, password);
       window.location.reload();
     } catch (err) {
-      setFeedback(readableError(err));
+      setFeedback(readableAuthError(err));
     } finally {
       setBusy(false);
     }
