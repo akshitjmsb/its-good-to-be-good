@@ -74,6 +74,41 @@ export const issueForOwner = internalMutation({
     issueCredential(ctx, userId, tokenHash, label),
 });
 
+/**
+ * Keep exactly one headless credential during rotation. This also revokes
+ * browser-issued duplicates that may have been copied into an unsafe channel.
+ */
+export const revokeAllExceptForOwner = internalMutation({
+  args: {
+    userId: v.id('users'),
+    keepTokenHash: v.string(),
+  },
+  handler: async (ctx, { userId, keepTokenHash }) => {
+    const normalizedHash = keepTokenHash.trim().toLowerCase();
+    if (!TOKEN_HASH.test(normalizedHash))
+      throw new Error('Invalid credential digest');
+    const keep = await ctx.db
+      .query('jarvisTodoCredentials')
+      .withIndex('by_token_hash', q => q.eq('tokenHash', normalizedHash))
+      .unique();
+    if (!keep || keep.userId !== userId || keep.revokedAt !== undefined)
+      throw new Error('Credential not found');
+    const credentials = await ctx.db
+      .query('jarvisTodoCredentials')
+      .withIndex('by_user', q => q.eq('userId', userId))
+      .collect();
+    const revokedAt = Date.now();
+    let revoked = 0;
+    for (const credential of credentials) {
+      if (credential._id !== keep._id && credential.revokedAt === undefined) {
+        await ctx.db.patch(credential._id, { revokedAt });
+        revoked += 1;
+      }
+    }
+    return { revoked, keptCredentialId: keep._id };
+  },
+});
+
 export const list = query({
   args: {},
   handler: async ctx => {
