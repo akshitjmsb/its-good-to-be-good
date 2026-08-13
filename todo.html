@@ -47,6 +47,16 @@
         <div id="tasks-list-todo" class="todo-list" role="list"></div>
 
         <p id="todo-status" class="todo-status" data-state="idle" role="status" aria-live="polite"></p>
+
+        <section class="todo-jarvis" aria-labelledby="todo-jarvis-heading">
+            <div>
+                <p class="todo-jarvis__eyebrow">Private integration</p>
+                <h2 id="todo-jarvis-heading">Jarvis</h2>
+                <p>Let your Mac mini read and update this list with a revocable, To-Do-only credential.</p>
+            </div>
+            <button id="todo-jarvis-connect" type="button">Pair Jarvis</button>
+            <div id="todo-jarvis-credentials" class="todo-jarvis__credentials" aria-live="polite"></div>
+        </section>
     </div>
 
     <!-- One focused sheet per task: title stays succinct in the list while
@@ -100,6 +110,18 @@
             ></div>
 
             <p id="todo-note-meta" class="todo-note-sheet__meta" aria-live="polite"></p>
+        </section>
+    </dialog>
+
+    <dialog id="todo-jarvis-dialog" class="todo-jarvis-dialog" aria-labelledby="todo-jarvis-dialog-heading">
+        <section>
+            <h2 id="todo-jarvis-dialog-heading">Jarvis credential</h2>
+            <p>Copy this once to the Jarvis <code>.env.local</code> on your Mac mini. It will not be shown again.</p>
+            <textarea id="todo-jarvis-secret" readonly rows="4" aria-label="Jarvis configuration"></textarea>
+            <div class="todo-jarvis-dialog__actions">
+                <button id="todo-jarvis-copy" type="button">Copy configuration</button>
+                <button id="todo-jarvis-close" type="button">Done</button>
+            </div>
         </section>
     </dialog>
 
