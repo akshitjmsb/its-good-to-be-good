@@ -300,3 +300,67 @@
         font-size: 1rem;
     }
 }
+/* Jarvis gets a deliberately small service credential, never the browser session. */
+.todo-jarvis {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid var(--home-border, #3f3f3f);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.todo-jarvis h2,
+.todo-jarvis p { margin: 0; }
+
+.todo-jarvis__eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.todo-jarvis > button,
+.todo-jarvis__credential button,
+.todo-jarvis-dialog button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.todo-jarvis__credentials { font-size: 0.82rem; opacity: 0.78; }
+
+.todo-jarvis__credential {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.todo-jarvis-dialog {
+  max-width: min(34rem, calc(100vw - 2rem));
+  color: inherit;
+  background: var(--home-bg, #111);
+  border: 1px solid var(--home-border, #555);
+}
+
+.todo-jarvis-dialog::backdrop { background: rgb(0 0 0 / 70%); }
+.todo-jarvis-dialog section { display: grid; gap: 1rem; }
+.todo-jarvis-dialog h2,
+.todo-jarvis-dialog p { margin: 0; }
+
+.todo-jarvis-dialog textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75rem;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--home-border, #555);
+  font: 0.75rem/1.45 monospace;
+}
+
+.todo-jarvis-dialog__actions { display: flex; justify-content: flex-end; gap: 0.75rem; }

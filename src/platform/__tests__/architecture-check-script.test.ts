@@ -10,18 +10,24 @@ const scriptPath = path.join(repoRoot, 'scripts/check-architecture.mjs');
 // Mirrors EXPECTED_MODULES in scripts/check-architecture.mjs.
 const MODULES: Record<string, 'circle' | 'square'> = {
   being: 'circle',
+  food: 'circle',
   todo: 'square',
   'khyaali-bhoot': 'square',
   tennis: 'square',
-  food: 'square',
 };
 
 const SOUL_HOOKS = [
+  'data-panel="sleep"',
+  'data-panel="food"',
+  'data-panel="movement"',
+  'data-panel="mindfulness"',
+  'data-panel="rooh"',
+];
+
+const MINDFULNESS_HOOKS = [
   'data-mode="breathe"',
   'data-mode="om"',
-  'data-mode="sleep"',
-  'data-panel="stretch"',
-  'data-panel="weights"',
+  'data-mode="focus"',
 ];
 
 function writeFixtureFile(root: string, relativePath: string, content: string) {
@@ -41,6 +47,16 @@ function homeHtml(): string {
 
 function createFixture(root: string) {
   writeFixtureFile(root, 'index.html', homeHtml());
+  writeFixtureFile(
+    root,
+    'src/modules/being/orbit.ts',
+    MINDFULNESS_HOOKS.map(hook => `<button ${hook}></button>`).join('\n')
+  );
+  writeFixtureFile(
+    root,
+    'src/modules/being/__tests__/orbit.test.ts',
+    'export {};\n'
+  );
 
   for (const [id, ring] of Object.entries(MODULES)) {
     const baseDir = `src/modules/${id}`;

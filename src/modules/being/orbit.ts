@@ -5,15 +5,12 @@
  * orbit it on the circle as quiet captioned icons; the purpose tools sit
  * at the corners of the square as plain links to their own pages.
  *
- * Tapping a circle icon enters that practice on the activity stage below:
+ * Five pillars ride the Sukoon circle: Sleep, Food, Movement, Mindfulness,
+ * and Rooh. Tapping one opens its content on the activity stage below.
  *
- *   • Breathe / OM / Sleep reveal the meditation timer (`#being-meditate`).
- *     OM and Sleep additionally toggle their ambient loop — they keep the
- *     `meditate-om-toggle` / `meditate-sleep-toggle` ids that `initMeditate()`
- *     binds. The breath-chime toggle lives inside the timer panel.
- *   • Stretch / Weights open the practice panel (`#being-panel`). Stretch
- *     opens a YouTube routine in a new tab; Weights mounts the
- *     deterministic offline workout calendar inline.
+ * Breathe / OM / Focus live inside Mindfulness. Movement holds Stretch +
+ * Weights; Food mounts its deterministic meal calendar. Nothing navigates or
+ * leaves a durable record.
  *
  * One thing is on the stage at a time. The "Stillness" control (or
  * re-tapping the open icon) closes the stage and returns to the orbit.
@@ -30,19 +27,75 @@ interface PracticeLink {
   url: string;
 }
 
-type PanelName = 'stretch' | 'weights';
-type MeditateMode = 'breathe' | 'om' | 'sleep';
-type Mode = PanelName | MeditateMode;
+type PillarName = 'sleep' | 'food' | 'movement' | 'mindfulness' | 'rooh';
+type QuickMode = 'breathe' | 'om' | 'focus';
+type Mode = PillarName | QuickMode;
+type FoodRenderer = (container: HTMLElement, today: Date) => void;
 
-export function initBeingOrbit(): void {
-  // Timer + breath ring + ambient audio toggles (chime / OM / Sleep).
-  initMeditate();
+interface PillarCopy {
+  title: string;
+  kicker: string;
+  law: string;
+  move: string;
+  why: string;
+}
+
+interface ActionCue {
+  label: string;
+  detail: string;
+  icon: string;
+}
+
+const ACTION_ICONS = {
+  sunrise: '<path d="M4 18h16"></path><path d="M6 14a6 6 0 0 1 12 0"></path><path d="M12 3v3"></path><path d="m4.9 7.9 2.1 2.1"></path><path d="m19.1 7.9-2.1 2.1"></path>',
+  moon: '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z"></path>',
+  soften: '<path d="M7 9h10"></path><path d="M8 14c1.2 1.3 2.5 2 4 2s2.8-.7 4-2"></path><circle cx="12" cy="12" r="9"></circle>',
+  breath: '<path d="M5 8h8.5a2.5 2.5 0 1 0-2.5-2.5"></path><path d="M3 12h15a3 3 0 1 1-3 3"></path><path d="M4 16h6.5a2 2 0 1 1-2 2"></path>',
+  connect: '<circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3 19c.6-3.3 2.6-5 6-5s5.4 1.7 6 5"></path><path d="M15 14c3.1 0 5 1.7 5.5 5"></path>',
+  stretch: '<path d="M8 4v6l-3 4"></path><path d="m8 10 4 3 4-5"></path><path d="m12 13-1 7"></path><circle cx="8" cy="3" r="1.5"></circle>',
+  weights: '<path d="M6 9v6"></path><path d="M3 10v4"></path><path d="M18 9v6"></path><path d="M21 10v4"></path><path d="M6 12h12"></path>',
+} as const;
+
+const PILLAR_COPY: Record<
+  Exclude<PillarName, 'food' | 'movement'>,
+  PillarCopy
+> = {
+  sleep: {
+    title: 'Sleep',
+    kicker: 'The master pillar',
+    law: 'Rest = refuel + flush.',
+    move: 'Circadian / light: get outside within an hour of waking. At night, keep feeds and wake-ups dim and warm so the clock stays anchored.',
+    why: 'Adenosine builds sleep pressure while the brain works. Deep sleep restores energy and runs the glymphatic flush. Morning light sets the circadian wave that guides temperature, hormones, alertness, and the natural afternoon dip.',
+  },
+  mindfulness: {
+    title: 'Mindfulness',
+    kicker: 'The direct control knob',
+    law: 'The exhale is the brake.',
+    move: 'Breathe through the nose and let the belly move: in for 4, out for 6. Choose Breathe, OM, or Focus above.',
+    why: 'Breath can run automatically or manually. Fast, shallow breathing is a danger signal the brain trusts; a longer exhale gives the nervous system evidence that the body is safe.',
+  },
+  rooh: {
+    title: 'Rooh',
+    kicker: 'We regulate one another',
+    law: 'Your calm becomes part of his calm.',
+    move: 'Before you connect, soften the jaw, lower the shoulders, and slow one breath. Offer safety with your own body first.',
+    why: 'Other people’s states enter the body-budget. A baby reads heartbeat, breath, voice, and muscle tension to answer one basic question: am I safe? Co-regulation teaches the nervous system what safety feels like.',
+  },
+};
+
+export function initBeingOrbit({
+  renderFoodView,
+}: {
+  renderFoodView: FoodRenderer;
+}): void {
+  // Timer + breath ring + ambient audio used by the Mindfulness practices.
+  const meditation = initMeditate();
 
   const stage = document.getElementById('being-stage');
   const meditate = document.getElementById('being-meditate');
   const panel = document.getElementById('being-panel');
   const closeBtn = document.getElementById('being-stage-close');
-  const icons = Array.from(
+  const controls = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.orbit-icon')
   );
   if (!stage || !meditate || !panel) return;
@@ -54,11 +107,17 @@ export function initBeingOrbit(): void {
     return STRETCH_ROUTINES.flatMap(entry =>
       entry.urls.length === 1
         ? [{ label: entry.bodyPart, url: entry.urls[0] }]
-        : entry.urls.map((url, i) => ({ label: `${entry.bodyPart} ${i + 1}`, url }))
+        : entry.urls.map((url, i) => ({
+            label: `${entry.bodyPart} ${i + 1}`,
+            url,
+          }))
     );
   }
 
-  function renderLinks(title: string, links: ReadonlyArray<PracticeLink>): string {
+  function renderLinks(
+    title: string,
+    links: ReadonlyArray<PracticeLink>
+  ): string {
     const buttons = links
       .map(
         link =>
@@ -71,40 +130,253 @@ export function initBeingOrbit(): void {
     );
   }
 
-  function showPanel(name: PanelName): void {
+  function renderPillarCopy(copy: PillarCopy): string {
+    return `
+      <section class="pillar-copy">
+        <p class="pillar-copy__kicker">${escapeHtml(copy.kicker)}</p>
+        <h2 class="pillar-copy__title">${escapeHtml(copy.title)}</h2>
+        <p class="pillar-copy__law">${escapeHtml(copy.law)}</p>
+        <div class="pillar-copy__move">
+          <span>For today</span>
+          <p>${escapeHtml(copy.move)}</p>
+        </div>
+        <details class="pillar-copy__why">
+          <summary>Why this works</summary>
+          <p>${escapeHtml(copy.why)}</p>
+        </details>
+      </section>
+    `;
+  }
+
+  function renderActionHeader(
+    title: string,
+    prompt: string,
+    titleId: string
+  ): string {
+    return `
+      <p class="pillar-copy__kicker">Action</p>
+      <h2 class="pillar-copy__title" id="${escapeHtml(titleId)}">${escapeHtml(title)}</h2>
+      <p class="pillar-action-layer__prompt">${escapeHtml(prompt)}</p>
+    `;
+  }
+
+  function renderGyaan(copy: PillarCopy): string {
+    return `
+      <section class="pillar-gyaan" aria-label="${escapeHtml(copy.title)} Gyaan">
+        <p class="pillar-gyaan__label">Gyaan</p>
+        ${renderPillarCopy(copy)}
+      </section>
+    `;
+  }
+
+  function renderActionCues(cues: ReadonlyArray<ActionCue>): string {
+    return `<div class="pillar-cues">${cues
+      .map(
+        cue => `
+          <div class="pillar-cue">
+            <span class="pillar-action__glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${cue.icon}</svg>
+            </span>
+            <span class="pillar-cue__copy">
+              <strong>${escapeHtml(cue.label)}</strong>
+              <small>${escapeHtml(cue.detail)}</small>
+            </span>
+          </div>
+        `
+      )
+      .join('')}</div>`;
+  }
+
+  function sleepOverview(): string {
+    const copy = PILLAR_COPY.sleep;
+    return `
+      <section class="pillar-action-layer" aria-labelledby="sleep-title">
+        ${renderActionHeader('Sleep', 'Anchor the clock at both ends of the day.', 'sleep-title')}
+        ${renderActionCues([
+          {
+            label: 'Morning light',
+            detail: 'Outside within one hour',
+            icon: ACTION_ICONS.sunrise,
+          },
+          {
+            label: 'Dim the night',
+            detail: 'Keep wake-ups warm and low',
+            icon: ACTION_ICONS.moon,
+          },
+        ])}
+      </section>
+      ${renderGyaan(copy)}
+    `;
+  }
+
+  function movementOverview(): string {
+    const copy: PillarCopy = {
+      title: 'Movement',
+      kicker: 'Motion changes the signal',
+      law: 'Long sitting, then move.',
+      move: 'Use Stretch to close the tension signal, Weights to train the body, or take a low-stakes walk.',
+      why: 'Working muscles release messengers that support BDNF, the brain’s growth factor. Stretching restores muscle length and blood flow; walking gives the nervous system a gentle place to practise moving forward.',
+    };
+    return `
+      <section class="pillar-action-layer" aria-labelledby="movement-title">
+        ${renderActionHeader('Movement', 'How do you want to move?', 'movement-title')}
+        <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Movement practices">
+          <button type="button" class="pillar-action pillar-action--icon" data-movement="stretch">
+            <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ACTION_ICONS.stretch}</svg></span>
+            <span>Stretch</span>
+          </button>
+          <button type="button" class="pillar-action pillar-action--icon" data-movement="weights">
+            <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ACTION_ICONS.weights}</svg></span>
+            <span>Weights</span>
+          </button>
+        </div>
+      </section>
+      ${renderGyaan(copy)}
+    `;
+  }
+
+  function mindfulnessOverview(): string {
+    const omPressed = meditation?.isOmPlaying() ?? false;
+    const focusPressed = meditation?.isFocusPlaying() ?? false;
+    return `
+      <section class="pillar-action-layer" aria-labelledby="mindfulness-title">
+        ${renderActionHeader('Mindfulness', 'What does your body need right now?', 'mindfulness-title')}
+        <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Mindfulness practices">
+          <button type="button" class="pillar-action pillar-action--icon" data-mode="breathe">
+            <span class="pillar-action__glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.5 -2.5"></path>
+                <path d="M3 12h15a3 3 0 1 1 -3 3"></path>
+                <path d="M4 16h6.5a2 2 0 1 1 -2 2"></path>
+              </svg>
+            </span>
+            <span>Breathe</span>
+          </button>
+          <button type="button" class="pillar-action pillar-action--icon" data-mode="om" aria-pressed="${omPressed}">
+            <span class="pillar-action__glyph pillar-action__glyph--om" aria-hidden="true">ॐ</span>
+            <span>OM</span>
+          </button>
+          <button type="button" class="pillar-action pillar-action--icon" data-mode="focus" aria-pressed="${focusPressed}">
+            <span class="pillar-action__glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="8"></circle>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+            <span>Focus</span>
+          </button>
+        </div>
+      </section>
+      ${renderGyaan(PILLAR_COPY.mindfulness)}
+    `;
+  }
+
+  function foodCopy(): PillarCopy {
+    return {
+      title: 'Food',
+      kicker: 'Fuel the body-budget',
+      law: 'Never eat a naked carb.',
+      move: 'Pair carbohydrate with protein, fat, or fibre. At lunch, eat protein and vegetables first and the carbohydrate last.',
+      why: 'Glucose is fast cash, fat is slower stored energy, and protein repairs the machine. Pairing and ordering food steadies the fuel arriving in the bloodstream.',
+    };
+  }
+
+  function roohOverview(): string {
+    const copy = PILLAR_COPY.rooh;
+    return `
+      <section class="pillar-action-layer" aria-labelledby="rooh-title">
+        ${renderActionHeader('Rooh', 'Offer safety with your body first.', 'rooh-title')}
+        ${renderActionCues([
+          {
+            label: 'Soften',
+            detail: 'Jaw and shoulders',
+            icon: ACTION_ICONS.soften,
+          },
+          {
+            label: 'Slow one breath',
+            detail: 'Let the exhale lengthen',
+            icon: ACTION_ICONS.breath,
+          },
+          {
+            label: 'Connect',
+            detail: 'Meet them from calm',
+            icon: ACTION_ICONS.connect,
+          },
+        ])}
+      </section>
+      ${renderGyaan(copy)}
+    `;
+  }
+
+  function showPanel(name: PillarName): void {
     if (!panel) return;
     panel.innerHTML = '';
 
-    if (name === 'weights') {
-      // Render into a fresh host so the exercise view's delegated listener is
-      // dropped with the node on the next panel swap (no listener build-up).
+    if (name === 'food') {
+      // Food is a Sukoon practice: meal ticks last for this open panel only
+      // and disappear when the user returns to stillness.
+      panel.innerHTML = `
+        <section class="pillar-action-layer" aria-labelledby="food-title">
+          ${renderActionHeader('Food', 'What will steady your next meal?', 'food-title')}
+        </section>
+      `;
       const host = document.createElement('div');
+      host.className = 'pillar-embedded-view pillar-embedded-view--action';
       panel.appendChild(host);
-      renderExerciseView(host, new Date());
-    } else if (name === 'stretch') {
-      panel.innerHTML = renderLinks('Stretch', stretchLinks());
+      renderFoodView(host, new Date());
+      panel.insertAdjacentHTML('beforeend', renderGyaan(foodCopy()));
+    } else if (name === 'movement') {
+      panel.innerHTML = movementOverview();
+    } else if (name === 'mindfulness') {
+      panel.innerHTML = mindfulnessOverview();
+    } else if (name === 'sleep') {
+      panel.innerHTML = sleepOverview();
+    } else {
+      panel.innerHTML = roohOverview();
     }
+  }
+
+  function showMovementPractice(name: 'stretch' | 'weights'): void {
+    if (!panel) return;
+    panel.innerHTML = `
+      <button type="button" class="pillar-back" data-pillar-back="movement">← Movement</button>
+    `;
+
+    if (name === 'stretch') {
+      panel.insertAdjacentHTML(
+        'beforeend',
+        renderLinks('Stretch', stretchLinks())
+      );
+      return;
+    }
+
+    // Render into a fresh host so the exercise view's delegated listener is
+    // dropped with the node on the next panel swap (no listener build-up).
+    const host = document.createElement('div');
+    host.className = 'pillar-embedded-view';
+    panel.appendChild(host);
+    renderExerciseView(host, new Date());
   }
 
   // Reveal the stage with one face — the meditation timer or the practice
   // panel — and hide the other.
   function enter(mode: Mode): void {
     if (!stage || !meditate || !panel) return;
-    const isMeditate = mode === 'breathe' || mode === 'om' || mode === 'sleep';
+    const isMeditate = mode === 'breathe' || mode === 'om' || mode === 'focus';
 
     if (isMeditate) {
       meditate.removeAttribute('hidden');
       panel.setAttribute('hidden', '');
       panel.innerHTML = '';
     } else {
-      showPanel(mode as PanelName);
+      showPanel(mode as PillarName);
       panel.removeAttribute('hidden');
       meditate.setAttribute('hidden', '');
     }
 
     stage.removeAttribute('hidden');
     openMode = mode;
-    syncIcons(mode);
+    syncControls(mode);
     stage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -115,16 +387,20 @@ export function initBeingOrbit(): void {
     panel.setAttribute('hidden', '');
     panel.innerHTML = '';
     openMode = null;
-    syncIcons(null);
+    syncControls(null);
   }
 
   // Mark the active orbit icon. aria-expanded for panel launchers; the
   // meditation icons carry their own aria-pressed (audio state) so we use a
   // plain `is-open` class for them.
-  function syncIcons(active: Mode | null): void {
-    icons.forEach(btn => {
-      const mine = (btn.dataset.panel ?? btn.dataset.mode) as Mode | undefined;
-      const on = mine === active;
+  function syncControls(active: Mode | null): void {
+    const mindfulnessActive =
+      active === 'breathe' || active === 'om' || active === 'focus';
+    controls.forEach(btn => {
+      const panelName = btn.dataset.panel as PillarName | undefined;
+      const on =
+        panelName === active ||
+        (panelName === 'mindfulness' && mindfulnessActive);
       if (btn.hasAttribute('aria-expanded')) {
         btn.setAttribute('aria-expanded', on ? 'true' : 'false');
       }
@@ -132,12 +408,12 @@ export function initBeingOrbit(): void {
     });
   }
 
-  icons.forEach(btn => {
+  controls.forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = (btn.dataset.panel ?? btn.dataset.mode) as Mode | undefined;
       if (!mode) return;
 
-      // Re-tapping the open practice closes the stage. (For OM / Sleep the
+      // Re-tapping the open practice closes the stage. (For OM / Focus the
       // ambient loop is toggled independently by initMeditate's own listener,
       // so a second tap reads as "stop and step back".)
       if (openMode === mode) {
@@ -154,6 +430,29 @@ export function initBeingOrbit(): void {
   // renders (data-link); the exercise view owns its own clicks separately.
   panel.addEventListener('click', event => {
     const target = event.target as HTMLElement | null;
+    const movement = target?.closest<HTMLButtonElement>('[data-movement]');
+    if (
+      movement?.dataset.movement === 'stretch' ||
+      movement?.dataset.movement === 'weights'
+    ) {
+      showMovementPractice(movement.dataset.movement);
+      return;
+    }
+
+    if (target?.closest<HTMLButtonElement>('[data-pillar-back="movement"]')) {
+      showPanel('movement');
+      return;
+    }
+
+    const quick = target?.closest<HTMLButtonElement>('[data-mode]');
+    const quickMode = quick?.dataset.mode as QuickMode | undefined;
+    if (quickMode) {
+      if (quickMode === 'om') meditation?.toggleOm();
+      if (quickMode === 'focus') meditation?.toggleFocus();
+      enter(quickMode);
+      return;
+    }
+
     const link = target?.closest<HTMLButtonElement>('.stretch-btn[data-link]');
     if (link?.dataset.link) {
       window.open(link.dataset.link, '_blank', 'noopener');

@@ -54,6 +54,11 @@ import {
   sanitizeNoteHtml,
 } from './rich-text';
 import type { Task, TaskDeletion } from '../../types';
+import {
+  issueJarvisTodoCredential,
+  listJarvisTodoCredentials,
+  revokeJarvisTodoCredential,
+} from '../../platform/convex/jarvis-todo-integration';
 import './todo.css';
 
 const LIST_ID = 'tasks-list-todo';
@@ -833,6 +838,87 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   });
+
+  /* ── Jarvis service pairing ───────────────────────────────────── */
+  const jarvisConnect = document.getElementById('todo-jarvis-connect') as HTMLButtonElement | null;
+  const jarvisCredentials = document.getElementById('todo-jarvis-credentials');
+  const jarvisDialog = document.getElementById('todo-jarvis-dialog') as HTMLDialogElement | null;
+  const jarvisSecret = document.getElementById('todo-jarvis-secret') as HTMLTextAreaElement | null;
+  const jarvisCopy = document.getElementById('todo-jarvis-copy') as HTMLButtonElement | null;
+  const jarvisClose = document.getElementById('todo-jarvis-close') as HTMLButtonElement | null;
+
+  const renderJarvisCredentials = async () => {
+    if (!jarvisCredentials) return;
+    try {
+      const credentials = await listJarvisTodoCredentials();
+      jarvisCredentials.replaceChildren();
+      const active = credentials.filter(item => item.revokedAt === null);
+      if (active.length === 0) {
+        jarvisCredentials.textContent = 'No active Jarvis connection.';
+        return;
+      }
+      for (const credential of active) {
+        const row = document.createElement('div');
+        row.className = 'todo-jarvis__credential';
+        const description = document.createElement('span');
+        const lastUsed = credential.lastUsedAt
+          ? `last used ${new Date(credential.lastUsedAt).toLocaleString()}`
+          : 'not used yet';
+        description.textContent = `${credential.label} · ${lastUsed}`;
+        const revoke = document.createElement('button');
+        revoke.type = 'button';
+        revoke.textContent = 'Revoke';
+        revoke.dataset.credentialId = credential.id;
+        row.append(description, revoke);
+        jarvisCredentials.append(row);
+      }
+    } catch (error) {
+      console.error('Could not load Jarvis credentials:', error);
+      jarvisCredentials.textContent = 'Could not load Jarvis connections.';
+    }
+  };
+
+  jarvisConnect?.addEventListener('click', async () => {
+    jarvisConnect.disabled = true;
+    try {
+      const issued = await issueJarvisTodoCredential();
+      if (jarvisSecret) {
+        jarvisSecret.value = `JARVIS_TODO_API_URL=${issued.apiUrl}\nJARVIS_TODO_API_TOKEN=${issued.secret}`;
+      }
+      jarvisDialog?.showModal();
+      await renderJarvisCredentials();
+    } catch (error) {
+      console.error('Could not pair Jarvis:', error);
+      if (jarvisCredentials) jarvisCredentials.textContent = 'Pairing failed. Please try again.';
+    } finally {
+      jarvisConnect.disabled = false;
+    }
+  });
+  jarvisCredentials?.addEventListener('click', async event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-credential-id]');
+    if (!button?.dataset.credentialId) return;
+    button.disabled = true;
+    try {
+      await revokeJarvisTodoCredential(button.dataset.credentialId);
+      await renderJarvisCredentials();
+    } catch (error) {
+      console.error('Could not revoke Jarvis credential:', error);
+      button.disabled = false;
+    }
+  });
+  jarvisCopy?.addEventListener('click', async () => {
+    if (!jarvisSecret?.value) return;
+    await navigator.clipboard.writeText(jarvisSecret.value);
+    jarvisCopy.textContent = 'Copied';
+  });
+  jarvisClose?.addEventListener('click', () => {
+    jarvisDialog?.close();
+  });
+  jarvisDialog?.addEventListener('close', () => {
+    if (jarvisSecret) jarvisSecret.value = '';
+    if (jarvisCopy) jarvisCopy.textContent = 'Copy configuration';
+  });
+  await renderJarvisCredentials();
 
   /* ── input + mutations ────────────────────────────────────────── */
   const listEl = document.getElementById(LIST_ID);

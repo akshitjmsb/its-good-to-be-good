@@ -1,6 +1,6 @@
 {
-  "name": "It's Good To Be King",
-  "short_name": "King",
+  "name": "It's Good to Be Good",
+  "short_name": "Good",
   "description": "A personal dashboard for reflection, focus, learning, and living well.",
   "start_url": "/",
   "display": "standalone",

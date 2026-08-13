@@ -9,6 +9,8 @@
 
 import { initializeQuantumTimer } from './quantumTimer';
 import { initBeingOrbit } from '../modules/being/orbit';
+import { renderFoodView } from '../modules/food/view';
+import '../modules/food/food.css';
 import { initAuthStore, getAuthState } from '../platform/auth/store';
 import { onAuthStateChange } from '../platform/auth/session';
 import { mountLoginGate } from './loginGate';
@@ -58,7 +60,7 @@ export async function bootstrapApp(): Promise<void> {
   });
 
   attempt('quantum timer', () => initializeQuantumTimer());
-  attempt('orbit', () => initBeingOrbit());
+  attempt('orbit', () => initBeingOrbit({ renderFoodView }));
 
   if (failures.length > 0) {
     const note = document.createElement('p');
@@ -74,7 +76,10 @@ export async function bootstrapApp(): Promise<void> {
   try {
     await initAuthStore();
   } catch (error) {
-    console.error('[home] auth bootstrap failed — treating as signed out:', error);
+    console.error(
+      '[home] auth bootstrap failed — treating as signed out:',
+      error
+    );
   }
   const authedUser = getAuthState().user;
 

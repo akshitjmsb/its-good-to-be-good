@@ -49,4 +49,36 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_client", ["userId", "clientId"]),
+
+  // Revocable service credentials let the owner's local Jarvis backend use a
+  // deliberately narrow To-Do API without borrowing a browser session. Only a
+  // SHA-256 digest is stored; the plaintext credential is shown once in the
+  // authenticated To-Do UI and remains on the owner's Mac mini.
+  jarvisTodoCredentials: defineTable({
+    userId: v.id("users"),
+    tokenHash: v.string(),
+    label: v.string(),
+    scopes: v.array(v.string()),
+    createdAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_token_hash", ["tokenHash"])
+    .index("by_user", ["userId"]),
+
+  // One receipt per user/request id makes every Jarvis mutation idempotent and
+  // leaves an owner-scoped before/after record. Reusing an id for different
+  // content is rejected rather than silently performing a second action.
+  jarvisTodoCommandReceipts: defineTable({
+    userId: v.id("users"),
+    credentialId: v.id("jarvisTodoCredentials"),
+    requestId: v.string(),
+    requestHash: v.string(),
+    action: v.string(),
+    state: v.string(),
+    responseJson: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_user_request", ["userId", "requestId"])
+    .index("by_user_created", ["userId", "createdAt"]),
 });

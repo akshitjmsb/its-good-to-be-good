@@ -1,4 +1,4 @@
-# It's Good To Be King — design system & conventions
+# It's Good to Be Good — King design system & conventions
 
 This repo is a personal-life PWA built around one idea, taken from the
 drawing at its centre: **the circle holds the soul, the square holds the
@@ -44,12 +44,13 @@ Every module's manifest declares its `ring`, and the architecture guard
 enforces the contract:
 
 - **`circle`** — a soul practice. Acts in place on the home, leaves
-  nothing behind, **never navigates** (no `routeHref`). The five circle
-  practices (Breathe, OM, Sleep, Stretch, Weights) live in the home
-  markup and `src/modules/being/`.
+  nothing behind, **never navigates** (no `routeHref`). Sukoon has five
+  pillars: Sleep, Food, Movement, Mindfulness, and Rooh. Breathe, OM, and
+  Focus appear inside Mindfulness. Every pillar leads with its icon-led
+  Action layer and places its explanatory Gyaan afterward.
 - **`square`** — a purpose tool. Opens its own page (`routeHref`) from a
   corner tile on the home and accumulates a record. Current tools:
-  `todo`, `khyaali-bhoot`, `tennis`, `food`.
+  `todo`, `khyaali-bhoot`, `tennis`.
 
 The membership test for anything new: *does using it leave something
 behind?* Nothing remains → circle. A record accumulates → square.
@@ -108,7 +109,8 @@ maps to a previously-real data-loss bug:
 - a **SaveController** whose dirty flag is only cleared by a confirmed
   save, with backoff retries that park in an `offline` state.
 
-Local-only state (like Food's check-offs) uses plain guarded localStorage.
+Ephemeral circle-practice state (like Food's check-offs) stays in memory and
+is cleared when the practice closes.
 
 ## Icon style
 
@@ -128,8 +130,9 @@ page header `<span class="theme-icon">`.
 
 - The orbit markup in `index.html` is the source of truth for what's on
   the home. There is no runtime module-arranging code — that's deliberate.
-- The five soul-practice hooks (`data-mode="breathe|om|sleep"`,
-  `data-panel="stretch|weights"`) and one `href` per square tool must
+- The five Sukoon pillar hooks (`data-panel="sleep|food|movement|mindfulness|rooh"`),
+  the three Mindfulness actions (`data-mode="breathe|om|focus"`), and one
+  `href` per square tool must
   exist in the home markup; `npm run check:architecture` fails otherwise.
 - The quantum focus timer lives in the header top-right; the contemplation
   verse rests below the orbit.

@@ -8,14 +8,20 @@
 ## Purpose
 
 Being IS the home page's resting state: the Vitruvian Man at the centre
-with the five soul practices riding the circle —
+with five Sukoon pillars riding the circle —
 
-- **Breathe / OM / Sleep** — meditation timer with optional 4-4-4-4
-  box-breathing chimes, an OM loop, and a sleep-music loop (HTMLAudioElement
-  for iOS autoplay reasons).
-- **Stretch** — YouTube routine links, flattened from body-part pools.
-- **Weights** — deterministic, fully-offline PPL + Upper schedule with a
-  month calendar and compact exercise cards.
+- **Sleep** — the master pillar, including circadian/light guidance.
+- **Food** — a session-only next-meal cue rendered by the shell from the Food
+  module, keeping the module boundary intact.
+- **Movement** — Stretch links plus the deterministic, fully-offline Weights
+  calendar.
+- **Mindfulness** — body-budget guidance containing Breathe, OM, and Focus.
+  Audio uses HTMLAudioElement for iOS autoplay reliability.
+- **Rooh** — relationships, safety, and co-regulation.
+
+Every pillar panel follows the same hierarchy: an icon-led **Action** layer
+first, followed by its explanatory **Gyaan** layer. Do not put teaching copy
+ahead of the immediate practice.
 
 ## Files
 

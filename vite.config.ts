@@ -27,7 +27,6 @@ export default defineConfig(() => {
           being: path.resolve(__dirname, 'being.html'),
           tennis: path.resolve(__dirname, 'tennis.html'),
           'khyaali-bhoot': path.resolve(__dirname, 'khyaali-bhoot.html'),
-          food: path.resolve(__dirname, 'food.html'),
         },
       },
     },

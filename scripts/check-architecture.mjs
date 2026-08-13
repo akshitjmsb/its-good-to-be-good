@@ -28,20 +28,25 @@ const repoRoot = process.env.ARCH_CHECK_ROOT
 // The exact module set. Adding a module means updating this map on purpose.
 const EXPECTED_MODULES = {
   being: 'circle',
+  food: 'circle',
   todo: 'square',
   'khyaali-bhoot': 'square',
   tennis: 'square',
-  food: 'square',
 };
 
-// The soul practices act in place on the home; these markup hooks are their
-// only registration.
+// The five Sukoon pillars act on the home; the three practices are rendered
+// only after Mindfulness opens.
 const EXPECTED_SOUL_HOOKS = [
+  'data-panel="sleep"',
+  'data-panel="food"',
+  'data-panel="movement"',
+  'data-panel="mindfulness"',
+  'data-panel="rooh"',
+];
+const EXPECTED_MINDFULNESS_HOOKS = [
   'data-mode="breathe"',
   'data-mode="om"',
-  'data-mode="sleep"',
-  'data-panel="stretch"',
-  'data-panel="weights"',
+  'data-mode="focus"',
 ];
 
 const ALLOWED_RINGS = new Set(['circle', 'square']);
@@ -236,6 +241,18 @@ async function validateModules() {
   for (const hook of EXPECTED_SOUL_HOOKS) {
     if (indexHtml && !indexHtml.includes(hook)) {
       fail(`Soul practice hook ${hook} is missing from the home orbit.`);
+    }
+  }
+
+  let orbitSource = '';
+  try {
+    orbitSource = await readText('src/modules/being/orbit.ts');
+  } catch {
+    fail('src/modules/being/orbit.ts is missing.');
+  }
+  for (const hook of EXPECTED_MINDFULNESS_HOOKS) {
+    if (orbitSource && !orbitSource.includes(hook)) {
+      fail(`Mindfulness practice hook ${hook} is missing from its panel.`);
     }
   }
 }

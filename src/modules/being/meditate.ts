@@ -42,7 +42,14 @@ const LEGACY_SOUND_KEY = 'meditate.soundEnabled';
 type SoundMode = 'bell' | 'off';
 const SOUND_MODES: readonly SoundMode[] = ['bell', 'off'];
 
-export function initMeditate(): void {
+export interface MeditateAudioControls {
+  isOmPlaying(): boolean;
+  isFocusPlaying(): boolean;
+  toggleOm(): void;
+  toggleFocus(): void;
+}
+
+export function initMeditate(): MeditateAudioControls | null {
   const display = document.getElementById('meditate-display');
   const button = document.getElementById(
     'meditate-toggle'
@@ -50,19 +57,13 @@ export function initMeditate(): void {
   const breatheToggle = document.getElementById(
     'meditate-breathe-toggle'
   ) as HTMLButtonElement | null;
-  const omToggle = document.getElementById(
-    'meditate-om-toggle'
-  ) as HTMLButtonElement | null;
-  const sleepToggle = document.getElementById(
-    'meditate-sleep-toggle'
-  ) as HTMLButtonElement | null;
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
   const presets = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.meditate-preset')
   );
 
-  if (!display || !button) return;
+  if (!display || !button) return null;
 
   const timer = getMeditateTimer();
 
@@ -123,7 +124,7 @@ export function initMeditate(): void {
     });
   }
 
-  // OM chant + sleep music — independent looping audio toggles.
+  // OM chant + focus music — independent looping audio toggles.
   function makeLoopAudio(url: string, tag: string): HTMLAudioElement {
     const a = new Audio(url);
     a.loop = true;
@@ -137,12 +138,12 @@ export function initMeditate(): void {
   }
 
   const omAudio = makeLoopAudio('/audio/om.mp3', 'om');
-  const sleepAudio = makeLoopAudio('/audio/sleep-music.mp3', 'sleep');
+  const focusAudio = makeLoopAudio('/audio/sleep-music.mp3', 'focus');
   let omPlaying = false;
-  let sleepPlaying = false;
+  let focusPlaying = false;
 
   function setLoopPlaying(
-    tag: 'om' | 'sleep',
+    tag: 'om' | 'focus',
     audio: HTMLAudioElement,
     button: HTMLButtonElement | null,
     next: boolean,
@@ -167,15 +168,15 @@ export function initMeditate(): void {
 
   function setOmPlaying(next: boolean): void {
     omPlaying = next;
-    setLoopPlaying('om', omAudio, omToggle, next, () => {
+    setLoopPlaying('om', omAudio, null, next, () => {
       omPlaying = false;
     });
   }
 
-  function setSleepPlaying(next: boolean): void {
-    sleepPlaying = next;
-    setLoopPlaying('sleep', sleepAudio, sleepToggle, next, () => {
-      sleepPlaying = false;
+  function setFocusPlaying(next: boolean): void {
+    focusPlaying = next;
+    setLoopPlaying('focus', focusAudio, null, next, () => {
+      focusPlaying = false;
     });
   }
 
@@ -348,18 +349,6 @@ export function initMeditate(): void {
     });
   }
 
-  if (omToggle) {
-    omToggle.addEventListener('click', () => {
-      setOmPlaying(!omPlaying);
-    });
-  }
-
-  if (sleepToggle) {
-    sleepToggle.addEventListener('click', () => {
-      setSleepPlaying(!sleepPlaying);
-    });
-  }
-
   presets.forEach(preset => {
     preset.addEventListener('click', () => {
       const min = Number(preset.dataset.duration);
@@ -392,6 +381,13 @@ export function initMeditate(): void {
     window.clearInterval(intervalId);
     stopBreathChimes();
     omAudio.pause();
-    sleepAudio.pause();
+    focusAudio.pause();
   });
+
+  return {
+    isOmPlaying: () => omPlaying,
+    isFocusPlaying: () => focusPlaying,
+    toggleOm: () => setOmPlaying(!omPlaying),
+    toggleFocus: () => setFocusPlaying(!focusPlaying),
+  };
 }

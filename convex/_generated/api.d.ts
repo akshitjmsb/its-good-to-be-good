@@ -10,6 +10,8 @@
 
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as jarvisTodoCredentials from "../jarvisTodoCredentials.js";
+import type * as jarvisTodos from "../jarvisTodos.js";
 import type * as tasks from "../tasks.js";
 import type * as users from "../users.js";
 
@@ -22,6 +24,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  jarvisTodoCredentials: typeof jarvisTodoCredentials;
+  jarvisTodos: typeof jarvisTodos;
   tasks: typeof tasks;
   users: typeof users;
 }>;
