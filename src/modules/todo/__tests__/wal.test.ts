@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createWal, walKeyFor, type StorageLike, type WalSnapshot } from '../wal';
+import {
+  createWal,
+  findLegacyWalSnapshots,
+  walKeyFor,
+  type StorageLike,
+  type WalSnapshot,
+} from '../wal';
 import type { Task } from '../../../types';
 
 function memoryStorage(seed: Record<string, string> = {}): StorageLike & { dump: Record<string, string> } {
@@ -79,5 +85,24 @@ describe('createWal', () => {
     expect(recovered?.deleted).toHaveLength(1);
     expect(recovered?.deleted[0]?.id).toBe('gone');
     expect(recovered?.deleted[0]?.deleted_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('offers prior-identity journals without touching the current owner', () => {
+    const values = new Map<string, string>();
+    const storage: StorageLike & { length: number; key(index: number): string | null } = {
+      get length() { return values.size; },
+      key: index => [...values.keys()][index] ?? null,
+      getItem: key => values.get(key) ?? null,
+      setItem: (key, value) => void values.set(key, value),
+      removeItem: key => void values.delete(key),
+    };
+    createWal(storage, walKeyFor('old-user')).write({ tasks: [task('old')], deleted: [] });
+    createWal(storage, walKeyFor('current-user')).write({ tasks: [task('current')], deleted: [] });
+
+    const found = findLegacyWalSnapshots(storage, 'current-user');
+
+    expect(found).toHaveLength(1);
+    expect(found[0].snapshot.tasks[0].id).toBe('old');
+    expect(storage.getItem(walKeyFor('old-user'))).not.toBeNull();
   });
 });

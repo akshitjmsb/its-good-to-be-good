@@ -300,6 +300,26 @@
         font-size: 1rem;
     }
 }
+.todo-recovery {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--home-border, #3f3f3f);
+}
+
+.todo-recovery h2,
+.todo-recovery p { margin: 0 0 0.65rem; }
+
+.todo-recovery__actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+
+.todo-recovery button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
 /* Jarvis gets a deliberately small service credential, never the browser session. */
 .todo-jarvis {
   margin-top: 2rem;

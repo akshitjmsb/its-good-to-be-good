@@ -46,7 +46,7 @@ export async function listJarvisTodoCredentials(): Promise<
   await ensureFreshAuth();
   return (await convex.query(
     api.jarvisTodoCredentials.list,
-    {}
+    { refreshNonce: Date.now() }
   )) as JarvisTodoCredential[];
 }
 
