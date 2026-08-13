@@ -29,6 +29,7 @@
     "vercel:env:pull": "vercel env pull .env.local",
     "vercel:env:ls": "vercel env ls",
     "vercel:projects": "vercel projects list",
+    "jarvis:pair-headless": "node ./scripts/pair-jarvis-headless.mjs",
     "new:module": "node ./scripts/new-module.mjs"
   },
   "keywords": [
