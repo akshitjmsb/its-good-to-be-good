@@ -33,6 +33,15 @@ design system; this file is the operating contract.
 5. Secrets belong only in `.env.local`. Never commit credentials.
 6. Vanilla TS + HTML only. No React, no frameworks.
 7. Mobile first: verify at ~375×812 before desktop.
+8. Product values are binding: apply the `CLAUDE.md` decision filter to every
+   user-visible change. Lead with the lowest-friction action, then disclose
+   Gyaan only afterward.
+9. Do not add or rewrite user-facing copy unless it is a meaningful pointer
+   within the requested scope. Treat existing copy as approved; new copy must
+   be explicitly approved by the Product Owner before shipping.
+10. The Jadugar contemplation verse (`index.html .being-verse`) is protected
+    Product Owner-approved copy. Do not shorten, rewrite, translate, relocate,
+    or remove it without explicit Product Owner direction.
 
 ## Data Safety
 
@@ -71,3 +80,9 @@ npm run agent:prepr
    layers.
 4. Adding a module: `npm run new:module <id>`, then follow the guard's
    three wiring steps.
+5. Before adding a control, state, screen, or stored field, show why the
+   existing module cannot deliver the action without it.
+6. On the initial view, keep one primary action. Put alternatives and
+   explanation behind progressive disclosure.
+7. Do not add streaks, scores, urgency, reminders, or engagement mechanics
+   without explicit Product Owner direction.

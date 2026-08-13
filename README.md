@@ -22,6 +22,18 @@ and open their own page — each one accumulates a record.
 
 Not a product. Not a showcase. A place to be.
 
+## Product Values
+
+- Least barrier to entry.
+- Every word earns its place; only meaningful, approved pointers ship.
+- Action before Gyaan.
+- One clear next move.
+- Progressive disclosure.
+
+The supporting guardrails are: no unnecessary tracking, calm over
+engagement, preserve the visual language, mobile first, and improve before
+expanding.
+
 ---
 
 ## The Tools

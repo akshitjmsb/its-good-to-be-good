@@ -7,6 +7,49 @@ the centre, soul practices riding the circle, purpose tools sitting on
 the square's corners. Every subpage is a quiet sibling of the home — not
 a separate product.
 
+## Product values
+
+These values govern every screen, feature, and piece of copy. They are a
+decision filter, not marketing language.
+
+### Core values
+
+1. **Least barrier to entry.** The useful action takes the fewest possible
+   taps, decisions, and setup. Prefer an immediately usable default.
+2. **Every word earns its place.** No filler, redundant instruction, or
+   explanatory prose by default. User-facing text is limited to meaningful,
+   Product Owner-approved pointers.
+3. **Action before Gyaan.** Present what the user can do before explaining why
+   it works.
+4. **One clear next move.** Do not make several actions compete for attention.
+   Establish one primary action and keep alternatives quiet.
+5. **Progressive disclosure.** Keep the first view minimal. Reveal supporting
+   detail only when the user asks for it or needs it to continue.
+
+### Implementation guardrails
+
+6. **No unnecessary tracking.** Retain information only when remembering it
+   creates real user value. Sukoon remains ephemeral by default.
+7. **Calm over engagement.** No streak pressure, guilt, gamification,
+   manufactured urgency, or attention traps.
+8. **Preserve the visual language.** Use the established King tokens,
+   typography, icon style, geometry, and restrained interaction patterns.
+9. **Mobile and touch first.** Design for one-handed use, readable hierarchy,
+   and comfortable tap targets before adapting to desktop.
+10. **Function before expansion.** Improve an existing module before adding a
+    new surface, mode, or feature.
+
+For every proposed change, ask: *what is the next useful action, and what can
+be removed before it?*
+
+### Protected pointer
+
+The Hindi **Jadugar contemplation verse** in `index.html` (`.being-verse`) is
+an important Product Owner-approved pointer and part of the home's emotional
+centre. Minimalism does not mean removing it. Preserve its complete wording,
+line order, Hindi language, placement below the orbit, and quiet visual
+emphasis unless the Product Owner explicitly requests a change to the quote.
+
 ## Aesthetic
 
 A vintage-typewriter, paper-on-desk look. Calm, minimal, monochrome with a
