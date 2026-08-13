@@ -22,6 +22,11 @@ export interface WalSnapshot {
 
 export type Wal = GenericWal<WalSnapshot>;
 
+export interface LegacyWalSnapshot {
+  key: string;
+  snapshot: WalSnapshot;
+}
+
 export function walKeyFor(userId: string): string {
   return walKey('todo', userId);
 }
@@ -54,4 +59,36 @@ export function createWal(storage: StorageLike | null, key: string): Wal {
       deleted: [...deleted, ...legacyDeleted],
     };
   });
+}
+
+/**
+ * Discover journals created under an older auth identity on this device.
+ * Nothing is copied or removed here: the UI asks the signed-in owner before
+ * restoring data across identities.
+ */
+export function findLegacyWalSnapshots(
+  storage: StorageLike | null,
+  currentUserId: string
+): LegacyWalSnapshot[] {
+  if (!storage) return [];
+  const enumerable = storage as StorageLike & {
+    readonly length?: number;
+    key?: (index: number) => string | null;
+  };
+  if (typeof enumerable.length !== 'number' || typeof enumerable.key !== 'function') {
+    return [];
+  }
+
+  const currentKey = walKeyFor(currentUserId);
+  const prefix = 'king:todo:wal:';
+  const found: LegacyWalSnapshot[] = [];
+  for (let index = 0; index < enumerable.length; index += 1) {
+    const key = enumerable.key(index);
+    if (!key || key === currentKey || !key.startsWith(prefix)) continue;
+    const snapshot = createWal(storage, key).read();
+    if (snapshot && (snapshot.tasks.length > 0 || snapshot.deleted.length > 0)) {
+      found.push({ key, snapshot });
+    }
+  }
+  return found;
 }

@@ -12,7 +12,8 @@ async function issueCredential(
   ctx: MutationCtx,
   userId: Id<'users'>,
   tokenHash: string,
-  label: string
+  label: string,
+  allowExistingActive = false
 ) {
   const normalizedHash = tokenHash.trim().toLowerCase();
   const normalizedLabel = label.trim().slice(0, 80) || 'Jarvis on Mac mini';
@@ -33,6 +34,8 @@ async function issueCredential(
     .withIndex('by_user', q => q.eq('userId', userId))
     .collect();
   const active = credentials.filter(item => item.revokedAt === undefined);
+  if (!allowExistingActive && active.length > 0)
+    throw new Error('Jarvis is already paired. Revoke the active credential first.');
   if (active.length >= 5)
     throw new Error('Revoke an old Jarvis credential before adding another');
 
@@ -71,7 +74,7 @@ export const issueForOwner = internalMutation({
     label: v.string(),
   },
   handler: async (ctx, { userId, tokenHash, label }) =>
-    issueCredential(ctx, userId, tokenHash, label),
+    issueCredential(ctx, userId, tokenHash, label, true),
 });
 
 /**
@@ -110,7 +113,9 @@ export const revokeAllExceptForOwner = internalMutation({
 });
 
 export const list = query({
-  args: {},
+  // A nonce lets resumed iOS pages force an authoritative query even when
+  // their long-lived HTTP client retains a pre-rotation cache entry.
+  args: { refreshNonce: v.optional(v.number()) },
   handler: async ctx => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
@@ -119,6 +124,7 @@ export const list = query({
       .withIndex('by_user', q => q.eq('userId', userId))
       .collect();
     return credentials
+      .filter(item => item.revokedAt === undefined)
       .sort((a, b) => b.createdAt - a.createdAt)
       .map(item => ({
         id: item._id,

@@ -48,13 +48,22 @@
 
         <p id="todo-status" class="todo-status" data-state="idle" role="status" aria-live="polite"></p>
 
+        <section id="todo-legacy-recovery" class="todo-recovery" aria-labelledby="todo-recovery-heading" hidden>
+            <h2 id="todo-recovery-heading">Local tasks found</h2>
+            <p id="todo-legacy-recovery-message"></p>
+            <div class="todo-recovery__actions">
+                <button id="todo-legacy-restore" type="button">Restore to this account</button>
+                <button id="todo-legacy-dismiss" type="button">Not now</button>
+            </div>
+        </section>
+
         <section class="todo-jarvis" aria-labelledby="todo-jarvis-heading">
             <div>
                 <p class="todo-jarvis__eyebrow">Private integration</p>
                 <h2 id="todo-jarvis-heading">Jarvis</h2>
                 <p>Let your Mac mini read and update this list with a revocable, To-Do-only credential.</p>
             </div>
-            <button id="todo-jarvis-connect" type="button">Pair Jarvis</button>
+            <button id="todo-jarvis-connect" type="button" hidden>Pair Jarvis</button>
             <div id="todo-jarvis-credentials" class="todo-jarvis__credentials" aria-live="polite"></div>
         </section>
     </div>

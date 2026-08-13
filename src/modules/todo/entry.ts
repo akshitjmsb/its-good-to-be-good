@@ -41,6 +41,7 @@ import {
 import { SaveController, type SaveStatus } from './save-controller';
 import {
   createWal,
+  findLegacyWalSnapshots,
   getBrowserStorage,
   walKeyFor,
   type Wal,
@@ -654,6 +655,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const browserStorage = getBrowserStorage();
   const wal: Wal = createWal(browserStorage, walKeyFor(userId));
+  const legacyWalSnapshots = findLegacyWalSnapshots(browserStorage, userId);
+  let restoredLegacyKeys: string[] = [];
   localJournalUnavailable = browserStorage === null;
   const deletedSnapshot = (): TaskDeletion[] =>
     [...deleted].map(([id, deleted_at]) => ({ id, deleted_at }));
@@ -680,6 +683,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       snapshot.deleted.forEach(record => {
         if (deleted.get(record.id) === record.deleted_at) deleted.delete(record.id);
       });
+      if (restoredLegacyKeys.length && browserStorage) {
+        restoredLegacyKeys.forEach(key => browserStorage.removeItem(key));
+        restoredLegacyKeys = [];
+      }
     },
     onStatus: (status) => {
       renderStatus(status);
@@ -747,6 +754,45 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   refresh();
   if (localJournalUnavailable) renderStatus(saveController.status);
+
+  /* ── explicit pre-Convex local recovery ───────────────────────── */
+  const legacyRecovery = document.getElementById('todo-legacy-recovery');
+  const legacyMessage = document.getElementById('todo-legacy-recovery-message');
+  const legacyRestore = document.getElementById('todo-legacy-restore');
+  const legacyDismiss = document.getElementById('todo-legacy-dismiss');
+  const recoverableIds = new Set(
+    legacyWalSnapshots.flatMap(candidate => candidate.snapshot.tasks.map(task => task.id))
+  );
+  if (legacyRecovery && legacyWalSnapshots.length > 0 && recoverableIds.size > 0) {
+    legacyRecovery.hidden = false;
+    if (legacyMessage) {
+      legacyMessage.textContent =
+        `Found ${recoverableIds.size} task${recoverableIds.size === 1 ? '' : 's'} ` +
+        'saved on this device before the cloud upgrade.';
+    }
+  }
+  legacyRestore?.addEventListener('click', () => {
+    for (const candidate of legacyWalSnapshots) {
+      candidate.snapshot.deleted.forEach(record => {
+        const prior = deleted.get(record.id);
+        if (!prior || Date.parse(record.deleted_at) > Date.parse(prior)) {
+          deleted.set(record.id, record.deleted_at);
+        }
+      });
+      tasks = mergeTasks(candidate.snapshot.tasks, tasks, deleted.keys(), {
+        keepLocalOnly: true,
+      });
+    }
+    restoredLegacyKeys = legacyWalSnapshots.map(candidate => candidate.key);
+    tasks.forEach(task => mutationClock.observe(task.updated_at));
+    writeWal();
+    refresh();
+    saveController.notifyMutation();
+    if (legacyRecovery) legacyRecovery.hidden = true;
+  });
+  legacyDismiss?.addEventListener('click', () => {
+    if (legacyRecovery) legacyRecovery.hidden = true;
+  });
 
   /* ── background sync (merge, never replace) ─────────────────────── */
   const interactionBusy = () =>
@@ -849,10 +895,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const renderJarvisCredentials = async () => {
     if (!jarvisCredentials) return;
+    if (jarvisConnect) jarvisConnect.hidden = true;
     try {
       const credentials = await listJarvisTodoCredentials();
       jarvisCredentials.replaceChildren();
       const active = credentials.filter(item => item.revokedAt === null);
+      if (jarvisConnect) jarvisConnect.hidden = active.length > 0;
       if (active.length === 0) {
         jarvisCredentials.textContent = 'No active Jarvis connection.';
         return;
@@ -918,6 +966,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (jarvisSecret) jarvisSecret.value = '';
     if (jarvisCopy) jarvisCopy.textContent = 'Copy configuration';
   });
+  const refreshJarvisOnResume = () => {
+    if (document.visibilityState === 'visible') void renderJarvisCredentials();
+  };
+  document.addEventListener('visibilitychange', refreshJarvisOnResume);
+  window.addEventListener('focus', refreshJarvisOnResume);
+  window.addEventListener('pageshow', refreshJarvisOnResume);
   await renderJarvisCredentials();
 
   /* ── input + mutations ────────────────────────────────────────── */
