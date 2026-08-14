@@ -10,18 +10,17 @@
 Being IS the home page's resting state: the Vitruvian Man at the centre
 with five Sukoon pillars riding the circle —
 
-- **Sleep** — the master pillar, including circadian/light guidance.
+- **Sleep** — the master pillar, including circadian/light pointers.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food
   module, keeping the module boundary intact.
 - **Movement** — Stretch links plus the deterministic, fully-offline Weights
   calendar.
-- **Mindfulness** — body-budget guidance containing Breathe, OM, and Focus.
+- **Mindfulness** — Breathe, OM, and Focus.
   Audio uses HTMLAudioElement for iOS autoplay reliability.
 - **Rooh** — relationships, safety, and co-regulation.
 
-Every pillar panel follows the same hierarchy: an icon-led **Action** layer
-first, followed by supporting guidance. Do not put teaching copy ahead of the
-immediate practice.
+Every pillar panel contains only its approved icon-led action pointers. Do
+not add teaching or supporting prose without explicit Product Owner approval.
 
 ## Files
 

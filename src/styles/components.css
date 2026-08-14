@@ -1932,55 +1932,11 @@ button.preview-card {
     gap: 0.5rem;
 }
 
-/* Five-pillar guidance layer: one law and one approved pointer. */
-.pillar-copy {
-    max-width: 32rem;
-    margin: 0 auto;
-}
-
-.pillar-copy__kicker {
-    margin: 0 0 0.25rem;
-    color: var(--home-muted, #6b7280);
-    font-size: 0.66rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
 .pillar-copy__title {
-    margin: 0;
+    margin: 0 !important;
     color: var(--home-text, #374151);
     font-size: 1.35rem;
     font-weight: normal;
-}
-
-.pillar-copy__law {
-    margin: 0.75rem 0 1rem;
-    color: var(--home-ink, #111111);
-    font-size: 1.05rem;
-    line-height: 1.55;
-}
-
-.pillar-copy__move {
-    padding: 0.8rem;
-    background: var(--home-surface, #ffffff);
-    border: 1px solid var(--home-border, #e5e7eb);
-    border-radius: 0.5rem;
-}
-
-.pillar-copy__move span {
-    display: block;
-    margin-bottom: 0.35rem;
-    color: var(--home-muted, #6b7280);
-    font-size: 0.62rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-.pillar-copy__move p {
-    margin: 0;
-    color: var(--home-text, #374151);
-    font-size: 0.82rem;
-    line-height: 1.65;
 }
 
 .pillar-actions {
@@ -1994,13 +1950,6 @@ button.preview-card {
 .pillar-action-layer {
     max-width: 32rem;
     margin: 0 auto;
-}
-
-.pillar-action-layer__prompt {
-    margin: 0.65rem 0 0;
-    color: var(--home-muted, #6b7280);
-    font-size: 0.78rem;
-    line-height: 1.5;
 }
 
 .pillar-actions--icons {
@@ -2076,18 +2025,6 @@ button.preview-card {
 
 .pillar-action[aria-pressed='true'] .pillar-action__glyph {
     color: var(--home-text, #374151);
-}
-
-.pillar-guidance {
-    max-width: 32rem;
-    margin: 1.35rem auto 0;
-    padding-top: 1.1rem;
-    border-top: 1px solid var(--home-border, #e5e7eb);
-}
-
-.pillar-guidance .pillar-copy__kicker,
-.pillar-guidance .pillar-copy__title {
-    display: none;
 }
 
 .pillar-action,

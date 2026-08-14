@@ -32,13 +32,6 @@ type QuickMode = 'breathe' | 'om' | 'focus';
 type Mode = PillarName | QuickMode;
 type FoodRenderer = (container: HTMLElement, today: Date) => void;
 
-interface PillarCopy {
-  title: string;
-  kicker: string;
-  law: string;
-  move: string;
-}
-
 interface ActionCue {
   label: string;
   detail: string;
@@ -54,30 +47,6 @@ const ACTION_ICONS = {
   stretch: '<path d="M8 4v6l-3 4"></path><path d="m8 10 4 3 4-5"></path><path d="m12 13-1 7"></path><circle cx="8" cy="3" r="1.5"></circle>',
   weights: '<path d="M6 9v6"></path><path d="M3 10v4"></path><path d="M18 9v6"></path><path d="M21 10v4"></path><path d="M6 12h12"></path>',
 } as const;
-
-const PILLAR_COPY: Record<
-  Exclude<PillarName, 'food' | 'movement'>,
-  PillarCopy
-> = {
-  sleep: {
-    title: 'Sleep',
-    kicker: 'The master pillar',
-    law: 'Rest = refuel + flush.',
-    move: 'Circadian / light: get outside within an hour of waking. At night, keep feeds and wake-ups dim and warm so the clock stays anchored.',
-  },
-  mindfulness: {
-    title: 'Mindfulness',
-    kicker: 'The direct control knob',
-    law: 'The exhale is the brake.',
-    move: 'Breathe through the nose and let the belly move: in for 4, out for 6. Choose Breathe, OM, or Focus above.',
-  },
-  rooh: {
-    title: 'Rooh',
-    kicker: 'We regulate one another',
-    law: 'Your calm becomes part of his calm.',
-    move: 'Before you connect, soften the jaw, lower the shoulders, and slow one breath. Offer safety with your own body first.',
-  },
-};
 
 export function initBeingOrbit({
   renderFoodView,
@@ -127,37 +96,9 @@ export function initBeingOrbit({
     );
   }
 
-  function renderPillarCopy(copy: PillarCopy): string {
+  function renderActionHeader(title: string, titleId: string): string {
     return `
-      <section class="pillar-copy">
-        <p class="pillar-copy__kicker">${escapeHtml(copy.kicker)}</p>
-        <h2 class="pillar-copy__title">${escapeHtml(copy.title)}</h2>
-        <p class="pillar-copy__law">${escapeHtml(copy.law)}</p>
-        <div class="pillar-copy__move">
-          <span>For today</span>
-          <p>${escapeHtml(copy.move)}</p>
-        </div>
-      </section>
-    `;
-  }
-
-  function renderActionHeader(
-    title: string,
-    prompt: string,
-    titleId: string
-  ): string {
-    return `
-      <p class="pillar-copy__kicker">Action</p>
       <h2 class="pillar-copy__title" id="${escapeHtml(titleId)}">${escapeHtml(title)}</h2>
-      <p class="pillar-action-layer__prompt">${escapeHtml(prompt)}</p>
-    `;
-  }
-
-  function renderGuidance(copy: PillarCopy): string {
-    return `
-      <section class="pillar-guidance" aria-label="${escapeHtml(copy.title)} guidance">
-        ${renderPillarCopy(copy)}
-      </section>
     `;
   }
 
@@ -180,10 +121,9 @@ export function initBeingOrbit({
   }
 
   function sleepOverview(): string {
-    const copy = PILLAR_COPY.sleep;
     return `
       <section class="pillar-action-layer" aria-labelledby="sleep-title">
-        ${renderActionHeader('Sleep', 'Anchor the clock at both ends of the day.', 'sleep-title')}
+        ${renderActionHeader('Sleep', 'sleep-title')}
         ${renderActionCues([
           {
             label: 'Morning light',
@@ -197,20 +137,13 @@ export function initBeingOrbit({
           },
         ])}
       </section>
-      ${renderGuidance(copy)}
     `;
   }
 
   function movementOverview(): string {
-    const copy: PillarCopy = {
-      title: 'Movement',
-      kicker: 'Motion changes the signal',
-      law: 'Long sitting, then move.',
-      move: 'Use Stretch to close the tension signal, Weights to train the body, or take a low-stakes walk.',
-    };
     return `
       <section class="pillar-action-layer" aria-labelledby="movement-title">
-        ${renderActionHeader('Movement', 'How do you want to move?', 'movement-title')}
+        ${renderActionHeader('Movement', 'movement-title')}
         <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Movement practices">
           <button type="button" class="pillar-action pillar-action--icon" data-movement="stretch">
             <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ACTION_ICONS.stretch}</svg></span>
@@ -222,7 +155,6 @@ export function initBeingOrbit({
           </button>
         </div>
       </section>
-      ${renderGuidance(copy)}
     `;
   }
 
@@ -231,7 +163,7 @@ export function initBeingOrbit({
     const focusPressed = meditation?.isFocusPlaying() ?? false;
     return `
       <section class="pillar-action-layer" aria-labelledby="mindfulness-title">
-        ${renderActionHeader('Mindfulness', 'What does your body need right now?', 'mindfulness-title')}
+        ${renderActionHeader('Mindfulness', 'mindfulness-title')}
         <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Mindfulness practices">
           <button type="button" class="pillar-action pillar-action--icon" data-mode="breathe">
             <span class="pillar-action__glyph" aria-hidden="true">
@@ -258,24 +190,13 @@ export function initBeingOrbit({
           </button>
         </div>
       </section>
-      ${renderGuidance(PILLAR_COPY.mindfulness)}
     `;
   }
 
-  function foodCopy(): PillarCopy {
-    return {
-      title: 'Food',
-      kicker: 'Fuel the body-budget',
-      law: 'Never eat a naked carb.',
-      move: 'Pair carbohydrate with protein, fat, or fibre. At lunch, eat protein and vegetables first and the carbohydrate last.',
-    };
-  }
-
   function roohOverview(): string {
-    const copy = PILLAR_COPY.rooh;
     return `
       <section class="pillar-action-layer" aria-labelledby="rooh-title">
-        ${renderActionHeader('Rooh', 'Offer safety with your body first.', 'rooh-title')}
+        ${renderActionHeader('Rooh', 'rooh-title')}
         ${renderActionCues([
           {
             label: 'Soften',
@@ -294,7 +215,6 @@ export function initBeingOrbit({
           },
         ])}
       </section>
-      ${renderGuidance(copy)}
     `;
   }
 
@@ -307,14 +227,13 @@ export function initBeingOrbit({
       // and disappear when the user returns to stillness.
       panel.innerHTML = `
         <section class="pillar-action-layer" aria-labelledby="food-title">
-          ${renderActionHeader('Food', 'What will steady your next meal?', 'food-title')}
+          ${renderActionHeader('Food', 'food-title')}
         </section>
       `;
       const host = document.createElement('div');
       host.className = 'pillar-embedded-view pillar-embedded-view--action';
       panel.appendChild(host);
       renderFoodView(host, new Date());
-      panel.insertAdjacentHTML('beforeend', renderGuidance(foodCopy()));
     } else if (name === 'movement') {
       panel.innerHTML = movementOverview();
     } else if (name === 'mindfulness') {
