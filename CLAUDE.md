@@ -49,6 +49,8 @@ an important Product Owner-approved pointer and part of the home's emotional
 centre. Minimalism does not mean removing it. Preserve its complete wording,
 line order, Hindi language, placement below the orbit, and quiet visual
 emphasis unless the Product Owner explicitly requests a change to the quote.
+It belongs to the home's resting state and is hidden while a Sukoon module is
+open, then restored on return to Stillness.
 
 ## Aesthetic
 

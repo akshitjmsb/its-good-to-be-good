@@ -1976,29 +1976,11 @@ button.preview-card {
     text-transform: uppercase;
 }
 
-.pillar-copy__move p,
-.pillar-copy__why p {
+.pillar-copy__move p {
     margin: 0;
     color: var(--home-text, #374151);
     font-size: 0.82rem;
     line-height: 1.65;
-}
-
-.pillar-copy__why {
-    margin-top: 0.85rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--home-border, #e5e7eb);
-}
-
-.pillar-copy__why summary {
-    color: var(--home-muted, #6b7280);
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-}
-
-.pillar-copy__why p {
-    margin-top: 0.7rem;
 }
 
 .pillar-actions {

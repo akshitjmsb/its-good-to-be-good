@@ -41,7 +41,8 @@ design system; this file is the operating contract.
    be explicitly approved by the Product Owner before shipping.
 10. The Jadugar contemplation verse (`index.html .being-verse`) is protected
     Product Owner-approved copy. Do not shorten, rewrite, translate, relocate,
-    or remove it without explicit Product Owner direction.
+    or remove it without explicit Product Owner direction. Keep it visible in
+    the home resting state and hidden while a Sukoon module is open.
 
 ## Data Safety
 

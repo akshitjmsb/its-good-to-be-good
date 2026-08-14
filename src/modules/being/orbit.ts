@@ -37,7 +37,6 @@ interface PillarCopy {
   kicker: string;
   law: string;
   move: string;
-  why: string;
 }
 
 interface ActionCue {
@@ -65,21 +64,18 @@ const PILLAR_COPY: Record<
     kicker: 'The master pillar',
     law: 'Rest = refuel + flush.',
     move: 'Circadian / light: get outside within an hour of waking. At night, keep feeds and wake-ups dim and warm so the clock stays anchored.',
-    why: 'Adenosine builds sleep pressure while the brain works. Deep sleep restores energy and runs the glymphatic flush. Morning light sets the circadian wave that guides temperature, hormones, alertness, and the natural afternoon dip.',
   },
   mindfulness: {
     title: 'Mindfulness',
     kicker: 'The direct control knob',
     law: 'The exhale is the brake.',
     move: 'Breathe through the nose and let the belly move: in for 4, out for 6. Choose Breathe, OM, or Focus above.',
-    why: 'Breath can run automatically or manually. Fast, shallow breathing is a danger signal the brain trusts; a longer exhale gives the nervous system evidence that the body is safe.',
   },
   rooh: {
     title: 'Rooh',
     kicker: 'We regulate one another',
     law: 'Your calm becomes part of his calm.',
     move: 'Before you connect, soften the jaw, lower the shoulders, and slow one breath. Offer safety with your own body first.',
-    why: 'Other people’s states enter the body-budget. A baby reads heartbeat, breath, voice, and muscle tension to answer one basic question: am I safe? Co-regulation teaches the nervous system what safety feels like.',
   },
 };
 
@@ -94,6 +90,7 @@ export function initBeingOrbit({
   const stage = document.getElementById('being-stage');
   const meditate = document.getElementById('being-meditate');
   const panel = document.getElementById('being-panel');
+  const verse = document.querySelector<HTMLElement>('.being-verse');
   const closeBtn = document.getElementById('being-stage-close');
   const controls = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.orbit-icon')
@@ -140,10 +137,6 @@ export function initBeingOrbit({
           <span>For today</span>
           <p>${escapeHtml(copy.move)}</p>
         </div>
-        <details class="pillar-copy__why">
-          <summary>Why this works</summary>
-          <p>${escapeHtml(copy.why)}</p>
-        </details>
       </section>
     `;
   }
@@ -215,7 +208,6 @@ export function initBeingOrbit({
       kicker: 'Motion changes the signal',
       law: 'Long sitting, then move.',
       move: 'Use Stretch to close the tension signal, Weights to train the body, or take a low-stakes walk.',
-      why: 'Working muscles release messengers that support BDNF, the brain’s growth factor. Stretching restores muscle length and blood flow; walking gives the nervous system a gentle place to practise moving forward.',
     };
     return `
       <section class="pillar-action-layer" aria-labelledby="movement-title">
@@ -277,7 +269,6 @@ export function initBeingOrbit({
       kicker: 'Fuel the body-budget',
       law: 'Never eat a naked carb.',
       move: 'Pair carbohydrate with protein, fat, or fibre. At lunch, eat protein and vegetables first and the carbohydrate last.',
-      why: 'Glucose is fast cash, fat is slower stored energy, and protein repairs the machine. Pairing and ordering food steadies the fuel arriving in the bloodstream.',
     };
   }
 
@@ -375,6 +366,7 @@ export function initBeingOrbit({
     }
 
     stage.removeAttribute('hidden');
+    verse?.setAttribute('hidden', '');
     openMode = mode;
     syncControls(mode);
     stage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -383,6 +375,7 @@ export function initBeingOrbit({
   function close(): void {
     if (!stage || !meditate || !panel) return;
     stage.setAttribute('hidden', '');
+    verse?.removeAttribute('hidden');
     meditate.setAttribute('hidden', '');
     panel.setAttribute('hidden', '');
     panel.innerHTML = '';
