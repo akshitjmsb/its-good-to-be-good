@@ -7,8 +7,10 @@
 
 ## Purpose
 
-Tennis roadmap — the cradle-to-centre-court phase timeline. The page is
-static markup in `tennis.html`; `entry.ts` only tags the runtime.
+Truth of Tennis — five timeless, Product Owner-approved first-principle
+pointers. No ages, phases, schedules, equipment lists, progression systems,
+or footer. The page is static markup in `tennis.html`; `entry.ts` only tags
+the runtime.
 
 ## Files
 

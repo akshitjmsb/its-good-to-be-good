@@ -43,7 +43,7 @@ expanding.
   saves only count when the server confirms.
 - **Khyaali Bhoot** — write to the fear that's haunting you, let it go,
   watch it dissolve. Deliberately keeps nothing.
-- **Tennis** — the cradle-to-centre-court roadmap.
+- **Tennis** — five timeless first-principle pointers.
 - **Food** — a next-meal body-budget cue built around dressing every carb.
 
 ---
