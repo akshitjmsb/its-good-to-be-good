@@ -7,8 +7,8 @@ with two rings around him —
 
 - **Circle (soul)** — five pillars that act in place and leave nothing
   behind: Sleep, Food, Movement, Mindfulness, Rooh. Breathe, OM, and Focus
-  appear only inside Mindfulness. Each pillar renders Action first and Gyaan
-  afterward. Circle experiences never
+  appear only inside Mindfulness. Each pillar renders Action first and
+  supporting guidance afterward. Circle experiences never
   navigate.
 - **Square (purpose)** — tools that open their own page and accumulate a
   record: To do, Khyaali Bhoot, Tennis.

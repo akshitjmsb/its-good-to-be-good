@@ -153,10 +153,9 @@ export function initBeingOrbit({
     `;
   }
 
-  function renderGyaan(copy: PillarCopy): string {
+  function renderGuidance(copy: PillarCopy): string {
     return `
-      <section class="pillar-gyaan" aria-label="${escapeHtml(copy.title)} Gyaan">
-        <p class="pillar-gyaan__label">Gyaan</p>
+      <section class="pillar-guidance" aria-label="${escapeHtml(copy.title)} guidance">
         ${renderPillarCopy(copy)}
       </section>
     `;
@@ -198,7 +197,7 @@ export function initBeingOrbit({
           },
         ])}
       </section>
-      ${renderGyaan(copy)}
+      ${renderGuidance(copy)}
     `;
   }
 
@@ -223,7 +222,7 @@ export function initBeingOrbit({
           </button>
         </div>
       </section>
-      ${renderGyaan(copy)}
+      ${renderGuidance(copy)}
     `;
   }
 
@@ -259,7 +258,7 @@ export function initBeingOrbit({
           </button>
         </div>
       </section>
-      ${renderGyaan(PILLAR_COPY.mindfulness)}
+      ${renderGuidance(PILLAR_COPY.mindfulness)}
     `;
   }
 
@@ -295,7 +294,7 @@ export function initBeingOrbit({
           },
         ])}
       </section>
-      ${renderGyaan(copy)}
+      ${renderGuidance(copy)}
     `;
   }
 
@@ -315,7 +314,7 @@ export function initBeingOrbit({
       host.className = 'pillar-embedded-view pillar-embedded-view--action';
       panel.appendChild(host);
       renderFoodView(host, new Date());
-      panel.insertAdjacentHTML('beforeend', renderGyaan(foodCopy()));
+      panel.insertAdjacentHTML('beforeend', renderGuidance(foodCopy()));
     } else if (name === 'movement') {
       panel.innerHTML = movementOverview();
     } else if (name === 'mindfulness') {

@@ -35,7 +35,7 @@ design system; this file is the operating contract.
 7. Mobile first: verify at ~375×812 before desktop.
 8. Product values are binding: apply the `CLAUDE.md` decision filter to every
    user-visible change. Lead with the lowest-friction action, then disclose
-   Gyaan only afterward.
+   supporting guidance only afterward.
 9. Do not add or rewrite user-facing copy unless it is a meaningful pointer
    within the requested scope. Treat existing copy as approved; new copy must
    be explicitly approved by the Product Owner before shipping.

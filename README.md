@@ -26,7 +26,7 @@ Not a product. Not a showcase. A place to be.
 
 - Least barrier to entry.
 - Every word earns its place; only meaningful, approved pointers ship.
-- Action before Gyaan.
+- Action before explanation.
 - One clear next move.
 - Progressive disclosure.
 

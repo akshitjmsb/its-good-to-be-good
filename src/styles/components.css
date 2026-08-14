@@ -1932,7 +1932,7 @@ button.preview-card {
     gap: 0.5rem;
 }
 
-/* Five-pillar Gyaan layer: one law, one move, then optional depth. */
+/* Five-pillar guidance layer: one law and one approved pointer. */
 .pillar-copy {
     max-width: 32rem;
     margin: 0 auto;
@@ -2078,23 +2078,15 @@ button.preview-card {
     color: var(--home-text, #374151);
 }
 
-.pillar-gyaan {
+.pillar-guidance {
     max-width: 32rem;
     margin: 1.35rem auto 0;
     padding-top: 1.1rem;
     border-top: 1px solid var(--home-border, #e5e7eb);
 }
 
-.pillar-gyaan__label {
-    margin: 0 0 0.85rem;
-    color: var(--home-muted, #6b7280);
-    font-size: 0.66rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
-.pillar-gyaan .pillar-copy__kicker,
-.pillar-gyaan .pillar-copy__title {
+.pillar-guidance .pillar-copy__kicker,
+.pillar-guidance .pillar-copy__title {
     display: none;
 }
 

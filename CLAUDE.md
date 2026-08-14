@@ -19,8 +19,8 @@ decision filter, not marketing language.
 2. **Every word earns its place.** No filler, redundant instruction, or
    explanatory prose by default. User-facing text is limited to meaningful,
    Product Owner-approved pointers.
-3. **Action before Gyaan.** Present what the user can do before explaining why
-   it works.
+3. **Action before explanation.** Present what the user can do before any
+   supporting guidance.
 4. **One clear next move.** Do not make several actions compete for attention.
    Establish one primary action and keep alternatives quiet.
 5. **Progressive disclosure.** Keep the first view minimal. Reveal supporting
@@ -92,7 +92,7 @@ enforces the contract:
   nothing behind, **never navigates** (no `routeHref`). Sukoon has five
   pillars: Sleep, Food, Movement, Mindfulness, and Rooh. Breathe, OM, and
   Focus appear inside Mindfulness. Every pillar leads with its icon-led
-  Action layer and places its explanatory Gyaan afterward.
+  Action layer and places its supporting guidance afterward.
 - **`square`** — a purpose tool. Opens its own page (`routeHref`) from a
   corner tile on the home and accumulates a record. Current tools:
   `todo`, `khyaali-bhoot`, `tennis`.
