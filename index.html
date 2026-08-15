@@ -167,13 +167,24 @@
             <div id="being-meditate" class="being-meditate" hidden>
                 <div class="meditate-stage">
                     <div id="meditate-display" class="meditate-display" role="timer" aria-live="polite">10:00</div>
-                    <p id="meditate-status" class="meditate-status">10 minute session</p>
                     <button id="meditate-toggle" type="button" class="panel-btn meditate-btn" aria-pressed="false">Start</button>
-                    <section class="meditate-presets" aria-label="Session length">
-                        <button type="button" class="meditate-preset" data-duration="5" aria-pressed="false">5 min</button>
-                        <button type="button" class="meditate-preset" data-duration="10" aria-pressed="true">10 min</button>
-                        <button type="button" class="meditate-preset" data-duration="20" aria-pressed="false">20 min</button>
-                    </section>
+                    <p id="meditate-status" class="sr-only">10 minute session</p>
+                    <div class="meditate-options">
+                        <section class="meditate-presets" aria-label="Session length">
+                            <button type="button" class="meditate-preset" data-duration="5" aria-pressed="false">5 min</button>
+                            <button type="button" class="meditate-preset" data-duration="10" aria-pressed="true">10 min</button>
+                            <button type="button" class="meditate-preset" data-duration="20" aria-pressed="false">20 min</button>
+                        </section>
+                        <button id="meditate-breathe-toggle" type="button" class="being-sound-toggle" aria-pressed="true" aria-label="Breath chime">
+                            <span class="being-sound-toggle__glyph">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                    <path d="M11 5 6 9H2v6h4l5 4z"></path>
+                                    <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+                                    <path d="M19 5a9 9 0 0 1 0 14"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
                 <section id="meditate-breath" class="meditate-breath" aria-hidden="true">
@@ -186,20 +197,6 @@
                     </div>
                 </section>
 
-                <!-- Breath-chime toggle. OM and Focus live inside Mindfulness;
-                     the chime belongs with the timer. -->
-                <div class="being-sounds" role="group" aria-label="Ambient sound">
-                    <button id="meditate-breathe-toggle" type="button" class="being-sound-toggle" aria-pressed="true" aria-label="Breath chime">
-                        <span class="being-sound-toggle__glyph">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                <path d="M11 5 6 9H2v6h4l5 4z"></path>
-                                <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
-                                <path d="M19 5a9 9 0 0 1 0 14"></path>
-                            </svg>
-                        </span>
-                        <span>Chime</span>
-                    </button>
-                </div>
             </div>
 
             <!-- Five-pillar content panel. -->
