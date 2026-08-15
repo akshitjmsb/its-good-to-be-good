@@ -9,7 +9,7 @@
  * and Rooh. Tapping one opens its content on the activity stage below.
  *
  * Breathe / OM / Focus live inside Mindfulness. Movement holds Stretch +
- * Weights; Food mounts its deterministic meal calendar. Nothing navigates or
+ * Weights; Food mounts its deterministic next-meal pointer. Nothing navigates or
  * leaves a durable record.
  *
  * One thing is on the stage at a time. The "Stillness" control (or
@@ -223,8 +223,7 @@ export function initBeingOrbit({
     panel.innerHTML = '';
 
     if (name === 'food') {
-      // Food is a Sukoon practice: meal ticks last for this open panel only
-      // and disappear when the user returns to stillness.
+      // Food stays in the Sukoon layer and points only to the next meal.
       panel.innerHTML = `
         <section class="pillar-action-layer" aria-labelledby="food-title">
           ${renderActionHeader('Food', 'food-title')}
@@ -259,8 +258,6 @@ export function initBeingOrbit({
       return;
     }
 
-    // Render into a fresh host so the exercise view's delegated listener is
-    // dropped with the node on the next panel swap (no listener build-up).
     const host = document.createElement('div');
     host.className = 'pillar-embedded-view';
     panel.appendChild(host);

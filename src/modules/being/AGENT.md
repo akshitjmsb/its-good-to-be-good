@@ -13,8 +13,8 @@ with five Sukoon pillars riding the circle —
 - **Sleep** — the master pillar, including circadian/light pointers.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food
   module, keeping the module boundary intact.
-- **Movement** — Stretch links plus the deterministic, fully-offline Weights
-  calendar.
+- **Movement** — Stretch links plus three deterministic, fully-offline Weights
+  pointers for today.
 - **Mindfulness** — Breathe, OM, and Focus.
   Audio uses HTMLAudioElement for iOS autoplay reliability.
 - **Rooh** — relationships, safety, and co-regulation.
@@ -28,7 +28,7 @@ not add teaching or supporting prose without explicit Product Owner approval.
 - `orbit.ts` — `initBeingOrbit()`: orbit icon wiring, the activity stage,
   practice panels. Mounted by `src/home/bootstrap.ts`.
 - `meditate.ts` — `initMeditate()`: timer + breath ring + ambient audio.
-- `exercise-view.ts` — Weights panel renderer (calendar + cards).
+- `exercise-view.ts` — today's three Weights pointers.
 - `exercise-data.ts` — schedule + pools, deterministic and offline.
 - `exercise.css` — Weights panel styles (imported by orbit.ts).
 - `icon.svg` — module icon (monoline lotus).

@@ -88,15 +88,6 @@
     border-bottom: 1px solid var(--home-border, #e5e7eb);
 }
 
-.todo-note-sheet__eyebrow {
-    margin: 0 0 0.3rem;
-    color: var(--home-muted, #6b7280);
-    font-family: var(--home-font-family, 'Special Elite', monospace);
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
 .todo-note-sheet__heading {
     margin: 0;
     color: var(--home-ink, #111111);
@@ -192,7 +183,6 @@
     background: var(--home-border, #e5e7eb);
 }
 
-.todo-note-sheet__help,
 .todo-note-sheet__meta {
     margin: 0;
     color: var(--home-muted, #6b7280);
@@ -200,10 +190,6 @@
     font-size: 0.72rem;
     letter-spacing: 0.025em;
     line-height: 1.5;
-}
-
-.todo-note-sheet__help {
-    padding: 0.75rem 0 0.5rem;
 }
 
 .todo-note-sheet__meta {
@@ -323,20 +309,24 @@
 /* Jarvis gets a deliberately small service credential, never the browser session. */
 .todo-jarvis {
   margin-top: 2rem;
-  padding: 1rem;
-  border: 1px solid var(--home-border, #3f3f3f);
-  display: grid;
-  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--home-border, #3f3f3f);
 }
 
-.todo-jarvis h2,
-.todo-jarvis p { margin: 0; }
+.todo-jarvis summary {
+  color: var(--home-muted, #6b7280);
+  cursor: pointer;
+  font-size: 0.78rem;
+  list-style: none;
+}
 
-.todo-jarvis__eyebrow {
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0.62;
+.todo-jarvis summary::-webkit-details-marker { display: none; }
+.todo-jarvis summary::before { content: '+ '; }
+.todo-jarvis[open] summary::before { content: '− '; }
+
+.todo-jarvis > button,
+.todo-jarvis__credentials {
+  margin-top: 0.75rem;
 }
 
 .todo-jarvis > button,

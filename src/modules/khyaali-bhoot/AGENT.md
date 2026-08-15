@@ -8,13 +8,12 @@
 
 ## Purpose
 
-Daydream / parking-lot for fleeting fears and ideas. Write to the ghost,
-tap "Let it go", watch it dissolve. No history — the act of writing is
-the release.
+Write the fear, tap "Let it go", watch it dissolve. One prompt, one action,
+no response copy, no history.
 
 ## Files
 
 - `manifest.json` — module metadata (the manifest IS the registry).
-- `entry.ts` — the whole runtime (prompts, whispers, dissolve animation).
+- `entry.ts` — the dissolve action.
 - `khyaali-bhoot.css` — page styles (imported by entry.ts).
 - `icon.svg` — module icon.

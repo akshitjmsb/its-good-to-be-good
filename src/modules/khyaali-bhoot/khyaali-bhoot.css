@@ -3,11 +3,6 @@
    Vintage typewriter aesthetic, tokens from home-lock.css.
    ───────────────────────────────────────────────────────────────── */
 
-.kb-page .theme-icon {
-    margin-left: 0.5rem;
-    font-size: 1.4rem;
-}
-
 /* ── Container ────────────────────────────────────────────────────── */
 
 .kb-container {
@@ -43,7 +38,7 @@
     border: 1px solid var(--home-border, #e5e7eb);
     border-radius: 0.75rem;
     resize: vertical;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.8s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.5s ease;
     box-sizing: border-box;
 }
 
@@ -62,7 +57,7 @@
 .kb-textarea.kb-dissolving {
     opacity: 0;
     transform: translateY(-4px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
+    transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 /* ── Actions ──────────────────────────────────────────────────────── */
@@ -71,11 +66,6 @@
     text-align: center;
     margin-top: 1.25rem;
     transition: opacity 0.3s ease;
-}
-
-.kb-actions.kb-hidden {
-    opacity: 0;
-    pointer-events: none;
 }
 
 .kb-release-btn {
@@ -105,48 +95,6 @@
 .kb-release-btn:disabled {
     opacity: 0.35;
     cursor: not-allowed;
-}
-
-/* ── Whisper (post-release message) ───────────────────────────────── */
-
-.kb-whisper {
-    text-align: center;
-    color: var(--home-muted, #6b7280);
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-top: 2rem;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-}
-
-.kb-whisper--visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* ── Footer verse ─────────────────────────────────────────────────── */
-
-.kb-footer {
-    max-width: 480px;
-    margin: 3rem auto 1.5rem;
-    padding: 1.5rem 1rem 0;
-    border-top: 1px solid var(--home-border, #e5e7eb);
-    text-align: center;
-}
-
-.kb-verse {
-    color: var(--home-muted, #6b7280);
-    font-size: 0.85rem;
-    line-height: 1.8;
-    margin: 0;
-    letter-spacing: 0.01em;
-}
-
-.kb-attribution {
-    color: #9ca3af;
-    font-size: 0.75rem;
-    margin: 0.5rem 0 0;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────── */

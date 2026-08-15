@@ -1029,16 +1029,6 @@ button.preview-card {
     }
 }
 
-.todo-counter {
-    font-family: 'Special Elite', monospace;
-    color: #6b7280;
-    font-size: 0.8rem;
-    text-align: center;
-    margin: 0 0 1rem 0;
-    min-height: 1.2em;
-    letter-spacing: 0.025em;
-}
-
 /* Save-status line — a quiet typewriter aside under the list. Empty when
    idle (reserves a line so nothing jumps), fades in/out as state changes. */
 .todo-status {
@@ -2911,11 +2901,6 @@ button.preview-card {
 /* ─────────────────────────────────────────────────────────────────
    Tennis page — timeless first principles
    ───────────────────────────────────────────────────────────────── */
-
-.tennis-page .theme-icon {
-    margin-left: 0.5rem;
-    font-size: 1.4rem;
-}
 
 .tennis-truth {
     max-width: 28rem;

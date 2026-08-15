@@ -6,17 +6,15 @@
 
 ## Purpose
 
-A calm body-budget practice opened in the home activity stage. It leads with
-the meal relevant to the current time and the rule "never eat a naked carb."
-The user can move one day backward or forward, reveal the rest of the day's
-Breakfast, Lunch, Snack, and Dinner, and check meals off. Tuesdays and
-Thursdays are vegetarian-only; other days draw from the combined veg + non-veg
-pool. Check-offs last only for the open practice and clear on stillness.
+A calm body-budget practice opened in the home activity stage. It shows only
+the meal relevant to the current time and two approved food pointers. Tuesdays
+and Thursdays are vegetarian-only; other days draw from the combined veg +
+non-veg pool.
 
 ## Files
 
 - `manifest.json` — module metadata (the manifest IS the registry).
-- `view.ts` — next-meal cue, compact day navigation, meal cards, click handling; mounted
+- `view.ts` — next-meal cue and food pointers; mounted
   by `src/modules/being/orbit.ts` into the home activity stage.
 - `data.ts` — meal pool and the deterministic per-week shuffle.
 - `types.ts` — re-exports the public types from `data.ts`.
@@ -28,5 +26,4 @@ pool. Check-offs last only for the open practice and clear on stillness.
 
 - All meal names and ingredient strings render through
   `createSafeHtml` / `escapeHtml`.
-- Food is intentionally session-only: it must not write a record or retain
-  check-offs after the practice is closed.
+- Food is intentionally read-only and session-only.

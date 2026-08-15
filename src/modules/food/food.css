@@ -1,253 +1,46 @@
-/* Food practice — one decision now, the rest within reach. */
+/* Food — one meal, two pointers. */
 
 .food-view {
-    font-family: 'Special Elite', monospace;
     color: var(--home-text, #374151);
+    font-family: var(--home-font-family, 'Special Elite', monospace);
 }
 
-.food-day {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-}
-
-.food-day__identity {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.2rem;
-    text-align: center;
-}
-
-.food-day__identity span {
-    font-size: 0.9rem;
-}
-
-.food-day__identity small {
-    color: var(--home-muted, #6b7280);
-    font-size: 0.64rem;
-    letter-spacing: 0.04em;
-}
-
-.food-day__nav,
-.food-day__today {
-    min-width: 44px;
-    min-height: 44px;
-    background: var(--home-surface, #ffffff);
-    border: 1px solid var(--home-border, #e5e7eb);
-    border-radius: 0.5rem;
-    color: var(--home-muted, #6b7280);
-    font-family: 'Special Elite', monospace;
-    cursor: pointer;
-}
-
-.food-day__nav {
-    font-size: 1rem;
-}
-
-.food-day__today {
-    min-height: 36px;
-    display: block;
-    margin: 0.6rem auto 0;
-    padding: 0.35rem 0.75rem;
-    font-size: 0.68rem;
-}
-
-.food-day__nav:hover,
-.food-day__today:hover,
-.food-check:hover {
-    background: var(--home-card-bg, #f8f9fa);
-    border-color: #d1d5db;
-    color: var(--home-text, #374151);
-}
-
-.food-day__nav:focus-visible,
-.food-day__today:focus-visible,
-.food-check:focus-visible {
-    outline: 2px solid var(--home-text, #374151);
-    outline-offset: 2px;
-}
-
-.food-rule {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding: 0.65rem 0.75rem;
-    background: #eef2ed;
-    border: 1px solid #d8e0d6;
-    border-radius: 0.5rem;
-}
-
-.food-rule span {
-    color: #4b5e4a;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.food-rule p {
+.food-view__meal {
     margin: 0;
-    color: #4b5e4a;
-    font-size: 0.72rem;
-    text-align: right;
-}
-
-.food-next {
-    margin-top: 0.75rem;
-    padding: 0.9rem;
-    background: var(--home-surface, #ffffff);
-    border: 1px solid var(--home-border, #e5e7eb);
-    border-radius: 0.6rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.food-next__eyebrow,
-.food-meal__label {
     color: var(--home-muted, #6b7280);
-    font-size: 0.64rem;
+    font-size: 0.7rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
 }
 
-.food-next__eyebrow {
-    margin: 0 0 0.45rem;
-}
-
-.food-next__name {
-    margin: 0;
+.food-view__name {
+    margin: 0.45rem 0 0;
     color: var(--home-ink, #111111);
-    font-size: 1.05rem;
-    font-weight: normal;
+    font: inherit;
+    font-size: 1.1rem;
     line-height: 1.4;
 }
 
-.food-meal__ingredients,
-.food-next__note {
+.food-meal__ingredients {
     margin: 0.35rem 0 0;
     color: var(--home-muted, #6b7280);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     line-height: 1.5;
 }
 
-.food-next__note {
-    font-style: italic;
-}
-
-.food-next__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-top: 0.85rem;
-    padding-top: 0.75rem;
+.food-pointers {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
     border-top: 1px solid var(--home-border, #e5e7eb);
 }
 
-.food-next__footer p {
+.food-pointers p {
     margin: 0;
+    line-height: 1.5;
+}
+
+.food-pointers p + p {
+    margin-top: 0.35rem;
     color: var(--home-muted, #6b7280);
-    font-size: 0.66rem;
-    line-height: 1.4;
-}
-
-.food-next__footer p span {
-    display: block;
-    margin-bottom: 0.15rem;
-    color: var(--home-text, #374151);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.food-check {
-    min-width: 44px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.3rem;
-    padding: 0.35rem 0.6rem;
-    background: var(--home-surface, #ffffff);
-    border: 1px solid #d1d5db;
-    border-radius: 0.45rem;
-    color: var(--home-text, #374151);
-    font-family: 'Special Elite', monospace;
-    font-size: 0.66rem;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.food-check[aria-pressed='true'] {
-    background: var(--home-text, #374151);
-    border-color: var(--home-text, #374151);
-    color: var(--home-surface, #ffffff);
-}
-
-.food-next.is-checked,
-.food-meal.is-checked {
-    opacity: 0.58;
-}
-
-.food-next.is-checked .food-next__name,
-.food-meal.is-checked .food-meal__name {
-    color: var(--home-muted, #6b7280);
-    text-decoration: line-through;
-    text-decoration-thickness: 1px;
-}
-
-.food-rest {
-    margin-top: 0.85rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--home-border, #e5e7eb);
-}
-
-.food-rest summary {
-    color: var(--home-muted, #6b7280);
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-}
-
-.food-rest__list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-    margin-top: 0.65rem;
-}
-
-.food-meal {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.65rem 0.75rem;
-    background: var(--home-card-bg, #f8f9fa);
-    border: 1px solid var(--home-border, #e5e7eb);
-    border-radius: 0.5rem;
-}
-
-.food-meal__copy {
-    min-width: 0;
-}
-
-.food-meal__name {
-    margin: 0.25rem 0 0;
-    color: var(--home-text, #374151);
-    font-size: 0.78rem;
-    line-height: 1.4;
-}
-
-@media (max-width: 380px) {
-    .food-rule,
-    .food-next__footer {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .food-rule p {
-        text-align: left;
-    }
+    font-size: 0.75rem;
 }

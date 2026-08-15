@@ -13,6 +13,10 @@ for each task. It survives reloads, crashes, and offline spells. The page is
 plain TypeScript + DOM (no framework); this module is the home-side handle
 that routes to it.
 
+Jarvis pairing is kept behind one disclosure. Save state appears only when it
+has something meaningful to report; task counts and note helper prose stay out
+of the primary view.
+
 ## Architecture
 
 - `manifest.json` — module metadata.

@@ -330,20 +330,6 @@ function renderList(tasks: Task[]): void {
   if (animate) flipAnimate(listEl, prevRects);
 }
 
-function renderCounter(tasks: Task[]): void {
-  const counterEl = document.getElementById('todo-counter');
-  if (!counterEl) return;
-
-  const roots = tasks.filter(t => !t.parent_id);
-  if (roots.length === 0) {
-    counterEl.textContent = '';
-    return;
-  }
-
-  const done = roots.filter(t => t.completed).length;
-  counterEl.textContent = `${done} of ${roots.length} done`;
-}
-
 /* ── save-status indicator ───────────────────────────────────────── */
 
 const STATUS_TEXT: Record<SaveStatus, string> = {
@@ -698,7 +684,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const refresh = () => {
     // Don't repaint the list out from under an in-progress interaction.
     if (!editingId && !noteEditorId && !subtaskInputActive && !isDragging) renderList(tasks);
-    renderCounter(tasks);
   };
 
   /** Optimistic: normalise + WAL + render immediately, queue the save. */

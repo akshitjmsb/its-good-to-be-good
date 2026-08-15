@@ -42,8 +42,6 @@
             </button>
         </form>
 
-        <p id="todo-counter" class="todo-counter" aria-live="polite"></p>
-
         <div id="tasks-list-todo" class="todo-list" role="list"></div>
 
         <p id="todo-status" class="todo-status" data-state="idle" role="status" aria-live="polite"></p>
@@ -57,15 +55,11 @@
             </div>
         </section>
 
-        <section class="todo-jarvis" aria-labelledby="todo-jarvis-heading">
-            <div>
-                <p class="todo-jarvis__eyebrow">Private integration</p>
-                <h2 id="todo-jarvis-heading">Jarvis</h2>
-                <p>Let your Mac mini read and update this list with a revocable, To-Do-only credential.</p>
-            </div>
+        <details class="todo-jarvis">
+            <summary id="todo-jarvis-heading">Jarvis</summary>
             <button id="todo-jarvis-connect" type="button" hidden>Pair Jarvis</button>
             <div id="todo-jarvis-credentials" class="todo-jarvis__credentials" aria-live="polite"></div>
-        </section>
+        </details>
     </div>
 
     <!-- One focused sheet per task: title stays succinct in the list while
@@ -74,10 +68,7 @@
     <dialog id="todo-note-dialog" class="todo-note-dialog" aria-labelledby="todo-note-heading">
         <section class="todo-note-sheet">
             <header class="todo-note-sheet__header">
-                <div>
-                    <p class="todo-note-sheet__eyebrow">Task note</p>
-                    <h2 id="todo-note-heading" class="todo-note-sheet__heading">Notes</h2>
-                </div>
+                <h2 id="todo-note-heading" class="todo-note-sheet__heading">Notes</h2>
                 <button id="todo-note-close" type="button" class="todo-note-sheet__done">Done</button>
             </header>
 
@@ -90,7 +81,6 @@
                 autocomplete="off"
                 autocapitalize="sentences"
                 spellcheck="true"
-                aria-describedby="todo-note-help"
             >
 
             <div class="todo-note-toolbar" role="toolbar" aria-label="Text formatting">
@@ -106,7 +96,6 @@
                 <button type="button" data-note-command="clear" aria-label="Clear formatting" title="Clear formatting">Tx</button>
             </div>
 
-            <p id="todo-note-help" class="todo-note-sheet__help">Write freely. Formatting and every change are saved locally first.</p>
             <div
                 id="todo-note-editor"
                 class="todo-note-editor"
