@@ -21,6 +21,7 @@ import { initMeditate } from './meditate';
 import { renderExerciseView } from './exercise-view';
 import { STRETCH_ROUTINES } from './exercise-data';
 import { escapeHtml } from '../../utils/escapeHtml';
+import { initBreathReset } from './breath-reset';
 
 interface PracticeLink {
   label: string;
@@ -67,6 +68,7 @@ export function initBeingOrbit({
   if (!stage || !meditate || !panel) return;
 
   let openMode: Mode | null = null;
+  const breathReset = initBreathReset({ beforeStart: () => close() });
 
   // Flatten the body-part stretch routines into labelled links (Back → Back 1…).
   function stretchLinks(): PracticeLink[] {
@@ -268,6 +270,7 @@ export function initBeingOrbit({
   // panel — and hide the other.
   function enter(mode: Mode): void {
     if (!stage || !meditate || !panel) return;
+    breathReset?.stop();
     const isMeditate = mode === 'breathe' || mode === 'om' || mode === 'focus';
 
     if (isMeditate) {

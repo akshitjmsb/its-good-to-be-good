@@ -1589,7 +1589,18 @@ button.preview-card {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    pointer-events: none;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.being-orbit__figure:focus-visible {
+    outline: 2px solid var(--home-text, #374151);
+    outline-offset: 4px;
 }
 
 .being-figure {
@@ -1599,6 +1610,58 @@ button.preview-card {
     opacity: 0.95;
     border: 1px solid var(--home-border, #e5e7eb);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: opacity 0.35s ease;
+}
+
+.being-reset__ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7.25rem;
+    height: 7.25rem;
+    margin: -3.625rem 0 0 -3.625rem;
+    border: 1px solid var(--home-muted, #6b7280);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1);
+    transition-property: transform, opacity, border-color;
+    transition-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+.being-orbit.is-resetting .being-reset__ring {
+    opacity: 0.9;
+}
+
+.being-orbit__figure[data-phase='inhale'] .being-reset__ring {
+    transform: scale(1.82);
+    border-color: var(--home-text, #374151);
+    transition-duration: 4s, 0.35s, 4s;
+}
+
+.being-orbit__figure[data-phase='exhale'] .being-reset__ring {
+    transform: scale(1);
+    border-color: var(--home-muted, #6b7280);
+    transition-duration: 6s, 0.35s, 6s;
+}
+
+.being-orbit.is-resetting .being-figure {
+    opacity: 0.72;
+}
+
+.being-orbit .orbit-icon,
+.being-orbit .orbit-tool,
+.being-orbit .orbit-ring-name {
+    transition-property: background-color, border-color, color, box-shadow,
+        opacity;
+    transition-duration: 0.2s, 0.2s, 0.2s, 0.2s, 0.35s;
+}
+
+.being-orbit.is-resetting .orbit-icon,
+.being-orbit.is-resetting .orbit-tool,
+.being-orbit.is-resetting .orbit-ring-name {
+    opacity: 0.18;
+    pointer-events: none;
 }
 
 .orbit-icon {
@@ -1627,6 +1690,18 @@ button.preview-card {
         rotate(calc(-1 * var(--a)));
     transition: background-color 0.2s ease, border-color 0.2s ease,
         color 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .being-reset__ring {
+        transition-property: opacity, border-color;
+    }
+
+    .being-orbit__figure[data-phase='inhale'] .being-reset__ring,
+    .being-orbit__figure[data-phase='exhale'] .being-reset__ring {
+        transform: scale(1.3);
+        transition-duration: 0.01ms, 0.01ms;
+    }
 }
 
 .orbit-icon:hover {
