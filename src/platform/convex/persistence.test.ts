@@ -43,6 +43,8 @@ describe('loadTasks', () => {
         completed: false,
         position: 0,
         parentId: 'p',
+        remindAt: '2026-01-02T14:00:00.000Z',
+        reminderRevision: 'reminder-1',
         updatedAt: '2026-01-01T00:00:00.000Z',
         createdAt: '2026-01-01T00:00:00.000Z',
       },
@@ -57,6 +59,8 @@ describe('loadTasks', () => {
         completed: false,
         position: 0,
         parent_id: 'p',
+        remind_at: '2026-01-02T14:00:00.000Z',
+        reminder_revision: 'reminder-1',
         updated_at: '2026-01-01T00:00:00.000Z',
         created_at: '2026-01-01T00:00:00.000Z',
       },
@@ -81,6 +85,8 @@ describe('saveTasks', () => {
         completed: false,
         position: 0,
         parent_id: null,
+        remind_at: '2026-01-03T14:00:00.000Z',
+        reminder_revision: 'revision-1',
         updated_at: '2026-01-01T00:00:00.000Z',
         created_at: '2026-01-01T00:00:00.000Z',
       },
@@ -104,6 +110,8 @@ describe('saveTasks', () => {
           completed: false,
           position: 0,
           parentId: null,
+          remindAt: '2026-01-03T14:00:00.000Z',
+          reminderRevision: 'revision-1',
           updatedAt: '2026-01-01T00:00:00.000Z',
           createdAt: '2026-01-01T00:00:00.000Z',
         },
@@ -114,6 +122,8 @@ describe('saveTasks', () => {
           completed: false,
           position: 0,
           parentId: 'id-1',
+          remindAt: null,
+          reminderRevision: null,
           updatedAt: '2026-01-02T00:00:00.000Z',
           createdAt: '2026-01-02T00:00:00.000Z',
         },
@@ -123,10 +133,16 @@ describe('saveTasks', () => {
   });
 
   it('can flush a tombstone-only save (delete with nothing to upsert)', async () => {
-    await saveTasks('u', [], [{ id: 'removed-1', deleted_at: '2026-01-02T00:00:00.000Z' }]);
+    await saveTasks(
+      'u',
+      [],
+      [{ id: 'removed-1', deleted_at: '2026-01-02T00:00:00.000Z' }]
+    );
     expect(mutation).toHaveBeenCalledWith('tasks.save', {
       tasks: [],
-      deleted: [{ clientId: 'removed-1', deletedAt: '2026-01-02T00:00:00.000Z' }],
+      deleted: [
+        { clientId: 'removed-1', deletedAt: '2026-01-02T00:00:00.000Z' },
+      ],
     });
   });
 

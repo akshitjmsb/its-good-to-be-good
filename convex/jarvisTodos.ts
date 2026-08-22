@@ -58,6 +58,8 @@ function taskView(row: {
   completed: boolean;
   position: number;
   parentId: string | null;
+  remindAt?: string;
+  reminderRevision?: string;
   updatedAt: string;
   createdAt: string;
 }): JarvisTaskRecord {
@@ -68,6 +70,8 @@ function taskView(row: {
     completed: row.completed,
     position: row.position,
     parentId: row.parentId,
+    remindAt: row.remindAt ?? null,
+    reminderRevision: row.reminderRevision ?? null,
     updatedAt: row.updatedAt,
     createdAt: row.createdAt,
   };
@@ -302,6 +306,8 @@ export const execute = internalMutation({
           completed: next.completed,
           position: next.position,
           parentId: next.parentId,
+          remindAt: next.remindAt ?? undefined,
+          reminderRevision: next.reminderRevision ?? undefined,
           updatedAt: next.updatedAt,
         });
       }
@@ -316,6 +322,8 @@ export const execute = internalMutation({
         completed: next.completed,
         position: next.position,
         parentId: next.parentId,
+        remindAt: next.remindAt ?? undefined,
+        reminderRevision: next.reminderRevision ?? undefined,
         updatedAt: next.updatedAt,
         createdAt: next.createdAt,
       });

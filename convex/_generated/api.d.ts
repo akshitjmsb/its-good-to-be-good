@@ -13,6 +13,8 @@ import type * as http from "../http.js";
 import type * as jarvisTodoCredentials from "../jarvisTodoCredentials.js";
 import type * as jarvisTodos from "../jarvisTodos.js";
 import type * as tasks from "../tasks.js";
+import type * as todoReminderDelivery from "../todoReminderDelivery.js";
+import type * as todoReminders from "../todoReminders.js";
 import type * as users from "../users.js";
 
 import type {
@@ -27,6 +29,8 @@ declare const fullApi: ApiFromModules<{
   jarvisTodoCredentials: typeof jarvisTodoCredentials;
   jarvisTodos: typeof jarvisTodos;
   tasks: typeof tasks;
+  todoReminderDelivery: typeof todoReminderDelivery;
+  todoReminders: typeof todoReminders;
   users: typeof users;
 }>;
 

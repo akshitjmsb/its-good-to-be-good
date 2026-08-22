@@ -1,128 +1,288 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>To Do — It's Good to Be Good</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="src/styles/index.css">
-    <link rel="stylesheet" href="src/styles/home-lock.css">
-    <link rel="icon" href="/vitruvian-logo.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="It's Good to Be Good">
-    <meta name="theme-color" content="#111111">
-</head>
-<body class="home-vintage-lock">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="src/styles/index.css" />
+    <link rel="stylesheet" href="src/styles/home-lock.css" />
+    <link rel="icon" href="/vitruvian-logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="It's Good to Be Good" />
+    <meta name="theme-color" content="#111111" />
+  </head>
+  <body class="home-vintage-lock">
     <div id="app-container" class="app-container todo-page">
-        <header class="todo-header">
-            <a href="index.html" class="todo-back" aria-label="Back to home">← Home</a>
-            <h1 class="todo-title">To Do</h1>
-        </header>
+      <header class="todo-header">
+        <a href="index.html" class="todo-back" aria-label="Back to home"
+          >← Home</a
+        >
+        <h1 class="todo-title">To Do</h1>
+      </header>
 
-        <form id="add-task-form-todo" class="todo-add-form" autocomplete="off" action="#">
-            <input
-                id="todo-input"
-                type="text"
-                inputmode="text"
-                enterkeyhint="done"
-                autocomplete="off"
-                autocapitalize="sentences"
-                spellcheck="true"
-                placeholder="Add a task and press return"
-                aria-label="Add a task"
-            >
-            <button id="todo-add-submit" class="todo-add-submit" type="submit" disabled>
-                <span aria-hidden="true">↵</span>
-                <span>Add</span>
-            </button>
-        </form>
+      <form
+        id="add-task-form-todo"
+        class="todo-add-form"
+        autocomplete="off"
+        action="#"
+      >
+        <input
+          id="todo-input"
+          type="text"
+          inputmode="text"
+          enterkeyhint="done"
+          autocomplete="off"
+          autocapitalize="sentences"
+          spellcheck="true"
+          placeholder="Add a task and press return"
+          aria-label="Add a task"
+        />
+        <button
+          id="todo-add-submit"
+          class="todo-add-submit"
+          type="submit"
+          disabled
+        >
+          <span aria-hidden="true">↵</span>
+          <span>Add</span>
+        </button>
+      </form>
 
-        <div id="tasks-list-todo" class="todo-list" role="list"></div>
+      <div id="tasks-list-todo" class="todo-list" role="list"></div>
 
-        <p id="todo-status" class="todo-status" data-state="idle" role="status" aria-live="polite"></p>
+      <p
+        id="todo-status"
+        class="todo-status"
+        data-state="idle"
+        role="status"
+        aria-live="polite"
+      ></p>
 
-        <section id="todo-legacy-recovery" class="todo-recovery" aria-labelledby="todo-recovery-heading" hidden>
-            <h2 id="todo-recovery-heading">Local tasks found</h2>
-            <p id="todo-legacy-recovery-message"></p>
-            <div class="todo-recovery__actions">
-                <button id="todo-legacy-restore" type="button">Restore to this account</button>
-                <button id="todo-legacy-dismiss" type="button">Not now</button>
-            </div>
-        </section>
+      <section
+        id="todo-legacy-recovery"
+        class="todo-recovery"
+        aria-labelledby="todo-recovery-heading"
+        hidden
+      >
+        <h2 id="todo-recovery-heading">Local tasks found</h2>
+        <p id="todo-legacy-recovery-message"></p>
+        <div class="todo-recovery__actions">
+          <button id="todo-legacy-restore" type="button">
+            Restore to this account
+          </button>
+          <button id="todo-legacy-dismiss" type="button">Not now</button>
+        </div>
+      </section>
 
-        <details class="todo-jarvis">
-            <summary id="todo-jarvis-heading">Jarvis</summary>
-            <button id="todo-jarvis-connect" type="button" hidden>Pair Jarvis</button>
-            <div id="todo-jarvis-credentials" class="todo-jarvis__credentials" aria-live="polite"></div>
-        </details>
+      <details class="todo-jarvis">
+        <summary id="todo-jarvis-heading">Jarvis</summary>
+        <button id="todo-jarvis-connect" type="button" hidden>
+          Pair Jarvis
+        </button>
+        <div
+          id="todo-jarvis-credentials"
+          class="todo-jarvis__credentials"
+          aria-live="polite"
+        ></div>
+      </details>
     </div>
 
     <!-- One focused sheet per task: title stays succinct in the list while
          the note can hold the thinking behind it. The editor is wired in
          entry.ts and journaled before every network save. -->
-    <dialog id="todo-note-dialog" class="todo-note-dialog" aria-labelledby="todo-note-heading">
-        <section class="todo-note-sheet">
-            <header class="todo-note-sheet__header">
-                <h2 id="todo-note-heading" class="todo-note-sheet__heading">Notes</h2>
-                <button id="todo-note-close" type="button" class="todo-note-sheet__done">Done</button>
-            </header>
+    <dialog
+      id="todo-note-dialog"
+      class="todo-note-dialog"
+      aria-labelledby="todo-note-heading"
+    >
+      <section class="todo-note-sheet">
+        <header class="todo-note-sheet__header">
+          <h2 id="todo-note-heading" class="todo-note-sheet__heading">Notes</h2>
+          <button
+            id="todo-note-close"
+            type="button"
+            class="todo-note-sheet__done"
+          >
+            Done
+          </button>
+        </header>
 
-            <label class="todo-note-sheet__title-label" for="todo-note-title">Task</label>
+        <label class="todo-note-sheet__title-label" for="todo-note-title"
+          >Task</label
+        >
+        <input
+          id="todo-note-title"
+          class="todo-note-sheet__title"
+          type="text"
+          maxlength="200"
+          autocomplete="off"
+          autocapitalize="sentences"
+          spellcheck="true"
+        />
+
+        <section class="todo-reminder" aria-label="Reminder">
+          <button
+            id="todo-reminder-trigger"
+            class="todo-reminder__trigger"
+            type="button"
+            aria-expanded="false"
+          >
+            Remind me
+          </button>
+          <div id="todo-reminder-options" class="todo-reminder__options" hidden>
+            <button type="button" data-reminder-preset="hour">1 hour</button>
+            <button type="button" data-reminder-preset="tomorrow">
+              Tomorrow · 9:00
+            </button>
+            <button id="todo-reminder-choose" type="button">Choose time</button>
             <input
-                id="todo-note-title"
-                class="todo-note-sheet__title"
-                type="text"
-                maxlength="200"
-                autocomplete="off"
-                autocapitalize="sentences"
-                spellcheck="true"
-            >
-
-            <div class="todo-note-toolbar" role="toolbar" aria-label="Text formatting">
-                <button type="button" data-note-command="bold" aria-label="Bold" title="Bold"><strong>B</strong></button>
-                <button type="button" data-note-command="italic" aria-label="Italic" title="Italic"><em>I</em></button>
-                <button type="button" data-note-command="underline" aria-label="Underline" title="Underline"><u>U</u></button>
-                <span class="todo-note-toolbar__rule" aria-hidden="true"></span>
-                <button type="button" data-note-command="heading" aria-label="Heading" title="Heading">H</button>
-                <button type="button" data-note-command="unordered-list" aria-label="Bulleted list" title="Bulleted list">•</button>
-                <button type="button" data-note-command="ordered-list" aria-label="Numbered list" title="Numbered list">1.</button>
-                <button type="button" data-note-command="quote" aria-label="Quote" title="Quote">“</button>
-                <span class="todo-note-toolbar__rule" aria-hidden="true"></span>
-                <button type="button" data-note-command="clear" aria-label="Clear formatting" title="Clear formatting">Tx</button>
-            </div>
-
-            <div
-                id="todo-note-editor"
-                class="todo-note-editor"
-                contenteditable="true"
-                role="textbox"
-                aria-multiline="true"
-                aria-label="Task note"
-                data-placeholder="Write the details, the plan, or the thought you do not want to lose…"
-                spellcheck="true"
-            ></div>
-
-            <p id="todo-note-meta" class="todo-note-sheet__meta" aria-live="polite"></p>
+              id="todo-reminder-date"
+              type="datetime-local"
+              aria-label="Choose time"
+              hidden
+            />
+            <button id="todo-reminder-remove" type="button" hidden>
+              Remove
+            </button>
+          </div>
+          <p
+            id="todo-reminder-status"
+            class="todo-reminder__status"
+            role="status"
+            aria-live="polite"
+          ></p>
         </section>
+
+        <div
+          class="todo-note-toolbar"
+          role="toolbar"
+          aria-label="Text formatting"
+        >
+          <button
+            type="button"
+            data-note-command="bold"
+            aria-label="Bold"
+            title="Bold"
+          >
+            <strong>B</strong>
+          </button>
+          <button
+            type="button"
+            data-note-command="italic"
+            aria-label="Italic"
+            title="Italic"
+          >
+            <em>I</em>
+          </button>
+          <button
+            type="button"
+            data-note-command="underline"
+            aria-label="Underline"
+            title="Underline"
+          >
+            <u>U</u>
+          </button>
+          <span class="todo-note-toolbar__rule" aria-hidden="true"></span>
+          <button
+            type="button"
+            data-note-command="heading"
+            aria-label="Heading"
+            title="Heading"
+          >
+            H
+          </button>
+          <button
+            type="button"
+            data-note-command="unordered-list"
+            aria-label="Bulleted list"
+            title="Bulleted list"
+          >
+            •
+          </button>
+          <button
+            type="button"
+            data-note-command="ordered-list"
+            aria-label="Numbered list"
+            title="Numbered list"
+          >
+            1.
+          </button>
+          <button
+            type="button"
+            data-note-command="quote"
+            aria-label="Quote"
+            title="Quote"
+          >
+            “
+          </button>
+          <span class="todo-note-toolbar__rule" aria-hidden="true"></span>
+          <button
+            type="button"
+            data-note-command="clear"
+            aria-label="Clear formatting"
+            title="Clear formatting"
+          >
+            Tx
+          </button>
+        </div>
+
+        <div
+          id="todo-note-editor"
+          class="todo-note-editor"
+          contenteditable="true"
+          role="textbox"
+          aria-multiline="true"
+          aria-label="Task note"
+          data-placeholder="Write the details, the plan, or the thought you do not want to lose…"
+          spellcheck="true"
+        ></div>
+
+        <p
+          id="todo-note-meta"
+          class="todo-note-sheet__meta"
+          aria-live="polite"
+        ></p>
+      </section>
     </dialog>
 
-    <dialog id="todo-jarvis-dialog" class="todo-jarvis-dialog" aria-labelledby="todo-jarvis-dialog-heading">
-        <section>
-            <h2 id="todo-jarvis-dialog-heading">Jarvis credential</h2>
-            <p>Copy this once to the Jarvis <code>.env.local</code> on your Mac mini. It will not be shown again.</p>
-            <textarea id="todo-jarvis-secret" readonly rows="4" aria-label="Jarvis configuration"></textarea>
-            <div class="todo-jarvis-dialog__actions">
-                <button id="todo-jarvis-copy" type="button">Copy configuration</button>
-                <button id="todo-jarvis-close" type="button">Done</button>
-            </div>
-        </section>
+    <dialog
+      id="todo-jarvis-dialog"
+      class="todo-jarvis-dialog"
+      aria-labelledby="todo-jarvis-dialog-heading"
+    >
+      <section>
+        <h2 id="todo-jarvis-dialog-heading">Jarvis credential</h2>
+        <p>
+          Copy this once to the Jarvis <code>.env.local</code> on your Mac mini.
+          It will not be shown again.
+        </p>
+        <textarea
+          id="todo-jarvis-secret"
+          readonly
+          rows="4"
+          aria-label="Jarvis configuration"
+        ></textarea>
+        <div class="todo-jarvis-dialog__actions">
+          <button id="todo-jarvis-copy" type="button">
+            Copy configuration
+          </button>
+          <button id="todo-jarvis-close" type="button">Done</button>
+        </div>
+      </section>
     </dialog>
 
     <script type="module" src="src/modules/todo/entry.ts"></script>
-</body>
+  </body>
 </html>

@@ -20,6 +20,8 @@ interface ConvexTask {
   completed: boolean;
   position: number;
   parentId: string | null;
+  remindAt?: string | null;
+  reminderRevision?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -37,13 +39,15 @@ export async function loadTasks(_userId: string): Promise<Task[]> {
     // The HTTP client holds no session — attach a fresh JWT per call.
     await ensureFreshAuth();
     const rows = (await convex.query(api.tasks.list, {})) as ConvexTask[];
-    return rows.map((t) => ({
+    return rows.map(t => ({
       id: t.id,
       text: t.text,
       note: t.note ?? '',
       completed: t.completed,
       position: t.position ?? 0,
       parent_id: t.parentId ?? null,
+      remind_at: t.remindAt ?? null,
+      reminder_revision: t.reminderRevision ?? null,
       updated_at: t.updatedAt ?? undefined,
       created_at: t.createdAt ?? undefined,
     }));
@@ -76,6 +80,8 @@ export async function saveTasks(
     completed: task.completed,
     position: task.position ?? i,
     parentId: task.parent_id ?? null,
+    remindAt: task.remind_at ?? null,
+    reminderRevision: task.reminder_revision ?? null,
     updatedAt: task.updated_at ?? nowIso,
     createdAt: task.created_at ?? nowIso,
   }));

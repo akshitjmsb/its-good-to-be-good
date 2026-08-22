@@ -33,9 +33,16 @@ describe('reindex', () => {
   });
 
   it('breaks position ties deterministically by id (stable across runs)', () => {
-    const a = [task({ id: 'zzz', position: 0 }), task({ id: 'aaa', position: 0 })];
-    const first = reindex(a).sort((x, y) => x.position - y.position).map(t => t.id);
-    const second = reindex([...a].reverse()).sort((x, y) => x.position - y.position).map(t => t.id);
+    const a = [
+      task({ id: 'zzz', position: 0 }),
+      task({ id: 'aaa', position: 0 }),
+    ];
+    const first = reindex(a)
+      .sort((x, y) => x.position - y.position)
+      .map(t => t.id);
+    const second = reindex([...a].reverse())
+      .sort((x, y) => x.position - y.position)
+      .map(t => t.id);
     expect(first).toEqual(second); // order is input-independent
     expect(first[0]).toBe('aaa'); // 'aaa' < 'zzz'
   });
@@ -48,7 +55,9 @@ describe('reindex', () => {
     ];
     const out = reindex(input);
     expect(input[0].position).toBe(3); // input untouched
-    const kids = out.filter(t => t.parent_id === 'p').sort((a, b) => a.position - b.position);
+    const kids = out
+      .filter(t => t.parent_id === 'p')
+      .sort((a, b) => a.position - b.position);
     expect(kids.map(k => k.id)).toEqual(['c2', 'c1']);
     expect(kids.map(k => k.position)).toEqual([0, 1]);
   });
@@ -91,14 +100,38 @@ describe('applyCompletion — bidirectional cascade', () => {
   ];
 
   it('completing a parent completes all children', () => {
-    const out = applyCompletion(tree(), 'p', true, '2026-01-01T00:00:00.000Z');
+    const withReminders = tree().map(item => ({
+      ...item,
+      remind_at: '2026-01-02T00:00:00.000Z',
+      reminder_revision: `reminder-${item.id}`,
+    }));
+    const out = applyCompletion(
+      withReminders,
+      'p',
+      true,
+      '2026-01-01T00:00:00.000Z'
+    );
     expect(out.every(t => t.completed)).toBe(true);
+    expect(
+      out.every(t => t.remind_at === null && t.reminder_revision === null)
+    ).toBe(true);
   });
 
   it('un-completing a parent un-completes all children', () => {
-    const allDone = tree().map(t => ({ ...t, completed: true }));
-    const out = applyCompletion(allDone, 'p', false, '2026-01-01T00:00:00.000Z');
+    const allDone = tree().map(t => ({
+      ...t,
+      completed: true,
+      remind_at: null,
+      reminder_revision: null,
+    }));
+    const out = applyCompletion(
+      allDone,
+      'p',
+      false,
+      '2026-01-01T00:00:00.000Z'
+    );
     expect(out.every(t => !t.completed)).toBe(true);
+    expect(out.every(t => t.remind_at === null)).toBe(true);
   });
 
   it('completing the last incomplete child auto-completes the parent', () => {
@@ -107,13 +140,23 @@ describe('applyCompletion — bidirectional cascade', () => {
       task({ id: 'c1', parent_id: 'p', completed: true }),
       task({ id: 'c2', parent_id: 'p', completed: false }),
     ];
-    const out = applyCompletion(oneLeft, 'c2', true, '2026-01-01T00:00:00.000Z');
+    const out = applyCompletion(
+      oneLeft,
+      'c2',
+      true,
+      '2026-01-01T00:00:00.000Z'
+    );
     expect(out.find(t => t.id === 'p')!.completed).toBe(true);
   });
 
   it('un-completing a child auto-uncompletes a completed parent', () => {
     const allDone = tree().map(t => ({ ...t, completed: true }));
-    const out = applyCompletion(allDone, 'c1', false, '2026-01-01T00:00:00.000Z');
+    const out = applyCompletion(
+      allDone,
+      'c1',
+      false,
+      '2026-01-01T00:00:00.000Z'
+    );
     expect(out.find(t => t.id === 'p')!.completed).toBe(false);
   });
 
@@ -158,14 +201,18 @@ describe('mergeTasks — non-destructive sync', () => {
   });
 
   it('resolves a conflict by later updated_at (local newer / unsaved edit wins)', () => {
-    const local = [task({ id: 'x', text: 'my unsaved edit', updated_at: LATER })];
+    const local = [
+      task({ id: 'x', text: 'my unsaved edit', updated_at: LATER }),
+    ];
     const server = [task({ id: 'x', text: 'stale', updated_at: T })];
     expect(mergeTasks(local, server, [])[0].text).toBe('my unsaved edit');
   });
 
   it('keeps a rich note with the record that wins a conflict', () => {
     const local = [task({ id: 'x', note: '<p>older</p>', updated_at: T })];
-    const server = [task({ id: 'x', note: '<p>newer note</p>', updated_at: LATER })];
+    const server = [
+      task({ id: 'x', note: '<p>newer note</p>', updated_at: LATER }),
+    ];
     expect(mergeTasks(local, server)[0]?.note).toBe('<p>newer note</p>');
   });
 
@@ -177,9 +224,14 @@ describe('mergeTasks — non-destructive sync', () => {
   });
 
   it('drops a local-only record during a clean background sync', () => {
-    const merged = mergeTasks([task({ id: 'deleted-remotely', updated_at: T })], [], [], {
-      keepLocalOnly: false,
-    });
+    const merged = mergeTasks(
+      [task({ id: 'deleted-remotely', updated_at: T })],
+      [],
+      [],
+      {
+        keepLocalOnly: false,
+      }
+    );
     expect(merged).toEqual([]);
   });
 });
@@ -210,6 +262,8 @@ describe('canSync guard', () => {
     ['saveError', { saveError: true }],
     ['signedOut', { signedOut: true }],
   ])('blocks sync while %s is set', (_label, patch) => {
-    expect(canSync({ ...ok, ...(patch as Partial<SyncGuardState>) })).toBe(false);
+    expect(canSync({ ...ok, ...(patch as Partial<SyncGuardState>) })).toBe(
+      false
+    );
   });
 });

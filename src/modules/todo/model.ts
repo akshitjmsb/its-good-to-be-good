@@ -43,7 +43,10 @@ export function topLevel(tasks: Task[]): Task[] {
 }
 
 /** A parent's subtasks in display order. */
-export function childrenOf(tasks: Task[], parentId: string | undefined | null): Task[] {
+export function childrenOf(
+  tasks: Task[],
+  parentId: string | undefined | null
+): Task[] {
   if (!parentId) return [];
   return tasks.filter(t => t.parent_id === parentId).sort(byDisplay);
 }
@@ -60,14 +63,18 @@ export function reindex(tasks: Task[]): Task[] {
   const next = tasks.map(t => ({ ...t }));
 
   const roots = next.filter(t => !t.parent_id).sort(byOrder);
-  roots.forEach((t, i) => { t.position = i; });
+  roots.forEach((t, i) => {
+    t.position = i;
+  });
 
   const parentIds = new Set(
     next.filter(t => t.parent_id).map(t => t.parent_id as string)
   );
   for (const pid of parentIds) {
     const kids = next.filter(t => t.parent_id === pid).sort(byOrder);
-    kids.forEach((t, i) => { t.position = i; });
+    kids.forEach((t, i) => {
+      t.position = i;
+    });
   }
   return next;
 }
@@ -92,25 +99,31 @@ export function applyCompletion(
   const target = tasks.find(t => t.id === taskId);
   if (!target) return tasks;
 
-  let next = tasks.map(t =>
-    t.id === taskId ? { ...t, completed: checked, updated_at: ts } : t
-  );
+  const withCompletion = (task: Task, completed: boolean): Task => ({
+    ...task,
+    completed,
+    updated_at: ts,
+    ...(completed ? { remind_at: null, reminder_revision: null } : {}),
+  });
+
+  let next = tasks.map(t => (t.id === taskId ? withCompletion(t, checked) : t));
 
   if (!target.parent_id) {
     // Parent toggled → cascade to all of its children.
     next = next.map(t =>
       t.parent_id === taskId && t.completed !== checked
-        ? { ...t, completed: checked, updated_at: ts }
+        ? withCompletion(t, checked)
         : t
     );
   } else {
     // Child toggled → reconcile the parent from its siblings.
     const parentId = target.parent_id;
     const siblings = next.filter(t => t.parent_id === parentId);
-    const parentShouldBe = siblings.length > 0 && siblings.every(s => s.completed);
+    const parentShouldBe =
+      siblings.length > 0 && siblings.every(s => s.completed);
     next = next.map(t =>
       t.id === parentId && t.completed !== parentShouldBe
-        ? { ...t, completed: parentShouldBe, updated_at: ts }
+        ? withCompletion(t, parentShouldBe)
         : t
     );
   }

@@ -24,7 +24,11 @@
  */
 
 import { loadTasks, saveTasks } from '../../platform/convex/persistence';
-import { initAuthStore, getAuthState, subscribeAuth } from '../../platform/auth/store';
+import {
+  initAuthStore,
+  getAuthState,
+  subscribeAuth,
+} from '../../platform/auth/store';
 import {
   sanitizeTaskInput,
   createSafeHtml,
@@ -60,6 +64,16 @@ import {
   listJarvisTodoCredentials,
   revokeJarvisTodoCredential,
 } from '../../platform/convex/jarvis-todo-integration';
+import {
+  ensureTodoReminderDelivery,
+  registerTodoReminderWorker,
+} from '../../platform/convex/todo-reminders';
+import {
+  formatReminder,
+  oneHourFrom,
+  tomorrowAtNine,
+  toLocalDateTimeValue,
+} from './reminder-model';
 import './todo.css';
 
 const LIST_ID = 'tasks-list-todo';
@@ -71,7 +85,10 @@ const NOTE_SAVE_DEBOUNCE_MS = 350;
 /* ── helpers ─────────────────────────────────────────────────────── */
 
 function makeId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
     return crypto.randomUUID();
   }
   // Fallback for the rare non-secure context where randomUUID is missing.
@@ -134,6 +151,7 @@ function rowSignature(task: Task, tasks: Task[], isSubtask: boolean): string {
     done,
     task.text,
     noteHasContent(task.note) ? 'n' : '-',
+    task.remind_at ?? '-',
   ].join('|');
 }
 
@@ -150,15 +168,21 @@ function rowInnerHtml(task: Task, tasks: Task[], isSubtask: boolean): string {
     ? `<button type="button" class="todo-row__toggle" data-task-id="${safeTaskId}" aria-label="${isCollapsed ? 'Expand' : 'Collapse'}" title="${isCollapsed ? 'Expand' : 'Collapse'}">${isCollapsed ? '▸' : '▾'}</button>`
     : '';
 
-  const addSubBtn = (!isSubtask && !task.completed)
-    ? `<button type="button" class="todo-row__add-sub" data-task-id="${safeTaskId}" aria-label="Add subtask" title="Add subtask">+</button>`
-    : '';
+  const addSubBtn =
+    !isSubtask && !task.completed
+      ? `<button type="button" class="todo-row__add-sub" data-task-id="${safeTaskId}" aria-label="Add subtask" title="Add subtask">+</button>`
+      : '';
 
-  const badge = (hasChildren && !isSubtask)
-    ? `<span class="todo-row__badge">${kids.filter(k => k.completed).length}/${kids.length}</span>`
-    : '';
+  const badge =
+    hasChildren && !isSubtask
+      ? `<span class="todo-row__badge">${kids.filter(k => k.completed).length}/${kids.length}</span>`
+      : '';
 
   const checked = task.completed ? ' checked' : '';
+  const reminderText = task.remind_at ? formatReminder(task.remind_at) : '';
+  const reminder = reminderText
+    ? `<time class="todo-row__reminder" datetime="${escapeHtmlAttribute(task.remind_at!)}">${createSafeHtml(reminderText, { maxLength: 80 })}</time>`
+    : '';
 
   return `
     ${dragHandle}
@@ -169,13 +193,16 @@ function rowInnerHtml(task: Task, tasks: Task[], isSubtask: boolean): string {
       data-task-id="${safeTaskId}"
       aria-label="Mark task complete"${checked}
     >
-    <label
-      class="todo-row__label"
-      data-task-id="${safeTaskId}"
-      role="button"
-      tabindex="0"
-      title="Click to edit"
-    >${safeText}</label>
+    <span class="todo-row__content">
+      <span
+        class="todo-row__label"
+        data-task-id="${safeTaskId}"
+        role="button"
+        tabindex="0"
+        title="Click to edit"
+      >${safeText}</span>
+      ${reminder}
+    </span>
     ${badge}
     ${addSubBtn}
     <button
@@ -195,7 +222,11 @@ function rowInnerHtml(task: Task, tasks: Task[], isSubtask: boolean): string {
   `;
 }
 
-function createRowEl(task: Task, tasks: Task[], isSubtask: boolean): HTMLElement {
+function createRowEl(
+  task: Task,
+  tasks: Task[],
+  isSubtask: boolean
+): HTMLElement {
   const el = document.createElement('div');
   el.className = rowClassName(task, isSubtask);
   el.dataset.taskId = task.id;
@@ -213,7 +244,12 @@ function createRowEl(task: Task, tasks: Task[], isSubtask: boolean): HTMLElement
   return el;
 }
 
-function updateRow(el: HTMLElement, task: Task, tasks: Task[], isSubtask: boolean): void {
+function updateRow(
+  el: HTMLElement,
+  task: Task,
+  tasks: Task[],
+  isSubtask: boolean
+): void {
   const cls = rowClassName(task, isSubtask);
   if (el.className !== cls && !el.classList.contains('todo-row--enter')) {
     el.className = cls;
@@ -231,7 +267,9 @@ function updateRow(el: HTMLElement, task: Task, tasks: Task[], isSubtask: boolea
 
 /** Flat, ordered list of rows to render: each parent followed by its
  *  expanded children. */
-function flatRenderOrder(tasks: Task[]): Array<{ task: Task; isSubtask: boolean }> {
+function flatRenderOrder(
+  tasks: Task[]
+): Array<{ task: Task; isSubtask: boolean }> {
   const out: Array<{ task: Task; isSubtask: boolean }> = [];
   for (const parent of topLevel(tasks)) {
     out.push({ task: parent, isSubtask: false });
@@ -245,30 +283,35 @@ function flatRenderOrder(tasks: Task[]): Array<{ task: Task; isSubtask: boolean 
 }
 
 /** FLIP: animate rows from their pre-render position to the new one. */
-function flipAnimate(listEl: HTMLElement, prevRects: Map<string, DOMRect>): void {
-  listEl.querySelectorAll<HTMLElement>('.todo-row[data-task-id]').forEach(el => {
-    const id = el.dataset.taskId;
-    if (!id) return;
-    const prev = prevRects.get(id);
-    if (!prev) return; // newly created — handled by the enter transition
-    const next = el.getBoundingClientRect();
-    const dy = prev.top - next.top;
-    if (Math.abs(dy) < 1) return;
+function flipAnimate(
+  listEl: HTMLElement,
+  prevRects: Map<string, DOMRect>
+): void {
+  listEl
+    .querySelectorAll<HTMLElement>('.todo-row[data-task-id]')
+    .forEach(el => {
+      const id = el.dataset.taskId;
+      if (!id) return;
+      const prev = prevRects.get(id);
+      if (!prev) return; // newly created — handled by the enter transition
+      const next = el.getBoundingClientRect();
+      const dy = prev.top - next.top;
+      if (Math.abs(dy) < 1) return;
 
-    el.style.transition = 'none';
-    el.style.transform = `translateY(${dy}px)`;
-    void el.offsetHeight; // force reflow so the transform is the start state
-    el.style.transition = `transform ${FLIP_MS}ms ease`;
-    el.style.transform = '';
-
-    const clear = (e: TransitionEvent) => {
-      if (e.propertyName !== 'transform') return;
-      el.style.transition = '';
+      el.style.transition = 'none';
+      el.style.transform = `translateY(${dy}px)`;
+      void el.offsetHeight; // force reflow so the transform is the start state
+      el.style.transition = `transform ${FLIP_MS}ms ease`;
       el.style.transform = '';
-      el.removeEventListener('transitionend', clear);
-    };
-    el.addEventListener('transitionend', clear);
-  });
+
+      const clear = (e: TransitionEvent) => {
+        if (e.propertyName !== 'transform') return;
+        el.style.transition = '';
+        el.style.transform = '';
+        el.removeEventListener('transitionend', clear);
+      };
+      el.addEventListener('transitionend', clear);
+    });
 }
 
 /**
@@ -282,7 +325,9 @@ function renderList(tasks: Task[]): void {
   const ordered = flatRenderOrder(tasks);
 
   if (ordered.length === 0) {
-    listEl.querySelectorAll('.todo-row[data-task-id]').forEach(el => el.remove());
+    listEl
+      .querySelectorAll('.todo-row[data-task-id]')
+      .forEach(el => el.remove());
     if (!listEl.querySelector('.todo-empty')) {
       const p = document.createElement('p');
       p.className = 'todo-empty';
@@ -296,11 +341,13 @@ function renderList(tasks: Task[]): void {
   const animate = !prefersReducedMotion();
   const prevRects = new Map<string, DOMRect>();
   const existing = new Map<string, HTMLElement>();
-  listEl.querySelectorAll<HTMLElement>('.todo-row[data-task-id]').forEach(el => {
-    const id = el.dataset.taskId!;
-    existing.set(id, el);
-    if (animate) prevRects.set(id, el.getBoundingClientRect());
-  });
+  listEl
+    .querySelectorAll<HTMLElement>('.todo-row[data-task-id]')
+    .forEach(el => {
+      const id = el.dataset.taskId!;
+      existing.set(id, el);
+      if (animate) prevRects.set(id, el.getBoundingClientRect());
+    });
 
   // Remove rows that no longer exist.
   const desiredIds = new Set(ordered.map(o => o.task.id));
@@ -319,7 +366,9 @@ function renderList(tasks: Task[]): void {
     if (found) updateRow(el, task, tasks, isSubtask);
     else existing.set(task.id, el);
 
-    const desiredNext: Element | null = prev ? prev.nextElementSibling : listEl.firstElementChild;
+    const desiredNext: Element | null = prev
+      ? prev.nextElementSibling
+      : listEl.firstElementChild;
     if (el !== desiredNext) {
       if (prev) prev.after(el);
       else listEl.prepend(el);
@@ -350,7 +399,7 @@ function renderStatus(status: SaveStatus): void {
   const visibleStatus = localJournalUnavailable ? 'local-error' : status;
   el.textContent = localJournalUnavailable
     ? 'Local backup unavailable — wait for Saved before leaving'
-    : STATUS_TEXT[status] ?? '';
+    : (STATUS_TEXT[status] ?? '');
   el.dataset.state = visibleStatus;
 
   // "Saved" is a brief confirmation flash, then fades back to nothing.
@@ -388,7 +437,9 @@ function setupDragReorder(
     el?.classList.contains('todo-row__drag') || el?.closest('.todo-row__drag');
 
   function getRowElements(): HTMLElement[] {
-    return Array.from(listEl.querySelectorAll('.todo-row:not(.todo-row--subtask)'));
+    return Array.from(
+      listEl.querySelectorAll('.todo-row:not(.todo-row--subtask)')
+    );
   }
 
   function startDrag(row: HTMLElement, clientY: number) {
@@ -489,16 +540,18 @@ function setupDragReorder(
     if (wasDragging) onDragStateChange(false);
   }
 
-  listEl.addEventListener('mousedown', (e) => {
+  listEl.addEventListener('mousedown', e => {
     const target = e.target as HTMLElement;
     if (!isHandle(target)) return;
-    const row = target.closest('.todo-row:not(.todo-row--subtask)') as HTMLElement | null;
+    const row = target.closest(
+      '.todo-row:not(.todo-row--subtask)'
+    ) as HTMLElement | null;
     if (!row) return;
     e.preventDefault();
     startDrag(row, e.clientY);
   });
 
-  document.addEventListener('mousemove', (e) => {
+  document.addEventListener('mousemove', e => {
     if (isDragging) {
       e.preventDefault();
       moveDrag(e.clientY);
@@ -509,32 +562,42 @@ function setupDragReorder(
     if (isDragging) endDrag();
   });
 
-  listEl.addEventListener('touchstart', (e) => {
-    const target = e.target as HTMLElement;
-    if (!isHandle(target)) return;
-    const row = target.closest('.todo-row:not(.todo-row--subtask)') as HTMLElement | null;
-    if (!row) return;
+  listEl.addEventListener(
+    'touchstart',
+    e => {
+      const target = e.target as HTMLElement;
+      if (!isHandle(target)) return;
+      const row = target.closest(
+        '.todo-row:not(.todo-row--subtask)'
+      ) as HTMLElement | null;
+      if (!row) return;
 
-    const touch = e.touches[0];
-    startY = touch.clientY;
+      const touch = e.touches[0];
+      startY = touch.clientY;
 
-    longPressTimer = setTimeout(() => {
-      e.preventDefault();
-      startDrag(row, touch.clientY);
-      if (navigator.vibrate) navigator.vibrate(30);
-    }, 200);
-  }, { passive: false });
+      longPressTimer = setTimeout(() => {
+        e.preventDefault();
+        startDrag(row, touch.clientY);
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, 200);
+    },
+    { passive: false }
+  );
 
-  listEl.addEventListener('touchmove', (e) => {
-    if (longPressTimer && Math.abs(e.touches[0].clientY - startY) > 10) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-    if (isDragging) {
-      e.preventDefault();
-      moveDrag(e.touches[0].clientY);
-    }
-  }, { passive: false });
+  listEl.addEventListener(
+    'touchmove',
+    e => {
+      if (longPressTimer && Math.abs(e.touches[0].clientY - startY) > 10) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+      if (isDragging) {
+        e.preventDefault();
+        moveDrag(e.touches[0].clientY);
+      }
+    },
+    { passive: false }
+  );
 
   listEl.addEventListener('touchend', () => {
     if (longPressTimer) {
@@ -559,7 +622,9 @@ function showSubtaskInput(
 ) {
   listEl.querySelectorAll('.todo-subtask-input-row').forEach(el => el.remove());
 
-  const parentRow = listEl.querySelector(`.todo-row[data-task-id="${parentTaskId}"]`);
+  const parentRow = listEl.querySelector(
+    `.todo-row[data-task-id="${parentTaskId}"]`
+  );
   if (!parentRow) return;
 
   const inputRow = document.createElement('div');
@@ -587,7 +652,9 @@ function showSubtaskInput(
   }
   insertAfter.parentNode?.insertBefore(inputRow, insertAfter.nextSibling);
 
-  const input = inputRow.querySelector('.todo-subtask-input') as HTMLInputElement;
+  const input = inputRow.querySelector(
+    '.todo-subtask-input'
+  ) as HTMLInputElement;
   // Mark interaction active so the auto-sync / re-render can't yank the input
   // out from under the user while they're typing a subtask.
   onActiveChange(true);
@@ -603,7 +670,7 @@ function showSubtaskInput(
     if (commit && text) onAdd(text, parentTaskId);
   };
 
-  input.addEventListener('keydown', (e) => {
+  input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.isComposing) {
       e.preventDefault();
       finish(true);
@@ -625,6 +692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = 'index.html';
     return;
   }
+  void registerTodoReminderWorker();
 
   /* ── shared mutable state ─────────────────────────────────────── */
   let tasks: Task[] = [];
@@ -663,18 +731,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       tasks: tasks.map(t => ({ ...t })),
       deleted: deletedSnapshot(),
     }),
-    onPersisted: (snapshot) => {
+    onPersisted: snapshot => {
       // Drop just the tombstones this confirmed snapshot carried. A second
       // delete of the same id while the request was in flight stays queued.
       snapshot.deleted.forEach(record => {
-        if (deleted.get(record.id) === record.deleted_at) deleted.delete(record.id);
+        if (deleted.get(record.id) === record.deleted_at)
+          deleted.delete(record.id);
       });
       if (restoredLegacyKeys.length && browserStorage) {
         restoredLegacyKeys.forEach(key => browserStorage.removeItem(key));
         restoredLegacyKeys = [];
       }
     },
-    onStatus: (status) => {
+    onStatus: status => {
       renderStatus(status);
       // Once everything is confirmed saved, the WAL has done its job.
       if (status === 'saved' && !saveController.dirty) wal.clear();
@@ -683,7 +752,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const refresh = () => {
     // Don't repaint the list out from under an in-progress interaction.
-    if (!editingId && !noteEditorId && !subtaskInputActive && !isDragging) renderList(tasks);
+    if (!editingId && !noteEditorId && !subtaskInputActive && !isDragging)
+      renderList(tasks);
   };
 
   /** Optimistic: normalise + WAL + render immediately, queue the save. */
@@ -717,11 +787,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     server = await loadTasks(userId);
   } catch {
-    console.error('Initial task load failed — running on the local WAL; saves stay locked until a load succeeds.');
+    console.error(
+      'Initial task load failed — running on the local WAL; saves stay locked until a load succeeds.'
+    );
   }
 
   if (server) {
-    tasks = walSnap ? mergeTasks(walSnap.tasks, server, deleted.keys()) : reindex(server);
+    tasks = walSnap
+      ? mergeTasks(walSnap.tasks, server, deleted.keys())
+      : reindex(server);
     tasks.forEach(task => mutationClock.observe(task.updated_at));
     loadedSuccessfully = true;
     saveController.setLoaded(true);
@@ -746,9 +820,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const legacyRestore = document.getElementById('todo-legacy-restore');
   const legacyDismiss = document.getElementById('todo-legacy-dismiss');
   const recoverableIds = new Set(
-    legacyWalSnapshots.flatMap(candidate => candidate.snapshot.tasks.map(task => task.id))
+    legacyWalSnapshots.flatMap(candidate =>
+      candidate.snapshot.tasks.map(task => task.id)
+    )
   );
-  if (legacyRecovery && legacyWalSnapshots.length > 0 && recoverableIds.size > 0) {
+  if (
+    legacyRecovery &&
+    legacyWalSnapshots.length > 0 &&
+    recoverableIds.size > 0
+  ) {
     legacyRecovery.hidden = false;
     if (legacyMessage) {
       legacyMessage.textContent =
@@ -852,7 +932,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   /* ── auth awareness ───────────────────────────────────────────── */
-  subscribeAuth((state) => {
+  subscribeAuth(state => {
     if (state.status === 'anon') {
       signedOut = true;
       saveController.setAuthed(false); // pauses saves; status → signed-out
@@ -871,12 +951,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   /* ── Jarvis service pairing ───────────────────────────────────── */
-  const jarvisConnect = document.getElementById('todo-jarvis-connect') as HTMLButtonElement | null;
+  const jarvisConnect = document.getElementById(
+    'todo-jarvis-connect'
+  ) as HTMLButtonElement | null;
   const jarvisCredentials = document.getElementById('todo-jarvis-credentials');
-  const jarvisDialog = document.getElementById('todo-jarvis-dialog') as HTMLDialogElement | null;
-  const jarvisSecret = document.getElementById('todo-jarvis-secret') as HTMLTextAreaElement | null;
-  const jarvisCopy = document.getElementById('todo-jarvis-copy') as HTMLButtonElement | null;
-  const jarvisClose = document.getElementById('todo-jarvis-close') as HTMLButtonElement | null;
+  const jarvisDialog = document.getElementById(
+    'todo-jarvis-dialog'
+  ) as HTMLDialogElement | null;
+  const jarvisSecret = document.getElementById(
+    'todo-jarvis-secret'
+  ) as HTMLTextAreaElement | null;
+  const jarvisCopy = document.getElementById(
+    'todo-jarvis-copy'
+  ) as HTMLButtonElement | null;
+  const jarvisClose = document.getElementById(
+    'todo-jarvis-close'
+  ) as HTMLButtonElement | null;
 
   const renderJarvisCredentials = async () => {
     if (!jarvisCredentials) return;
@@ -922,13 +1012,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       await renderJarvisCredentials();
     } catch (error) {
       console.error('Could not pair Jarvis:', error);
-      if (jarvisCredentials) jarvisCredentials.textContent = 'Pairing failed. Please try again.';
+      if (jarvisCredentials)
+        jarvisCredentials.textContent = 'Pairing failed. Please try again.';
     } finally {
       jarvisConnect.disabled = false;
     }
   });
   jarvisCredentials?.addEventListener('click', async event => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-credential-id]');
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '[data-credential-id]'
+    );
     if (!button?.dataset.credentialId) return;
     button.disabled = true;
     try {
@@ -965,18 +1058,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupDragReorder(
       listEl,
       () => tasks,
-      (newTasks) => { tasks = newTasks; },
+      newTasks => {
+        tasks = newTasks;
+      },
       () => persist(),
-      (dragging) => {
+      dragging => {
         isDragging = dragging;
         if (!dragging) flushDeferredSync();
       }
     );
   }
 
-  const form = document.getElementById('add-task-form-todo') as HTMLFormElement | null;
-  const input = document.getElementById('todo-input') as HTMLInputElement | null;
-  const addSubmit = document.getElementById('todo-add-submit') as HTMLButtonElement | null;
+  const form = document.getElementById(
+    'add-task-form-todo'
+  ) as HTMLFormElement | null;
+  const input = document.getElementById(
+    'todo-input'
+  ) as HTMLInputElement | null;
+  const addSubmit = document.getElementById(
+    'todo-add-submit'
+  ) as HTMLButtonElement | null;
 
   const syncAddSubmit = () => {
     if (!input || !addSubmit) return;
@@ -992,17 +1093,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       input.focus();
       return;
     }
-    const maxPos = tasks.filter(t => !t.parent_id).reduce((m, t) => Math.max(m, t.position), -1);
+    const maxPos = tasks
+      .filter(t => !t.parent_id)
+      .reduce((m, t) => Math.max(m, t.position), -1);
     const ts = nowIso();
-    tasks = [...tasks, {
-      id: makeId(),
-      text: sanitized,
-      completed: false,
-      position: maxPos + 1,
-      parent_id: null,
-      updated_at: ts,
-      created_at: ts,
-    }];
+    tasks = [
+      ...tasks,
+      {
+        id: makeId(),
+        text: sanitized,
+        completed: false,
+        position: maxPos + 1,
+        parent_id: null,
+        updated_at: ts,
+        created_at: ts,
+      },
+    ];
     input.value = '';
     syncAddSubmit();
     persist();
@@ -1026,21 +1132,147 @@ document.addEventListener('DOMContentLoaded', async () => {
   syncAddSubmit();
 
   const getTaskId = (el: HTMLElement | null): string | null =>
-    el?.dataset.taskId || el?.closest('[data-task-id]')?.getAttribute('data-task-id') || null;
+    el?.dataset.taskId ||
+    el?.closest('[data-task-id]')?.getAttribute('data-task-id') ||
+    null;
 
-  const findTask = (taskId: string): Task | undefined => tasks.find(t => t.id === taskId);
-  const findTaskIdx = (taskId: string): number => tasks.findIndex(t => t.id === taskId);
+  const findTask = (taskId: string): Task | undefined =>
+    tasks.find(t => t.id === taskId);
+  const findTaskIdx = (taskId: string): number =>
+    tasks.findIndex(t => t.id === taskId);
 
   /* ── rich task note ──────────────────────────────────────────── */
 
-  const noteDialog = document.getElementById('todo-note-dialog') as HTMLDialogElement | null;
-  const noteTitleInput = document.getElementById('todo-note-title') as HTMLInputElement | null;
-  const noteEditor = document.getElementById('todo-note-editor') as HTMLElement | null;
-  const noteToolbar = noteDialog?.querySelector('.todo-note-toolbar') as HTMLElement | null;
+  const noteDialog = document.getElementById(
+    'todo-note-dialog'
+  ) as HTMLDialogElement | null;
+  const noteTitleInput = document.getElementById(
+    'todo-note-title'
+  ) as HTMLInputElement | null;
+  const noteEditor = document.getElementById(
+    'todo-note-editor'
+  ) as HTMLElement | null;
+  const noteToolbar = noteDialog?.querySelector(
+    '.todo-note-toolbar'
+  ) as HTMLElement | null;
   const noteMeta = document.getElementById('todo-note-meta');
-  const noteClose = document.getElementById('todo-note-close') as HTMLButtonElement | null;
+  const noteClose = document.getElementById(
+    'todo-note-close'
+  ) as HTMLButtonElement | null;
+  const reminderTrigger = document.getElementById(
+    'todo-reminder-trigger'
+  ) as HTMLButtonElement | null;
+  const reminderOptions = document.getElementById('todo-reminder-options');
+  const reminderChoose = document.getElementById(
+    'todo-reminder-choose'
+  ) as HTMLButtonElement | null;
+  const reminderDate = document.getElementById(
+    'todo-reminder-date'
+  ) as HTMLInputElement | null;
+  const reminderRemove = document.getElementById(
+    'todo-reminder-remove'
+  ) as HTMLButtonElement | null;
+  const reminderStatus = document.getElementById('todo-reminder-status');
   let noteLastValidHtml = '';
   let noteReturnFocus: HTMLElement | null = null;
+
+  const renderReminder = () => {
+    const task = noteEditorId ? findTask(noteEditorId) : undefined;
+    const label = task?.remind_at
+      ? formatReminder(task.remind_at)
+      : 'Remind me';
+    if (reminderTrigger) reminderTrigger.textContent = label;
+    if (reminderRemove) reminderRemove.hidden = !task?.remind_at;
+    if (reminderDate) {
+      reminderDate.min = toLocalDateTimeValue(new Date());
+      reminderDate.value = task?.remind_at
+        ? toLocalDateTimeValue(new Date(task.remind_at))
+        : '';
+    }
+  };
+
+  const setReminder = async (date: Date) => {
+    if (
+      !noteEditorId ||
+      Number.isNaN(date.getTime()) ||
+      date.getTime() <= Date.now()
+    )
+      return;
+    const readiness = await ensureTodoReminderDelivery();
+    if (readiness === 'notifications-off') {
+      if (reminderStatus) reminderStatus.textContent = 'Notifications off';
+      return;
+    }
+    const taskId = noteEditorId;
+    tasks = tasks.map(task =>
+      task.id === taskId
+        ? {
+            ...task,
+            remind_at: date.toISOString(),
+            reminder_revision: makeId(),
+            updated_at: nowIso(),
+          }
+        : task
+    );
+    persist();
+    if (reminderStatus) {
+      reminderStatus.textContent =
+        readiness === 'offline'
+          ? 'Offline — reminder waits for connection'
+          : '';
+    }
+    if (reminderOptions) reminderOptions.hidden = true;
+    if (reminderTrigger) reminderTrigger.setAttribute('aria-expanded', 'false');
+    renderReminder();
+  };
+
+  reminderTrigger?.addEventListener('click', () => {
+    if (!reminderOptions) return;
+    reminderOptions.hidden = !reminderOptions.hidden;
+    reminderTrigger.setAttribute(
+      'aria-expanded',
+      String(!reminderOptions.hidden)
+    );
+    if (reminderStatus) reminderStatus.textContent = '';
+  });
+  reminderOptions?.addEventListener('click', event => {
+    const preset = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '[data-reminder-preset]'
+    )?.dataset.reminderPreset;
+    if (preset === 'hour') void setReminder(oneHourFrom(new Date()));
+    if (preset === 'tomorrow') void setReminder(tomorrowAtNine(new Date()));
+  });
+  reminderChoose?.addEventListener('click', () => {
+    if (!reminderDate) return;
+    reminderDate.hidden = false;
+    try {
+      reminderDate.showPicker();
+    } catch {
+      reminderDate.focus();
+    }
+  });
+  reminderDate?.addEventListener('change', () => {
+    if (reminderDate.value) void setReminder(new Date(reminderDate.value));
+  });
+  reminderRemove?.addEventListener('click', () => {
+    if (!noteEditorId) return;
+    const taskId = noteEditorId;
+    tasks = tasks.map(task =>
+      task.id === taskId
+        ? {
+            ...task,
+            remind_at: null,
+            reminder_revision: null,
+            updated_at: nowIso(),
+          }
+        : task
+    );
+    persist();
+    if (reminderStatus) reminderStatus.textContent = '';
+    if (reminderOptions) reminderOptions.hidden = true;
+    if (reminderTrigger) reminderTrigger.setAttribute('aria-expanded', 'false');
+    renderReminder();
+  });
 
   const placeCaretAtEnd = (el: HTMLElement) => {
     const selection = window.getSelection();
@@ -1107,9 +1339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (text === task.text) return;
     tasks = tasks.map(item =>
-      item.id === task.id
-        ? { ...item, text, updated_at: nowIso() }
-        : item
+      item.id === task.id ? { ...item, text, updated_at: nowIso() } : item
     );
     persist(NOTE_SAVE_DEBOUNCE_MS);
   };
@@ -1142,6 +1372,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     noteLastValidHtml = sanitizeNoteHtml(task.note);
     noteTitleInput.value = task.text;
     noteEditor.innerHTML = noteLastValidHtml;
+    if (reminderOptions) reminderOptions.hidden = true;
+    if (reminderTrigger) reminderTrigger.setAttribute('aria-expanded', 'false');
+    if (reminderDate) reminderDate.hidden = true;
+    if (reminderStatus) reminderStatus.textContent = '';
+    renderReminder();
     renderNoteMeta();
 
     try {
@@ -1240,20 +1475,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     event.preventDefault();
     const richHtml = event.clipboardData?.getData('text/html') ?? '';
     const plainText = event.clipboardData?.getData('text/plain') ?? '';
-    const html = richHtml ? sanitizeNoteHtml(richHtml) : plainTextToNoteHtml(plainText);
+    const html = richHtml
+      ? sanitizeNoteHtml(richHtml)
+      : plainTextToNoteHtml(plainText);
     insertSanitizedNoteHtml(html);
     saveActiveNote();
   });
   noteEditor?.addEventListener('drop', event => {
     event.preventDefault();
-    insertSanitizedNoteHtml(plainTextToNoteHtml(event.dataTransfer?.getData('text/plain') ?? ''));
+    insertSanitizedNoteHtml(
+      plainTextToNoteHtml(event.dataTransfer?.getData('text/plain') ?? '')
+    );
     saveActiveNote();
   });
   noteEditor?.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       event.preventDefault();
       finishNoteEditor();
-    } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+    } else if (
+      (event.metaKey || event.ctrlKey) &&
+      event.key.toLowerCase() === 's'
+    ) {
       event.preventDefault();
       saveActiveNote();
       renderNoteMeta('Saved locally first.');
@@ -1261,7 +1503,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   noteToolbar?.addEventListener('mousedown', event => event.preventDefault());
   noteToolbar?.addEventListener('click', event => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-note-command]');
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '[data-note-command]'
+    );
     const command = button?.dataset.noteCommand;
     if (command) executeNoteCommand(command);
   });
@@ -1273,7 +1517,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const idx = findTaskIdx(taskId);
     if (idx === -1) return;
 
-    const row = listEl?.querySelector(`.todo-row[data-task-id="${taskId}"]`) as HTMLElement | null;
+    const row = listEl?.querySelector(
+      `.todo-row[data-task-id="${taskId}"]`
+    ) as HTMLElement | null;
     const label = row?.querySelector('.todo-row__label') as HTMLElement | null;
     if (!row || !label) return;
 
@@ -1345,7 +1591,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Add subtask
-    const addSubBtn = target.closest('.todo-row__add-sub') as HTMLElement | null;
+    const addSubBtn = target.closest(
+      '.todo-row__add-sub'
+    ) as HTMLElement | null;
     if (addSubBtn && listEl) {
       const parentTaskId = addSubBtn.dataset.taskId;
       if (!parentTaskId) return;
@@ -1362,18 +1610,21 @@ document.addEventListener('DOMContentLoaded', async () => {
           const siblings = childrenOf(tasks, parent.id);
           const maxPos = siblings.reduce((m, t) => Math.max(m, t.position), -1);
           const ts = nowIso();
-          tasks = [...tasks, {
-            id: makeId(),
-            text,
-            completed: false,
-            position: maxPos + 1,
-            parent_id: parent.id,
-            updated_at: ts,
-            created_at: ts,
-          }];
+          tasks = [
+            ...tasks,
+            {
+              id: makeId(),
+              text,
+              completed: false,
+              position: maxPos + 1,
+              parent_id: parent.id,
+              updated_at: ts,
+              created_at: ts,
+            },
+          ];
           persist();
         },
-        (active) => {
+        active => {
           subtaskInputActive = active;
           if (!active) flushDeferredSync();
         }
@@ -1400,7 +1651,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       // save deletes exactly these ids on the server (never "delete the rest").
       const deletedAt = nowIso();
       for (const t of tasks) {
-        if (t.id === task.id || t.parent_id === task.id) deleted.set(t.id, deletedAt);
+        if (t.id === task.id || t.parent_id === task.id)
+          deleted.set(t.id, deletedAt);
       }
       tasks = tasks.filter(t => t.id !== task.id && t.parent_id !== task.id);
       persist();
@@ -1435,4 +1687,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     tasks = applyCompletion(tasks, taskId, target.checked, nowIso());
     persist();
   });
+
+  const requestedTaskId = new URLSearchParams(window.location.search).get(
+    'task'
+  );
+  if (requestedTaskId && findTask(requestedTaskId)) {
+    history.replaceState(null, '', '/todo.html');
+    openNoteEditor(requestedTaskId);
+  }
 });

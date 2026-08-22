@@ -10,6 +10,10 @@ export type Task = {
   completed: boolean;
   position: number;
   parent_id?: string | null;
+  /** ISO timestamp for the task's single optional reminder. */
+  remind_at?: string | null;
+  /** Stable client revision used to invalidate stale scheduled deliveries. */
+  reminder_revision?: string | null;
   /**
    * ISO timestamp, client-authoritative. Set on every local mutation and
    * written through to the server. Drives last-writer-wins merge during sync.

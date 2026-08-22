@@ -7,6 +7,8 @@ export type JarvisTaskRecord = {
   completed: boolean;
   position: number;
   parentId: string | null;
+  remindAt: string | null;
+  reminderRevision: string | null;
   updatedAt: string;
   createdAt: string;
 };
@@ -102,15 +104,26 @@ function reconcileCompletion(
   completed: boolean,
   timestamp: string
 ): JarvisTaskRecord[] {
+  const withCompletion = (
+    task: JarvisTaskRecord,
+    nextCompleted: boolean
+  ): JarvisTaskRecord => ({
+    ...task,
+    completed: nextCompleted,
+    updatedAt: timestamp,
+    ...(nextCompleted ? { remindAt: null, reminderRevision: null } : {}),
+  });
   let next = tasks.map(task =>
-    task.clientId === target.clientId && task.completed !== completed
-      ? { ...task, completed, updatedAt: timestamp }
+    task.clientId === target.clientId &&
+    (task.completed !== completed || (completed && task.remindAt !== null))
+      ? withCompletion(task, completed)
       : task
   );
   if (!target.parentId) {
     next = next.map(task =>
-      task.parentId === target.clientId && task.completed !== completed
-        ? { ...task, completed, updatedAt: timestamp }
+      task.parentId === target.clientId &&
+      (task.completed !== completed || (completed && task.remindAt !== null))
+        ? withCompletion(task, completed)
         : task
     );
   } else {
@@ -118,8 +131,10 @@ function reconcileCompletion(
     const parentCompleted =
       siblings.length > 0 && siblings.every(task => task.completed);
     next = next.map(task =>
-      task.clientId === target.parentId && task.completed !== parentCompleted
-        ? { ...task, completed: parentCompleted, updatedAt: timestamp }
+      task.clientId === target.parentId &&
+      (task.completed !== parentCompleted ||
+        (parentCompleted && task.remindAt !== null))
+        ? withCompletion(task, parentCompleted)
         : task
     );
   }
@@ -170,6 +185,8 @@ export function applyJarvisTaskMutation(
       position:
         peers.reduce((max, task) => Math.max(max, task.position), -1) + 1,
       parentId,
+      remindAt: null,
+      reminderRevision: null,
       updatedAt: timestamp,
       createdAt: timestamp,
     };

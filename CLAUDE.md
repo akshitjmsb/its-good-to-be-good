@@ -1,46 +1,60 @@
 # It's Good to Be Good — King design system & conventions
 
-This repo is a personal-life PWA built around one idea, taken from the
+This repo is a personal system delivered as a PWA. It is built around one idea, taken from the
 drawing at its centre: **the circle holds the soul, the square holds the
 work.** The home page (`index.html`) is the orbit — the Vitruvian Man at
 the centre, soul practices riding the circle, purpose tools sitting on
 the square's corners. Every subpage is a quiet sibling of the home — not
 a separate product.
 
-## Product values
+## Product compass
 
-These values govern every screen, feature, and piece of copy. They are a
+This compass governs every screen, feature, and piece of copy. It is a
 decision filter, not marketing language.
 
-### Core values
+### Mission
 
-1. **Least barrier to entry.** The useful action takes the fewest possible
-   taps, decisions, and setup. Prefer an immediately usable default.
-2. **Every word earns its place.** No filler, redundant instruction, or
-   explanatory prose by default. User-facing text is limited to meaningful,
-   Product Owner-approved pointers.
-3. **Action before explanation.** Present what the user can do before any
-   supporting guidance.
-4. **One clear next move.** Do not make several actions compete for attention.
-   Establish one primary action and keep alternatives quiet.
-5. **Progressive disclosure.** Keep the first view minimal. Reveal supporting
-   detail only when the user asks for it or needs it to continue.
+> **Make what matters easy to do.**
+
+### Five pointers
+
+1. **Whole person first.** Body, mind, and Rooh. The system serves the human,
+   not a metric.
+2. **Meaningful action.** Move life and work forward. Every feature must name
+   the real action it makes easier.
+3. **Zero barrier.** Open and begin. The useful action takes the fewest
+   possible taps, decisions, and setup, with an immediately usable default.
+4. **Essential only.** No extra words, controls, or tracking. Keep one clear
+   next move; place necessary alternatives behind progressive disclosure.
+   User-facing copy is limited to meaningful, Product Owner-approved pointers.
+5. **Calm trust.** Dependable, private, never pressuring. No silent data loss,
+   streak pressure, guilt, gamification, manufactured urgency, or attention
+   traps.
+
+### Decision filter
+
+Before building, answer:
+
+1. What meaningful action for the whole person becomes easier?
+2. Can the person open and begin without explanation or setup?
+3. What words, controls, state, or tracking can be removed?
+4. Does the result remain calm and trustworthy?
+
+If the first answer is unclear, do not build it. If the remaining answers are
+weak, simplify it.
 
 ### Implementation guardrails
 
-6. **No unnecessary tracking.** Retain information only when remembering it
+1. **Retain with purpose.** Remember information only when remembering it
    creates real user value. Sukoon remains ephemeral by default.
-7. **Calm over engagement.** No streak pressure, guilt, gamification,
-   manufactured urgency, or attention traps.
-8. **Preserve the visual language.** Use the established King tokens,
+2. **Action before explanation.** Present what the person can do before any
+   supporting guidance.
+3. **Preserve the visual language.** Use the established King tokens,
    typography, icon style, geometry, and restrained interaction patterns.
-9. **Mobile and touch first.** Design for one-handed use, readable hierarchy,
+4. **Mobile and touch first.** Design for one-handed use, readable hierarchy,
    and comfortable tap targets before adapting to desktop.
-10. **Function before expansion.** Improve an existing module before adding a
-    new surface, mode, or feature.
-
-For every proposed change, ask: *what is the next useful action, and what can
-be removed before it?*
+5. **Function before expansion.** Improve an existing module before adding a
+   new surface, mode, or feature.
 
 ### Protected pointer
 
@@ -64,15 +78,15 @@ not "dashboard".
 The home design lock lives at `src/styles/home-lock.css` and exposes the
 canonical tokens via CSS custom properties on `body.home-vintage-lock`:
 
-| Token             | Value     | Use                                      |
-| ----------------- | --------- | ---------------------------------------- |
-| `--home-bg`       | `#f4f4f4` | Page background (paper)                  |
-| `--home-surface`  | `#ffffff` | App container surface                    |
-| `--home-card-bg`  | `#f8f9fa` | Cards, tiles, inset blocks               |
-| `--home-border`   | `#e5e7eb` | Hairlines on cards / dividers            |
-| `--home-ink`      | `#111111` | Logo strokes, hover-emphasis ink         |
-| `--home-text`     | `#374151` | Body & headings                          |
-| `--home-muted`    | `#6b7280` | Captions, footers, "← Home" link         |
+| Token            | Value     | Use                              |
+| ---------------- | --------- | -------------------------------- |
+| `--home-bg`      | `#f4f4f4` | Page background (paper)          |
+| `--home-surface` | `#ffffff` | App container surface            |
+| `--home-card-bg` | `#f8f9fa` | Cards, tiles, inset blocks       |
+| `--home-border`  | `#e5e7eb` | Hairlines on cards / dividers    |
+| `--home-ink`     | `#111111` | Logo strokes, hover-emphasis ink |
+| `--home-text`    | `#374151` | Body & headings                  |
+| `--home-muted`   | `#6b7280` | Captions, footers, "← Home" link |
 
 Stick to that ramp. New shades or accent colors need an explicit reason.
 
@@ -97,8 +111,8 @@ enforces the contract:
   corner tile on the home and accumulates a record. Current tools:
   `todo`, `khyaali-bhoot`, `tennis`.
 
-The membership test for anything new: *does using it leave something
-behind?* Nothing remains → circle. A record accumulates → square.
+The membership test for anything new: _does using it leave something
+behind?_ Nothing remains → circle. A record accumulates → square.
 
 ## Repository shape
 

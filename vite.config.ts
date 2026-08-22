@@ -6,11 +6,9 @@ import { defineConfig } from 'vite';
 // repeatedly stranded devices on old, broken code that no update could reach
 // (the shell JS that drives a worker update can't run while the old worker is
 // still serving the old shell). We ship a self-destroying `public/sw.js`
-// instead — it unregisters any previously-installed worker and wipes its
-// caches — and register nothing new, so every launch loads current code
-// straight from the CDN. Installability (manifest + icons) is unaffected: the
-// manifest is linked statically from each HTML head and the icons live in
-// public/.
+// instead. `public/sw.js` is now notification-only: it has no fetch handler and
+// never caches an app asset, so every launch still loads current code straight
+// from the CDN. Installability (manifest + icons) is unaffected.
 export default defineConfig(() => {
   return {
     resolve: {

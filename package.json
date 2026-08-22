@@ -41,6 +41,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^24.2.0",
+    "@types/web-push": "^3.6.4",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "autoprefixer": "^10.4.16",
@@ -58,6 +59,7 @@
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.94",
-    "convex": "^1.42.0"
+    "convex": "^1.42.0",
+    "web-push": "^3.6.7"
   }
 }

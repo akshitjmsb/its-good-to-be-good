@@ -15,6 +15,8 @@ function task(overrides: Partial<JarvisTaskRecord> = {}): JarvisTaskRecord {
     completed: false,
     position: 0,
     parentId: null,
+    remindAt: null,
+    reminderRevision: null,
     updatedAt: NOW,
     createdAt: NOW,
     ...overrides,
@@ -63,8 +65,17 @@ describe('Jarvis To-Do contract', () => {
 
   it('cascades parent completion and reopening to children', () => {
     const tasks = [
-      task(),
-      task({ clientId: 'child', text: 'Buy milk', parentId: 'task-1' }),
+      task({
+        remindAt: '2026-08-13T10:00:00.000Z',
+        reminderRevision: 'r-parent',
+      }),
+      task({
+        clientId: 'child',
+        text: 'Buy milk',
+        parentId: 'task-1',
+        remindAt: '2026-08-13T11:00:00.000Z',
+        reminderRevision: 'r-child',
+      }),
     ];
     const completed = applyJarvisTaskMutation(
       tasks,
@@ -76,6 +87,7 @@ describe('Jarvis To-Do contract', () => {
       NEXT
     );
     expect(completed.tasks.every(item => item.completed)).toBe(true);
+    expect(completed.tasks.every(item => item.remindAt === null)).toBe(true);
     const reopened = applyJarvisTaskMutation(
       completed.tasks,
       {
@@ -86,6 +98,7 @@ describe('Jarvis To-Do contract', () => {
       '2026-08-12T10:00:02.000Z'
     );
     expect(reopened.tasks.every(item => !item.completed)).toBe(true);
+    expect(reopened.tasks.every(item => item.remindAt === null)).toBe(true);
   });
 
   it('reconciles the parent when the last child completes', () => {
