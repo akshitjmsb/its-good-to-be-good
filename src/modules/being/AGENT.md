@@ -12,7 +12,8 @@ with five Sukoon pillars riding the circle —
 
 - **Centre reset** — tapping the Vitruvian Man immediately starts a continuous
   4-second inhale / 6-second exhale guide with the existing OM loop at quiet
-  volume. A second tap stops it; it retains nothing.
+  volume. It continues through screen lock; a second tap stops it and it
+  retains nothing.
 
 - **Sleep** — the master pillar, including circadian/light pointers.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food

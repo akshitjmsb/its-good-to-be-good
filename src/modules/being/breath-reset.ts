@@ -167,9 +167,8 @@ export function initBreathReset({
     sound.start();
     controller.start();
   });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') controller.stop();
-  });
+  // Do not stop on visibilitychange: iOS marks an installed PWA hidden when
+  // the screen locks, while its media playback is still allowed to continue.
   window.addEventListener('beforeunload', controller.stop);
   return controller;
 }
