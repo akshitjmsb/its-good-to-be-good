@@ -1,6 +1,8 @@
 export const RESET_INHALE_MS = 4_000;
 export const RESET_EXHALE_MS = 6_000;
 export const RESET_CYCLES = 3;
+export const RESET_OM_VOLUME = 0.25;
+const RESET_OM_URL = '/audio/om.mp3';
 
 export type BreathResetPhase = 'idle' | 'inhale' | 'exhale';
 
@@ -27,10 +29,54 @@ export interface BreathResetController {
   getState(): BreathResetState;
 }
 
+export interface BreathResetAudio {
+  loop: boolean;
+  preload: string;
+  volume: number;
+  currentTime: number;
+  play(): Promise<void> | void;
+  pause(): void;
+}
+
+export interface BreathResetSound {
+  start(): void;
+  stop(): void;
+}
+
 const browserScheduler: BreathResetScheduler = {
   set: (callback, delayMs) => window.setTimeout(callback, delayMs),
   clear: timerId => window.clearTimeout(timerId),
 };
+
+export function createBreathResetSound(
+  audio: BreathResetAudio,
+  onPlaybackError: (error: unknown) => void = error =>
+    console.warn('[centre reset] OM playback rejected:', error)
+): BreathResetSound {
+  audio.loop = true;
+  audio.preload = 'auto';
+  audio.volume = RESET_OM_VOLUME;
+
+  const stop = (): void => {
+    audio.pause();
+    audio.currentTime = 0;
+  };
+
+  return {
+    start: () => {
+      audio.currentTime = 0;
+      try {
+        const playback = audio.play();
+        if (playback && typeof playback.catch === 'function') {
+          playback.catch(onPlaybackError);
+        }
+      } catch (error) {
+        onPlaybackError(error);
+      }
+    },
+    stop,
+  };
+}
 
 export function createBreathResetController({
   scheduler = browserScheduler,
@@ -93,6 +139,7 @@ export function initBreathReset({
   const button = document.getElementById('being-reset') as HTMLButtonElement | null;
   const status = document.getElementById('being-reset-status');
   if (!orbit || !button) return null;
+  const sound = createBreathResetSound(new Audio(RESET_OM_URL));
 
   const controller = createBreathResetController({
     onChange: state => {
@@ -107,12 +154,20 @@ export function initBreathReset({
               ? 'Breathe out'
               : '';
       }
+      if (!state.active) sound.stop();
     },
   });
 
   button.addEventListener('click', () => {
-    if (!controller.getState().active) beforeStart?.();
-    controller.toggle();
+    if (controller.getState().active) {
+      controller.stop();
+      return;
+    }
+    beforeStart?.();
+    // This remains directly inside the tap handler so iOS permits playback.
+    // A rejected play never blocks the visual breathing guide.
+    sound.start();
+    controller.start();
   });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') controller.stop();

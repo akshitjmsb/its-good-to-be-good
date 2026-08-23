@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createBreathResetSound,
   createBreathResetController,
   RESET_CYCLES,
   RESET_EXHALE_MS,
   RESET_INHALE_MS,
+  RESET_OM_VOLUME,
   type BreathResetState,
 } from '../breath-reset';
 
@@ -73,5 +75,57 @@ describe('three breath centre reset', () => {
     controller.start();
     expect(states).toHaveLength(1);
     expect(timers.size).toBe(1);
+  });
+});
+
+describe('centre reset OM', () => {
+  function audioHarness(play: () => Promise<void> | void = () => undefined) {
+    const calls = { pause: 0, play: 0 };
+    const audio = {
+      loop: false,
+      preload: '',
+      volume: 1,
+      currentTime: 12,
+      play: () => {
+        calls.play += 1;
+        return play();
+      },
+      pause: () => {
+        calls.pause += 1;
+      },
+    };
+    return { audio, calls };
+  }
+
+  it('configures and starts the existing OM as a quiet loop', () => {
+    const { audio, calls } = audioHarness();
+    const sound = createBreathResetSound(audio);
+
+    expect(audio.loop).toBe(true);
+    expect(audio.preload).toBe('auto');
+    expect(audio.volume).toBe(RESET_OM_VOLUME);
+    sound.start();
+    expect(calls.play).toBe(1);
+    expect(audio.currentTime).toBe(0);
+  });
+
+  it('stops and rewinds immediately', () => {
+    const { audio, calls } = audioHarness();
+    const sound = createBreathResetSound(audio);
+    sound.start();
+    audio.currentTime = 7;
+    sound.stop();
+    expect(calls.pause).toBe(1);
+    expect(audio.currentTime).toBe(0);
+  });
+
+  it('lets the ring continue when playback is rejected', async () => {
+    const rejected = new Error('blocked');
+    const errors: unknown[] = [];
+    const { audio } = audioHarness(() => Promise.reject(rejected));
+    const sound = createBreathResetSound(audio, error => errors.push(error));
+    expect(() => sound.start()).not.toThrow();
+    await Promise.resolve();
+    expect(errors).toEqual([rejected]);
   });
 });

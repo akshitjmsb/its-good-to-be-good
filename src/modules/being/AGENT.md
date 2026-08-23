@@ -10,8 +10,9 @@
 Being IS the home page's resting state: the Vitruvian Man at the centre
 with five Sukoon pillars riding the circle —
 
-- **Centre reset** — tapping the Vitruvian Man immediately guides three silent
-  breaths (4 seconds in, 6 seconds out), retains nothing, and returns to rest.
+- **Centre reset** — tapping the Vitruvian Man immediately guides three breaths
+  (4 seconds in, 6 seconds out) with the existing OM loop at quiet volume,
+  retains nothing, and returns to rest.
 
 - **Sleep** — the master pillar, including circadian/light pointers.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food

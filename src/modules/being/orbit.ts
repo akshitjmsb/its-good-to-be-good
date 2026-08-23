@@ -68,7 +68,13 @@ export function initBeingOrbit({
   if (!stage || !meditate || !panel) return;
 
   let openMode: Mode | null = null;
-  const breathReset = initBreathReset({ beforeStart: () => close() });
+  const breathReset = initBreathReset({
+    beforeStart: () => {
+      if (meditation?.isOmPlaying()) meditation.toggleOm();
+      if (meditation?.isFocusPlaying()) meditation.toggleFocus();
+      close();
+    },
+  });
 
   // Flatten the body-part stretch routines into labelled links (Back → Back 1…).
   function stretchLinks(): PracticeLink[] {
