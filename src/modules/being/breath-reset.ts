@@ -1,6 +1,5 @@
 export const RESET_INHALE_MS = 4_000;
 export const RESET_EXHALE_MS = 6_000;
-export const RESET_CYCLES = 3;
 export const RESET_OM_VOLUME = 0.25;
 const RESET_OM_URL = '/audio/om.mp3';
 
@@ -111,8 +110,7 @@ export function createBreathResetController({
     schedule(() => {
       publish({ active: true, cycle, phase: 'exhale' });
       schedule(() => {
-        if (cycle >= RESET_CYCLES) stop();
-        else beginInhale(cycle + 1);
+        beginInhale(cycle + 1);
       }, RESET_EXHALE_MS);
     }, RESET_INHALE_MS);
   };

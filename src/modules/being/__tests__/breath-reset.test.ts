@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   createBreathResetSound,
   createBreathResetController,
-  RESET_CYCLES,
   RESET_EXHALE_MS,
   RESET_INHALE_MS,
   RESET_OM_VOLUME,
@@ -39,23 +38,24 @@ function harness() {
   return { controller, runNext, states, timers };
 }
 
-describe('three breath centre reset', () => {
-  it('runs three 4-in / 6-out cycles and returns to rest', () => {
-    const { controller, runNext, states } = harness();
+describe('continuous centre reset', () => {
+  it('keeps running 4-in / 6-out cycles until stopped', () => {
+    const { controller, runNext, states, timers } = harness();
     controller.start();
 
-    for (let cycle = 1; cycle <= RESET_CYCLES; cycle += 1) {
+    for (let cycle = 1; cycle <= 4; cycle += 1) {
       expect(states.at(-1)).toMatchObject({ cycle, phase: 'inhale' });
       expect(runNext()).toBe(RESET_INHALE_MS);
       expect(states.at(-1)).toMatchObject({ cycle, phase: 'exhale' });
       expect(runNext()).toBe(RESET_EXHALE_MS);
     }
 
-    expect(controller.getState()).toEqual({
-      active: false,
-      cycle: 0,
-      phase: 'idle',
+    expect(controller.getState()).toMatchObject({
+      active: true,
+      cycle: 5,
+      phase: 'inhale',
     });
+    expect(timers.size).toBe(1);
   });
 
   it('stops immediately on a second tap and clears the pending phase', () => {
