@@ -45,6 +45,7 @@ const SOUND_MODES: readonly SoundMode[] = ['bell', 'off'];
 export interface MeditateAudioControls {
   isOmPlaying(): boolean;
   isFocusPlaying(): boolean;
+  setMode(mode: 'breathe' | 'om' | 'focus'): void;
   toggleOm(): void;
   toggleFocus(): void;
 }
@@ -59,6 +60,7 @@ export function initMeditate(): MeditateAudioControls | null {
   ) as HTMLButtonElement | null;
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
+  const options = document.querySelector<HTMLElement>('.meditate-options');
   const presets = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.meditate-preset')
   );
@@ -71,6 +73,7 @@ export function initMeditate(): MeditateAudioControls | null {
   let breathChimeInterval: number | null = null;
   let breathPhase = 0;
   let breathChimesActive = false;
+  let currentMode: 'breathe' | 'om' | 'focus' = 'breathe';
 
   // ─────────────────────────────────────────────────────────────────
   // Chime pool — three HTMLAudioElement instances, one per pitch.
@@ -248,7 +251,9 @@ export function initMeditate(): MeditateAudioControls | null {
       preset.disabled = isActive;
       preset.setAttribute(
         'aria-pressed',
-        !isActive && min === durationMin(state) ? 'true' : 'false'
+        currentMode !== 'focus' && !isActive && min === durationMin(state)
+          ? 'true'
+          : 'false'
       );
     });
   }
@@ -276,6 +281,12 @@ export function initMeditate(): MeditateAudioControls | null {
 
   function paint(state: CountdownState): void {
     if (!display || !button) return;
+    const isFocus = currentMode === 'focus';
+
+    display.hidden = isFocus && state.status === 'idle';
+    button.hidden = isFocus && state.status !== 'running';
+    if (options) options.hidden = isFocus && state.status === 'running';
+    if (breatheToggle) breatheToggle.hidden = isFocus;
 
     if (state.status === 'break') {
       display.textContent = 'Done';
@@ -291,6 +302,10 @@ export function initMeditate(): MeditateAudioControls | null {
         lastChimedFor = marker;
         playChime('high');
       }
+      if (isFocus) {
+        timer.skipBreak();
+        return;
+      }
     } else {
       display.classList.remove('timer-break');
       const remaining =
@@ -300,12 +315,12 @@ export function initMeditate(): MeditateAudioControls | null {
       if (state.status === 'running') {
         button.textContent = 'Stop';
         button.setAttribute('aria-pressed', 'true');
-        setStatus(STATUS_RUNNING);
-        setBreathActive(true);
+        setStatus(isFocus ? '' : STATUS_RUNNING);
+        setBreathActive(!isFocus);
       } else {
         button.textContent = 'Start';
         button.setAttribute('aria-pressed', 'false');
-        setStatus(idleStatus(durationMin(state)));
+        setStatus(isFocus ? '' : idleStatus(durationMin(state)));
         setBreathActive(false);
       }
     }
@@ -353,7 +368,12 @@ export function initMeditate(): MeditateAudioControls | null {
     preset.addEventListener('click', () => {
       const min = Number(preset.dataset.duration);
       if (!Number.isFinite(min) || min <= 0) return;
+      if (timer.store.getState().status === 'break') timer.skipBreak();
       timer.setDuration(min * 60 * 1000);
+      if (currentMode === 'focus') {
+        unlockChimes();
+        timer.start();
+      }
     });
   });
 
@@ -387,6 +407,10 @@ export function initMeditate(): MeditateAudioControls | null {
   return {
     isOmPlaying: () => omPlaying,
     isFocusPlaying: () => focusPlaying,
+    setMode: mode => {
+      currentMode = mode;
+      paint(timer.store.getState());
+    },
     toggleOm: () => setOmPlaying(!omPlaying),
     toggleFocus: () => setFocusPlaying(!focusPlaying),
   };

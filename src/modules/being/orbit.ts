@@ -280,6 +280,7 @@ export function initBeingOrbit({
     const isMeditate = mode === 'breathe' || mode === 'om' || mode === 'focus';
 
     if (isMeditate) {
+      meditation?.setMode(mode as QuickMode);
       meditate.removeAttribute('hidden');
       panel.setAttribute('hidden', '');
       panel.innerHTML = '';

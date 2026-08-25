@@ -20,7 +20,8 @@ with five Sukoon pillars riding the circle —
   module, keeping the module boundary intact.
 - **Movement** — Stretch links plus three deterministic, fully-offline Weights
   pointers for today.
-- **Mindfulness** — Breathe, OM, and Focus.
+- **Mindfulness** — Breathe, OM, and Focus. Focus begins immediately from one
+  of four fixed choices: 5, 10, 15, or 30 minutes.
   Audio uses HTMLAudioElement for iOS autoplay reliability.
 - **Rooh** — relationships, safety, and co-regulation.
 
