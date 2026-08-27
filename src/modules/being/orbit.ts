@@ -19,7 +19,7 @@
 import './exercise.css';
 import { initMeditate } from './meditate';
 import { renderExerciseView } from './exercise-view';
-import { STRETCH_ROUTINES } from './exercise-data';
+import { getStretchLinks, getStretchNow } from './exercise-data';
 import { escapeHtml } from '../../utils/escapeHtml';
 import { initBreathReset } from './breath-reset';
 
@@ -78,14 +78,7 @@ export function initBeingOrbit({
 
   // Flatten the body-part stretch routines into labelled links (Back → Back 1…).
   function stretchLinks(): PracticeLink[] {
-    return STRETCH_ROUTINES.flatMap(entry =>
-      entry.urls.length === 1
-        ? [{ label: entry.bodyPart, url: entry.urls[0] }]
-        : entry.urls.map((url, i) => ({
-            label: `${entry.bodyPart} ${i + 1}`,
-            url,
-          }))
-    );
+    return getStretchLinks();
   }
 
   function renderLinks(
@@ -149,18 +142,25 @@ export function initBeingOrbit({
   }
 
   function movementOverview(): string {
+    const stretchNow = getStretchNow(new Date());
+    const stretchNowAction = stretchNow
+      ? `data-stretch-now="${escapeHtml(stretchNow.url)}"`
+      : 'data-movement="stretch"';
     return `
       <section class="pillar-action-layer" aria-labelledby="movement-title">
         ${renderActionHeader('Movement', 'movement-title')}
-        <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Movement practices">
-          <button type="button" class="pillar-action pillar-action--icon" data-movement="stretch">
+        <div class="movement-now">
+          <button type="button" class="pillar-action pillar-action--icon movement-now__action" ${stretchNowAction}>
             <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ACTION_ICONS.stretch}</svg></span>
-            <span>Stretch</span>
+            <span>Stretch Now</span>
           </button>
-          <button type="button" class="pillar-action pillar-action--icon" data-movement="weights">
+        </div>
+        <div class="movement-alternatives" role="group" aria-label="Movement alternatives">
+          <button type="button" class="pillar-action movement-alternatives__action" data-movement="weights">
             <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ACTION_ICONS.weights}</svg></span>
             <span>Weights</span>
           </button>
+          <button type="button" class="pillar-action movement-alternatives__action" data-movement="stretch">Choose</button>
         </div>
       </section>
     `;
@@ -348,6 +348,12 @@ export function initBeingOrbit({
   // renders (data-link); the exercise view owns its own clicks separately.
   panel.addEventListener('click', event => {
     const target = event.target as HTMLElement | null;
+    const stretchNow = target?.closest<HTMLButtonElement>('[data-stretch-now]');
+    if (stretchNow?.dataset.stretchNow) {
+      window.open(stretchNow.dataset.stretchNow, '_blank', 'noopener');
+      return;
+    }
+
     const movement = target?.closest<HTMLButtonElement>('[data-movement]');
     if (
       movement?.dataset.movement === 'stretch' ||

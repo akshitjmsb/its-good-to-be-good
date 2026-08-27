@@ -582,6 +582,11 @@ export interface StretchEntry {
   urls: string[];
 }
 
+export interface StretchLink {
+  label: string;
+  url: string;
+}
+
 /**
  * Curated stretch videos — each body part links directly to a YouTube
  * routine. Multiple URLs per body part render as numbered buttons
@@ -596,6 +601,27 @@ export const STRETCH_ROUTINES: ReadonlyArray<StretchEntry> = [
     'https://youtu.be/HzXkMnvqojE?si=mtKPBZGTlHYHyf6Z',
   ]},
 ];
+
+export function getStretchLinks(): StretchLink[] {
+  return STRETCH_ROUTINES.flatMap(entry =>
+    entry.urls.length === 1
+      ? [{ label: entry.bodyPart, url: entry.urls[0] }]
+      : entry.urls.map((url, index) => ({
+          label: `${entry.bodyPart} ${index + 1}`,
+          url,
+        }))
+  );
+}
+
+/** One deterministic curated stretch per local calendar day. */
+export function getStretchNow(date: Date): StretchLink | null {
+  const links = getStretchLinks();
+  if (links.length === 0) return null;
+  const localDay = Math.floor(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000
+  );
+  return links[localDay % links.length];
+}
 
 /* ── Muscle focus per workout type ──────────────────────────────────────── */
 

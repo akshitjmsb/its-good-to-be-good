@@ -3,6 +3,8 @@ import {
   __INTERNAL,
   getDayPlan,
   getStartOfWeek,
+  getStretchLinks,
+  getStretchNow,
   type Exercise,
 } from '../exercise-data';
 
@@ -94,6 +96,30 @@ describe('getDayPlan — determinism + variety', () => {
     const allMatch =
       wk1.join(',') === wk2.join(',') && wk2.join(',') === wk3.join(',');
     expect(allMatch).toBe(false);
+  });
+});
+
+describe('Stretch Now', () => {
+  it('returns the same curated stretch throughout a local day', () => {
+    const morning = getStretchNow(new Date(2026, 7, 27, 8, 0));
+    const evening = getStretchNow(new Date(2026, 7, 27, 22, 0));
+    expect(evening).toEqual(morning);
+    expect(getStretchLinks()).toContainEqual(morning);
+  });
+
+  it('rotates to the next curated stretch on the next day', () => {
+    const today = getStretchNow(new Date(2026, 7, 27));
+    const tomorrow = getStretchNow(new Date(2026, 7, 28));
+    expect(tomorrow).not.toEqual(today);
+  });
+
+  it('keeps the body-part labels used by the chooser', () => {
+    expect(getStretchLinks().map(link => link.label)).toEqual([
+      'Face',
+      'Back 1',
+      'Back 2',
+      'Back 3',
+    ]);
   });
 });
 

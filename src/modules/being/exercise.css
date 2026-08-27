@@ -1,5 +1,39 @@
 /* Weights — a quiet list of today's pointers. */
 
+.movement-now {
+    margin-top: 1rem;
+}
+
+.movement-now__action {
+    width: 100%;
+}
+
+.movement-alternatives {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+.movement-alternatives__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: transparent;
+    border-color: transparent;
+    color: var(--home-muted, #6b7280);
+}
+
+.movement-alternatives__action .pillar-action__glyph {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.movement-alternatives__action .pillar-action__glyph svg {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
 .ex-view {
     color: var(--home-text, #374151);
     font-family: var(--home-font-family, 'Special Elite', monospace);

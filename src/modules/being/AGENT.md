@@ -18,8 +18,9 @@ with five Sukoon pillars riding the circle —
 - **Sleep** — the master pillar, including circadian/light pointers.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food
   module, keeping the module boundary intact.
-- **Movement** — Stretch links plus three deterministic, fully-offline Weights
-  pointers for today.
+- **Movement** — Stretch Now opens one deterministic curated stretch for the
+  local day. The full Stretch chooser and three deterministic, fully-offline
+  Weights pointers remain secondary paths.
 - **Mindfulness** — Breathe, OM, and Focus. Focus begins immediately from one
   of four fixed choices: 5, 10, 15, or 30 minutes.
   Audio uses HTMLAudioElement for iOS autoplay reliability.
