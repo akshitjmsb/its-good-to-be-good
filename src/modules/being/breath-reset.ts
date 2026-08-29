@@ -130,8 +130,10 @@ export function createBreathResetController({
 
 export function initBreathReset({
   beforeStart,
+  interceptPress,
 }: {
   beforeStart?: () => void;
+  interceptPress?: () => boolean;
 } = {}): BreathResetController | null {
   const orbit = document.querySelector<HTMLElement>('.being-orbit');
   const button = document.getElementById('being-reset') as HTMLButtonElement | null;
@@ -157,6 +159,7 @@ export function initBreathReset({
   });
 
   button.addEventListener('click', () => {
+    if (interceptPress?.()) return;
     if (controller.getState().active) {
       controller.stop();
       return;

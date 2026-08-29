@@ -29,3 +29,11 @@ Synthesized in-repo via `ffmpeg`'s `aevalsrc` filter — fundamental sine + 2× 
 | `chime-high.mp3` | 880 Hz (A5) | 1760 Hz | inhale phase + session-end |
 | `chime-mid.mp3`  | 660 Hz (E5) | 1320 Hz | hold phases |
 | `chime-low.mp3`  | 440 Hz (A4) | 880 Hz  | exhale phase |
+
+## breath-guide.mp3 — screen-free breathing cues
+
+Synthesized in-repo from the existing high and low breath chimes. A high chime
+marks inhale, a low chime marks exhale four seconds later, and the ten-second
+4-in / 6-out cycle repeats for five minutes before the media element loops.
+An inaudibly quiet noise floor keeps one continuous media stream active so iOS
+can continue it through screen lock.

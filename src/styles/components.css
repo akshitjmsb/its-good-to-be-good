@@ -2430,6 +2430,32 @@ button.preview-card {
     animation: meditate-breath-ring 16s infinite;
 }
 
+/* Screen-free Breathe follows the direct-control rhythm: 4 in, 6 out.
+   The continuous audio track carries the same cue timing through screen lock. */
+.meditate-breath.is-active.is-screen-free .meditate-breath__ring {
+    animation: meditate-screen-free-ring 10s infinite;
+}
+
+@keyframes meditate-screen-free-ring {
+    0% {
+        transform: scale(1);
+        border-color: #d1d5db;
+        background-color: transparent;
+        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    }
+    40% {
+        transform: scale(1.55);
+        border-color: #374151;
+        background-color: rgba(248, 249, 250, 0.6);
+        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    }
+    100% {
+        transform: scale(1);
+        border-color: #d1d5db;
+        background-color: transparent;
+    }
+}
+
 /* Per-keyframe timing function: smooth cubic ease on the inhale and
    exhale segments, dead-flat linear on the two holds. */
 @keyframes meditate-breath-ring {
@@ -2491,6 +2517,33 @@ button.preview-card {
 }
 .meditate-breath.is-active .meditate-breath__label--hold-2 {
     animation: meditate-label-hold-2 16s linear infinite;
+}
+
+.meditate-breath.is-active.is-screen-free .meditate-breath__label--inhale {
+    animation: meditate-screen-free-inhale 10s linear infinite;
+}
+.meditate-breath.is-active.is-screen-free .meditate-breath__label--exhale {
+    animation: meditate-screen-free-exhale 10s linear infinite;
+}
+.meditate-breath.is-screen-free .meditate-breath__label--hold-1,
+.meditate-breath.is-screen-free .meditate-breath__label--hold-2 {
+    display: none;
+}
+
+@keyframes meditate-screen-free-inhale {
+    0%      { opacity: 1; }
+    35%     { opacity: 1; }
+    40%     { opacity: 0; }
+    95%     { opacity: 0; }
+    100%    { opacity: 1; }
+}
+
+@keyframes meditate-screen-free-exhale {
+    0%      { opacity: 0; }
+    35%     { opacity: 0; }
+    40%     { opacity: 1; }
+    95%     { opacity: 1; }
+    100%    { opacity: 0; }
 }
 
 /* Cross-fade keyframes — each phase label is fully visible during its

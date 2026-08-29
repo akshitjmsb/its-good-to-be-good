@@ -21,8 +21,10 @@ with five Sukoon pillars riding the circle —
 - **Movement** — Stretch Now opens one deterministic curated stretch for the
   local day. The full Stretch chooser and three deterministic, fully-offline
   Weights pointers remain secondary paths.
-- **Mindfulness** — Breathe, OM, and Focus. Focus begins immediately from one
-  of four fixed choices: 5, 10, 15, or 30 minutes.
+- **Mindfulness** — Breathe, OM, and Focus. Breathe begins immediately with a
+  continuous 4-in / 6-out audio guide that survives screen lock and stops from
+  the Vitruvian Man. Focus begins immediately from one of four fixed choices:
+  5, 10, 15, or 30 minutes.
   Audio uses HTMLAudioElement for iOS autoplay reliability.
 - **Rooh** — relationships, safety, and co-regulation.
 

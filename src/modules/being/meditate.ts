@@ -20,6 +20,10 @@ import {
   formatCountdownTime,
 } from '../../platform/countdownTimer';
 import { getMeditateTimer } from '../../platform/meditateTimer';
+import {
+  BREATH_GUIDE_URL,
+  createBreathGuideSound,
+} from './breath-guide';
 
 const STATUS_RUNNING = 'Stay with the breath.';
 const STATUS_COMPLETE = 'Session complete.';
@@ -43,9 +47,12 @@ type SoundMode = 'bell' | 'off';
 const SOUND_MODES: readonly SoundMode[] = ['bell', 'off'];
 
 export interface MeditateAudioControls {
+  isBreathePlaying(): boolean;
   isOmPlaying(): boolean;
   isFocusPlaying(): boolean;
   setMode(mode: 'breathe' | 'om' | 'focus'): void;
+  startBreathe(): void;
+  stopBreathe(): void;
   toggleOm(): void;
   toggleFocus(): void;
 }
@@ -74,6 +81,7 @@ export function initMeditate(): MeditateAudioControls | null {
   let breathPhase = 0;
   let breathChimesActive = false;
   let currentMode: 'breathe' | 'om' | 'focus' = 'breathe';
+  let breathePlaying = false;
 
   // ─────────────────────────────────────────────────────────────────
   // Chime pool — three HTMLAudioElement instances, one per pitch.
@@ -142,6 +150,14 @@ export function initMeditate(): MeditateAudioControls | null {
 
   const omAudio = makeLoopAudio('/audio/om.mp3', 'om');
   const focusAudio = makeLoopAudio('/audio/sleep-music.mp3', 'focus');
+  const breathGuide = createBreathGuideSound(
+    new Audio(BREATH_GUIDE_URL),
+    error => {
+      console.warn('[breathe] guide playback rejected:', error);
+      breathePlaying = false;
+      paint(timer.store.getState());
+    }
+  );
   let omPlaying = false;
   let focusPlaying = false;
 
@@ -181,6 +197,22 @@ export function initMeditate(): MeditateAudioControls | null {
     setLoopPlaying('focus', focusAudio, null, next, () => {
       focusPlaying = false;
     });
+  }
+
+  function stopBreathe(): void {
+    breathePlaying = false;
+    breathGuide.stop();
+    paint(timer.store.getState());
+  }
+
+  function startBreathe(): void {
+    currentMode = 'breathe';
+    setOmPlaying(false);
+    setFocusPlaying(false);
+    if (timer.store.getState().status !== 'idle') timer.cancel();
+    breathePlaying = true;
+    breathGuide.start();
+    paint(timer.store.getState());
   }
 
   function playChime(pitch: ChimePitch): void {
@@ -258,12 +290,13 @@ export function initMeditate(): MeditateAudioControls | null {
     });
   }
 
-  function setBreathActive(active: boolean): void {
+  function setBreathActive(active: boolean, screenFree = false): void {
     if (breath) {
       breath.classList.toggle('is-active', active);
+      breath.classList.toggle('is-screen-free', active && screenFree);
       breath.setAttribute('aria-hidden', active ? 'false' : 'true');
     }
-    if (active) {
+    if (active && !screenFree) {
       startBreathChimes();
     } else {
       stopBreathChimes();
@@ -282,11 +315,21 @@ export function initMeditate(): MeditateAudioControls | null {
   function paint(state: CountdownState): void {
     if (!display || !button) return;
     const isFocus = currentMode === 'focus';
+    const isBreathe = currentMode === 'breathe';
 
-    display.hidden = isFocus && state.status === 'idle';
-    button.hidden = isFocus && state.status !== 'running';
-    if (options) options.hidden = isFocus && state.status === 'running';
-    if (breatheToggle) breatheToggle.hidden = isFocus;
+    display.hidden = isBreathe || (isFocus && state.status === 'idle');
+    button.hidden = isBreathe || (isFocus && state.status !== 'running');
+    if (options) {
+      options.hidden = isBreathe || (isFocus && state.status === 'running');
+    }
+    if (breatheToggle) breatheToggle.hidden = isBreathe || isFocus;
+
+    if (isBreathe) {
+      setStatus(breathePlaying ? STATUS_RUNNING : '');
+      setBreathActive(breathePlaying, true);
+      renderPresets(state);
+      return;
+    }
 
     if (state.status === 'break') {
       display.textContent = 'Done';
@@ -402,15 +445,20 @@ export function initMeditate(): MeditateAudioControls | null {
     stopBreathChimes();
     omAudio.pause();
     focusAudio.pause();
+    breathGuide.stop();
   });
 
   return {
+    isBreathePlaying: () => breathePlaying,
     isOmPlaying: () => omPlaying,
     isFocusPlaying: () => focusPlaying,
     setMode: mode => {
+      if (mode !== 'breathe' && breathePlaying) stopBreathe();
       currentMode = mode;
       paint(timer.store.getState());
     },
+    startBreathe,
+    stopBreathe,
     toggleOm: () => setOmPlaying(!omPlaying),
     toggleFocus: () => setFocusPlaying(!focusPlaying),
   };

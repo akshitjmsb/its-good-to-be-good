@@ -69,6 +69,11 @@ export function initBeingOrbit({
 
   let openMode: Mode | null = null;
   const breathReset = initBreathReset({
+    interceptPress: () => {
+      if (!meditation?.isBreathePlaying()) return false;
+      close();
+      return true;
+    },
     beforeStart: () => {
       if (meditation?.isOmPlaying()) meditation.toggleOm();
       if (meditation?.isFocusPlaying()) meditation.toggleFocus();
@@ -277,6 +282,9 @@ export function initBeingOrbit({
   function enter(mode: Mode): void {
     if (!stage || !meditate || !panel) return;
     breathReset?.stop();
+    if (mode !== 'breathe' && meditation?.isBreathePlaying()) {
+      meditation.stopBreathe();
+    }
     const isMeditate = mode === 'breathe' || mode === 'om' || mode === 'focus';
 
     if (isMeditate) {
@@ -299,6 +307,7 @@ export function initBeingOrbit({
 
   function close(): void {
     if (!stage || !meditate || !panel) return;
+    if (meditation?.isBreathePlaying()) meditation.stopBreathe();
     stage.setAttribute('hidden', '');
     verse?.removeAttribute('hidden');
     meditate.setAttribute('hidden', '');
@@ -371,6 +380,7 @@ export function initBeingOrbit({
     const quick = target?.closest<HTMLButtonElement>('[data-mode]');
     const quickMode = quick?.dataset.mode as QuickMode | undefined;
     if (quickMode) {
+      if (quickMode === 'breathe') meditation?.startBreathe();
       if (quickMode === 'om') meditation?.toggleOm();
       if (quickMode === 'focus') meditation?.toggleFocus();
       enter(quickMode);
