@@ -1,4 +1,7 @@
 import './khyaali-bhoot.css';
+import { registerAppWorker } from '../../platform/pwa/service-worker';
+
+void registerAppWorker();
 
 /** Write the fear, then let it go. Nothing is stored. */
 function init(): void {

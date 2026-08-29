@@ -1,5 +1,6 @@
 import { api } from '../../../convex/_generated/api';
 import { ensureFreshAuth } from '../auth/session';
+import { registerAppWorker } from '../pwa/service-worker';
 import { convex } from './client';
 
 export type ReminderReadiness = 'ready' | 'notifications-off' | 'offline';
@@ -15,22 +16,12 @@ function applicationServerKey(value: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
-export async function registerTodoReminderWorker(): Promise<ServiceWorkerRegistration | null> {
-  if (!('serviceWorker' in navigator)) return null;
-  try {
-    return await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-  } catch (error) {
-    console.error('Could not register the reminder worker:', error);
-    return null;
-  }
-}
-
 export async function ensureTodoReminderDelivery(): Promise<ReminderReadiness> {
   if (!navigator.onLine) return 'offline';
   if (!('Notification' in window) || !('PushManager' in window)) {
     return 'notifications-off';
   }
-  const registration = await registerTodoReminderWorker();
+  const registration = await registerAppWorker();
   if (!registration) return 'notifications-off';
   const permission =
     Notification.permission === 'default'

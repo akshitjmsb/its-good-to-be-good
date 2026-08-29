@@ -66,8 +66,8 @@ import {
 } from '../../platform/convex/jarvis-todo-integration';
 import {
   ensureTodoReminderDelivery,
-  registerTodoReminderWorker,
 } from '../../platform/convex/todo-reminders';
+import { registerAppWorker } from '../../platform/pwa/service-worker';
 import {
   formatReminder,
   oneHourFrom,
@@ -692,7 +692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = 'index.html';
     return;
   }
-  void registerTodoReminderWorker();
+  void registerAppWorker();
 
   /* ── shared mutable state ─────────────────────────────────────── */
   let tasks: Task[] = [];

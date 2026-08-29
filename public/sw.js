@@ -1,6 +1,6 @@
-/* Notification-only worker. It deliberately has no fetch handler and creates
- * no cache, so app pages always come from the network rather than a stale PWA
- * shell. */
+/* Notification-only worker, registered by every app surface. It deliberately
+ * has no fetch handler and creates no cache, so app pages update on their next
+ * opening without interrupting the page that is already in use. */
 
 self.addEventListener('install', () => {
   // Activate now — do not wait for existing pages to close. iOS standalone
