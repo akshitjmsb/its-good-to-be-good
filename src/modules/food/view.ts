@@ -1,4 +1,4 @@
-/** Food — two universal actions, with one optional meal idea. */
+/** Food — two universal actions, a tap-to-build meal, and one meal idea. */
 
 import { createSafeHtml } from '../../utils/escapeHtml';
 import { FOOD_SHELF, type MealCategory, getDayMealPlan } from './data';
@@ -11,6 +11,16 @@ export function mealCategoryForHour(hour: number): MealCategory {
   return 'dinner';
 }
 
+export function toggleMealChoice(
+  current: ReadonlyArray<string | undefined>,
+  categoryIndex: number,
+  food: string
+): Array<string | undefined> {
+  const next = [...current];
+  next[categoryIndex] = current[categoryIndex] === food ? undefined : food;
+  return next;
+}
+
 export function renderFoodView(container: HTMLElement, today: Date): void {
   const category = mealCategoryForHour(today.getHours());
   const meal = getDayMealPlan(today).meals[category];
@@ -20,10 +30,24 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
     meal.components.carb,
   ].filter((item): item is string => Boolean(item));
   const shelf = FOOD_SHELF.map(
-    category => `
+    (category, categoryIndex) => `
       <section class="food-shelf__group">
         <h3>${createSafeHtml(category.label)}</h3>
-        <p>${category.foods.map(food => createSafeHtml(food)).join(' · ')}</p>
+        <div class="food-shelf__choices">
+          ${category.foods
+            .map(
+              (food, foodIndex) => `
+                <button
+                  class="food-shelf__choice"
+                  type="button"
+                  aria-pressed="false"
+                  data-category-index="${categoryIndex}"
+                  data-food-index="${foodIndex}"
+                >${createSafeHtml(food)}</button>
+              `
+            )
+            .join('')}
+        </div>
       </section>
     `
   ).join('');
@@ -64,6 +88,10 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
 
       <details class="food-disclosure food-shelf">
         <summary>Build a meal <span aria-hidden="true">›</span></summary>
+        <div class="food-builder__meal" aria-live="polite" hidden>
+          <span>Your meal</span>
+          <p></p>
+        </div>
         <div class="food-shelf__groups">
           ${shelf}
         </div>
@@ -77,4 +105,43 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
       </details>
     </section>
   `;
+
+  const shelfElement = container.querySelector<HTMLElement>('.food-shelf');
+  const mealElement = container.querySelector<HTMLElement>(
+    '.food-builder__meal'
+  );
+  const mealText = mealElement?.querySelector<HTMLParagraphElement>('p');
+  if (!shelfElement || !mealElement || !mealText) return;
+
+  let selection: Array<string | undefined> = [];
+
+  shelfElement.addEventListener('click', event => {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest<HTMLButtonElement>('.food-shelf__choice');
+    if (!button || !shelfElement.contains(button)) return;
+
+    const categoryIndex = Number(button.dataset.categoryIndex);
+    const foodIndex = Number(button.dataset.foodIndex);
+    const food = FOOD_SHELF[categoryIndex]?.foods[foodIndex];
+    if (!food) return;
+
+    selection = toggleMealChoice(selection, categoryIndex, food);
+    const selectedFoods = selection.filter(
+      (item): item is string => Boolean(item)
+    );
+
+    shelfElement
+      .querySelectorAll<HTMLButtonElement>('.food-shelf__choice')
+      .forEach(choice => {
+        const choiceCategory = Number(choice.dataset.categoryIndex);
+        const choiceFood = Number(choice.dataset.foodIndex);
+        const isSelected =
+          FOOD_SHELF[choiceCategory]?.foods[choiceFood] ===
+          selection[choiceCategory];
+        choice.setAttribute('aria-pressed', String(isSelected));
+      });
+
+    mealText.textContent = selectedFoods.join(' · ');
+    mealElement.hidden = selectedFoods.length === 0;
+  });
 }

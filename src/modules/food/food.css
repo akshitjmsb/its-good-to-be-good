@@ -96,6 +96,27 @@
     padding: 0.1rem 0 0.65rem;
 }
 
+.food-builder__meal {
+    padding: 0.55rem 0 0.25rem;
+}
+
+.food-builder__meal span,
+.food-builder__meal p {
+    margin: 0;
+}
+
+.food-builder__meal span {
+    color: var(--home-muted, #6b7280);
+    font-size: 0.72rem;
+}
+
+.food-builder__meal p {
+    margin-top: 0.2rem;
+    color: var(--home-text, #374151);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
 .food-shelf__group {
     padding: 0.55rem 0;
 }
@@ -104,8 +125,7 @@
     border-top: 1px solid var(--home-border, #e5e7eb);
 }
 
-.food-shelf__group h3,
-.food-shelf__group p {
+.food-shelf__group h3 {
     margin: 0;
 }
 
@@ -116,11 +136,35 @@
     line-height: 1.4;
 }
 
-.food-shelf__group p {
+.food-shelf__choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
     margin-top: 0.25rem;
+}
+
+.food-shelf__choice {
+    min-height: 2.75rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.3rem;
+    background: var(--home-surface, #ffffff);
     color: var(--home-muted, #6b7280);
+    cursor: pointer;
+    font: inherit;
     font-size: 0.73rem;
-    line-height: 1.55;
+    line-height: 1.3;
+}
+
+.food-shelf__choice[aria-pressed='true'] {
+    border-color: var(--home-text, #374151);
+    background: var(--home-text, #374151);
+    color: var(--home-surface, #ffffff);
+}
+
+.food-shelf__choice:focus-visible {
+    outline: 2px solid var(--home-text, #374151);
+    outline-offset: 2px;
 }
 
 .food-meal__components {
