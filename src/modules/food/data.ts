@@ -1,8 +1,8 @@
 /**
  * Curated meal pool — fully offline, no API.
  *
- * Schedule: Tue + Thu are vegetarian (no meat, no fish, no eggs).
- * Other days draw from the combined pool (veg + non-veg items).
+ * Every day draws from Greek- and Indian-inspired plant + animal proteins.
+ * Beef is excluded from both the meal pool and the supporting food shelf.
  *
  * Per-week variation: each (week-start ISO date, day-of-week, meal
  * category) triple is hashed with djb2 to deterministically shuffle
@@ -19,6 +19,77 @@ export const MEAL_CATEGORIES: ReadonlyArray<MealCategory> = [
   'snack',
 ];
 
+export interface FoodShelfCategory {
+  label: string;
+  foods: ReadonlyArray<string>;
+}
+
+export const FOOD_SHELF: ReadonlyArray<FoodShelfCategory> = [
+  {
+    label: 'Protein',
+    foods: [
+      'Eggs',
+      'Greek yogurt',
+      'Chicken',
+      'Fish',
+      'Salmon',
+      'Tuna',
+      'Lamb',
+      'Paneer',
+      'Tofu',
+      'Dal',
+      'Chickpeas',
+      'Rajma',
+    ],
+  },
+  {
+    label: 'Vegetables / fibre',
+    foods: [
+      'Spinach / saag',
+      'Greek salad',
+      'Broccoli',
+      'Gobi',
+      'Cucumber',
+      'Tomato',
+      'Eggplant',
+      'Peppers',
+      'Okra',
+      'Greens',
+    ],
+  },
+  {
+    label: 'Fat',
+    foods: [
+      'Olive oil',
+      'Tahini',
+      'Nuts',
+      'Seeds',
+      'Peanut butter',
+      'Avocado',
+      'Ghee',
+    ],
+  },
+  {
+    label: 'Carb',
+    foods: [
+      'Roti',
+      'Rice',
+      'Pita',
+      'Oats',
+      'Potato',
+      'Sweet potato',
+      'Poha',
+      'Upma',
+      'Idli',
+      'Quinoa',
+    ],
+  },
+  {
+    label: 'Fruit — earlier',
+    foods: ['Berries', 'Apple', 'Pear', 'Orange', 'Banana'],
+  },
+];
+
 export interface Meal {
   name: string;
   components: {
@@ -29,20 +100,12 @@ export interface Meal {
 }
 
 export interface DayMealPlan {
-  vegetarian: boolean;
   meals: Record<MealCategory, Meal>;
-}
-
-/** Days of week (0 = Sun) that are vegetarian-only. */
-const VEG_WEEKDAYS: ReadonlySet<number> = new Set([2, 4]);
-
-export function isVegDay(date: Date): boolean {
-  return VEG_WEEKDAYS.has(date.getDay());
 }
 
 /* ── Breakfast ─────────────────────────────────────────────────────── */
 
-const BREAKFAST_VEG: ReadonlyArray<Meal> = [
+const BREAKFAST_PLANT: ReadonlyArray<Meal> = [
   {
     name: 'Greek yogurt, banana and oats',
     components: {
@@ -116,7 +179,7 @@ const BREAKFAST_VEG: ReadonlyArray<Meal> = [
   },
 ];
 
-const BREAKFAST_NONVEG: ReadonlyArray<Meal> = [
+const BREAKFAST_ANIMAL: ReadonlyArray<Meal> = [
   {
     name: 'Masala omelette with toast',
     components: {
@@ -144,7 +207,7 @@ const BREAKFAST_NONVEG: ReadonlyArray<Meal> = [
 
 /* ── Lunch ─────────────────────────────────────────────────────────── */
 
-const LUNCH_VEG: ReadonlyArray<Meal> = [
+const LUNCH_PLANT: ReadonlyArray<Meal> = [
   {
     name: 'Dal with rice and roasted vegetables',
     components: {
@@ -225,7 +288,7 @@ const LUNCH_VEG: ReadonlyArray<Meal> = [
   },
 ];
 
-const LUNCH_NONVEG: ReadonlyArray<Meal> = [
+const LUNCH_ANIMAL: ReadonlyArray<Meal> = [
   {
     name: 'Grilled chicken with brown rice and salad',
     components: {
@@ -257,11 +320,35 @@ const LUNCH_NONVEG: ReadonlyArray<Meal> = [
       carb: 'whole-grain bread',
     },
   },
+  {
+    name: 'Grilled lamb and Greek salad with pita',
+    components: {
+      protein: 'lamb',
+      fibre: 'cucumber + tomato + olive oil',
+      carb: 'whole-grain pita',
+    },
+  },
+  {
+    name: 'Chicken tikka and kachumber with roti',
+    components: {
+      protein: 'chicken tikka',
+      fibre: 'cucumber + tomato',
+      carb: 'whole-wheat roti',
+    },
+  },
+  {
+    name: 'Salmon and Greek salad with potato',
+    components: {
+      protein: 'salmon',
+      fibre: 'Greek salad + olive oil',
+      carb: 'potato',
+    },
+  },
 ];
 
 /* ── Dinner ────────────────────────────────────────────────────────── */
 
-const DINNER_VEG: ReadonlyArray<Meal> = [
+const DINNER_PLANT: ReadonlyArray<Meal> = [
   {
     name: 'Dal and greens with sweet potato',
     components: {
@@ -335,7 +422,7 @@ const DINNER_VEG: ReadonlyArray<Meal> = [
   },
 ];
 
-const DINNER_NONVEG: ReadonlyArray<Meal> = [
+const DINNER_ANIMAL: ReadonlyArray<Meal> = [
   {
     name: 'Grilled chicken with roasted vegetables',
     components: {
@@ -366,11 +453,27 @@ const DINNER_NONVEG: ReadonlyArray<Meal> = [
       carb: 'brown rice',
     },
   },
+  {
+    name: 'Lamb kebab and roasted vegetables with pita',
+    components: {
+      protein: 'lamb kebab',
+      fibre: 'peppers + eggplant',
+      carb: 'whole-grain pita',
+    },
+  },
+  {
+    name: 'Salmon and spinach with sweet potato',
+    components: {
+      protein: 'salmon',
+      fibre: 'spinach + olive oil',
+      carb: 'sweet potato',
+    },
+  },
 ];
 
 /* ── Snack ─────────────────────────────────────────────────────────── */
 
-const SNACK_VEG: ReadonlyArray<Meal> = [
+const SNACK_PLANT: ReadonlyArray<Meal> = [
   {
     name: 'Apple with peanut butter',
     components: {
@@ -436,7 +539,7 @@ const SNACK_VEG: ReadonlyArray<Meal> = [
   },
 ];
 
-const SNACK_NONVEG: ReadonlyArray<Meal> = [
+const SNACK_ANIMAL: ReadonlyArray<Meal> = [
   {
     name: 'Boiled egg with cucumber and tomato',
     components: {
@@ -448,36 +551,34 @@ const SNACK_NONVEG: ReadonlyArray<Meal> = [
 
 /* ── Pool lookup ───────────────────────────────────────────────────── */
 
-function vegPoolFor(category: MealCategory): ReadonlyArray<Meal> {
+function plantPoolFor(category: MealCategory): ReadonlyArray<Meal> {
   switch (category) {
     case 'breakfast':
-      return BREAKFAST_VEG;
+      return BREAKFAST_PLANT;
     case 'lunch':
-      return LUNCH_VEG;
+      return LUNCH_PLANT;
     case 'dinner':
-      return DINNER_VEG;
+      return DINNER_PLANT;
     case 'snack':
-      return SNACK_VEG;
+      return SNACK_PLANT;
   }
 }
 
-function nonVegPoolFor(category: MealCategory): ReadonlyArray<Meal> {
+function animalPoolFor(category: MealCategory): ReadonlyArray<Meal> {
   switch (category) {
     case 'breakfast':
-      return BREAKFAST_NONVEG;
+      return BREAKFAST_ANIMAL;
     case 'lunch':
-      return LUNCH_NONVEG;
+      return LUNCH_ANIMAL;
     case 'dinner':
-      return DINNER_NONVEG;
+      return DINNER_ANIMAL;
     case 'snack':
-      return SNACK_NONVEG;
+      return SNACK_ANIMAL;
   }
 }
 
-function poolFor(category: MealCategory, vegetarian: boolean): ReadonlyArray<Meal> {
-  const veg = vegPoolFor(category);
-  if (vegetarian) return veg;
-  return [...veg, ...nonVegPoolFor(category)];
+function poolFor(category: MealCategory): ReadonlyArray<Meal> {
+  return [...plantPoolFor(category), ...animalPoolFor(category)];
 }
 
 /* ── Deterministic shuffle (mirrors exercise/data.ts) ──────────────── */
@@ -492,7 +593,7 @@ function djb2(input: string): number {
 
 function pickOne(pool: ReadonlyArray<Meal>, seed: number): Meal {
   if (pool.length === 0) {
-    // Defensive — every (category, vegetarian) combo has at least one entry.
+    // Defensive — every category has at least one entry.
     return {
       name: '—',
       components: { protein: '—', fibre: '—' },
@@ -530,31 +631,30 @@ function isoDayKey(date: Date): string {
  * category are part of the seed so each meal slot varies independently.
  */
 export function getDayMealPlan(date: Date): DayMealPlan {
-  const vegetarian = isVegDay(date);
   const weekStartKey = isoDayKey(getStartOfWeek(date));
   const dayOfWeek = date.getDay();
 
   const meals = {} as Record<MealCategory, Meal>;
   for (const category of MEAL_CATEGORIES) {
-    const pool = poolFor(category, vegetarian);
+    const pool = poolFor(category);
     const seed = djb2(`${weekStartKey}|${dayOfWeek}|${category}`);
     meals[category] = pickOne(pool, seed);
   }
 
-  return { vegetarian, meals };
+  return { meals };
 }
 
 /** Exposed for tests. */
 export const __INTERNAL = {
   djb2,
   pickOne,
-  VEG_WEEKDAYS,
-  BREAKFAST_VEG,
-  BREAKFAST_NONVEG,
-  LUNCH_VEG,
-  LUNCH_NONVEG,
-  DINNER_VEG,
-  DINNER_NONVEG,
-  SNACK_VEG,
-  SNACK_NONVEG,
+  poolFor,
+  BREAKFAST_PLANT,
+  BREAKFAST_ANIMAL,
+  LUNCH_PLANT,
+  LUNCH_ANIMAL,
+  DINNER_PLANT,
+  DINNER_ANIMAL,
+  SNACK_PLANT,
+  SNACK_ANIMAL,
 };

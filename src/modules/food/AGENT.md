@@ -8,9 +8,9 @@
 
 A calm body-budget practice opened in the home activity stage. It leads with
 two universal actions: dress the carb, then eat protein and vegetables before
-the carb. One contextual meal idea sits behind progressive disclosure.
-Tuesdays and Thursdays are vegetarian-only; other days draw from the combined
-veg + non-veg pool.
+the carb. “Build a meal” reveals a small Greek–Indian food shelf by category;
+one contextual meal idea remains behind a second disclosure. Every day draws
+from plant and animal proteins. Beef is the only excluded meat.
 
 Every meal carries required `protein` and `fibre` components plus an optional
 `carb`. The disclosed meal idea renders only those fields in that order; the
@@ -31,4 +31,5 @@ type and pool tests prevent a naked-carb suggestion from being added later.
 
 - All meal names and ingredient strings render through
   `createSafeHtml` / `escapeHtml`.
+- The shelf and meal-pool tests reject beef or veal anywhere in Food data.
 - Food is intentionally read-only and session-only.

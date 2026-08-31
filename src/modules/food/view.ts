@@ -1,7 +1,7 @@
 /** Food — two universal actions, with one optional meal idea. */
 
 import { createSafeHtml } from '../../utils/escapeHtml';
-import { type MealCategory, getDayMealPlan } from './data';
+import { FOOD_SHELF, type MealCategory, getDayMealPlan } from './data';
 
 /** The meal window is deliberately broad; this is a cue, not a schedule. */
 export function mealCategoryForHour(hour: number): MealCategory {
@@ -19,6 +19,14 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
     meal.components.fibre,
     meal.components.carb,
   ].filter((item): item is string => Boolean(item));
+  const shelf = FOOD_SHELF.map(
+    category => `
+      <section class="food-shelf__group">
+        <h3>${createSafeHtml(category.label)}</h3>
+        <p>${category.foods.map(food => createSafeHtml(food)).join(' · ')}</p>
+      </section>
+    `
+  ).join('');
 
   container.innerHTML = `
     <section class="food-view" aria-label="Food pointers">
@@ -54,7 +62,14 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
         </div>
       </div>
 
-      <details class="food-idea">
+      <details class="food-disclosure food-shelf">
+        <summary>Build a meal <span aria-hidden="true">›</span></summary>
+        <div class="food-shelf__groups">
+          ${shelf}
+        </div>
+      </details>
+
+      <details class="food-disclosure food-idea">
         <summary>Meal idea <span aria-hidden="true">›</span></summary>
         <div class="food-idea__meal">
           <p class="food-meal__components">${components.map(item => createSafeHtml(item)).join(' · ')}</p>

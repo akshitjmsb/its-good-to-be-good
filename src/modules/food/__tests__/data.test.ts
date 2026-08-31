@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   __INTERNAL,
+  FOOD_SHELF,
   getDayMealPlan,
   getStartOfWeek,
-  isVegDay,
   MEAL_CATEGORIES,
   type Meal,
   type MealCategory,
@@ -12,38 +12,38 @@ import {
 const {
   djb2,
   pickOne,
-  BREAKFAST_VEG,
-  BREAKFAST_NONVEG,
-  LUNCH_VEG,
-  LUNCH_NONVEG,
-  DINNER_VEG,
-  DINNER_NONVEG,
-  SNACK_VEG,
-  SNACK_NONVEG,
+  poolFor,
+  BREAKFAST_PLANT,
+  BREAKFAST_ANIMAL,
+  LUNCH_PLANT,
+  LUNCH_ANIMAL,
+  DINNER_PLANT,
+  DINNER_ANIMAL,
+  SNACK_PLANT,
+  SNACK_ANIMAL,
 } = __INTERNAL;
 
-const VEG_POOLS: ReadonlyArray<ReadonlyArray<Meal>> = [
-  BREAKFAST_VEG,
-  LUNCH_VEG,
-  DINNER_VEG,
-  SNACK_VEG,
+const PLANT_POOLS: ReadonlyArray<ReadonlyArray<Meal>> = [
+  BREAKFAST_PLANT,
+  LUNCH_PLANT,
+  DINNER_PLANT,
+  SNACK_PLANT,
 ];
 
-const NONVEG_POOLS: ReadonlyArray<ReadonlyArray<Meal>> = [
-  BREAKFAST_NONVEG,
-  LUNCH_NONVEG,
-  DINNER_NONVEG,
-  SNACK_NONVEG,
+const ANIMAL_POOLS: ReadonlyArray<ReadonlyArray<Meal>> = [
+  BREAKFAST_ANIMAL,
+  LUNCH_ANIMAL,
+  DINNER_ANIMAL,
+  SNACK_ANIMAL,
 ];
 
 const ALL_POOLS: ReadonlyArray<ReadonlyArray<Meal>> = [
-  ...VEG_POOLS,
-  ...NONVEG_POOLS,
+  ...PLANT_POOLS,
+  ...ANIMAL_POOLS,
 ];
 
-const MEAT_KEYWORDS = [
+const ANIMAL_KEYWORDS = [
   'chicken',
-  'beef',
   'pork',
   'lamb',
   'mutton',
@@ -60,12 +60,16 @@ const MEAT_KEYWORDS = [
   'egg',
   'eggs',
 ];
+const BEEF_KEYWORDS = ['beef', 'veal'];
 
 // Use word boundaries so "egg" doesn't match "eggplant" and "fish" doesn't
 // match e.g. "fishcake" if a future meal happens to use that compound.
-function containsMeatKeyword(text: string): string | null {
+function containsKeyword(
+  text: string,
+  keywords: ReadonlyArray<string>
+): string | null {
   const lower = text.toLowerCase();
-  for (const keyword of MEAT_KEYWORDS) {
+  for (const keyword of keywords) {
     const pattern = new RegExp(`\\b${keyword}\\b`);
     if (pattern.test(lower)) return keyword;
   }
@@ -91,33 +95,8 @@ describe('getStartOfWeek', () => {
   });
 });
 
-describe('isVegDay', () => {
-  it.each([
-    [0, false], // Sunday
-    [1, false], // Monday
-    [2, true],  // Tuesday
-    [3, false], // Wednesday
-    [4, true],  // Thursday
-    [5, false], // Friday
-    [6, false], // Saturday
-  ])('day-of-week %s -> vegetarian: %s', (offset, expected) => {
-    const date = new Date(2026, 4, 10 + offset);
-    expect(isVegDay(date)).toBe(expected);
-  });
-});
-
 describe('getDayMealPlan — schedule', () => {
   const week = (offset: number) => new Date(2026, 4, 10 + offset);
-
-  it.each([2, 4] as const)('day offset %s is vegetarian', offset => {
-    const plan = getDayMealPlan(week(offset));
-    expect(plan.vegetarian).toBe(true);
-  });
-
-  it.each([0, 1, 3, 5, 6] as const)('day offset %s is regular', offset => {
-    const plan = getDayMealPlan(week(offset));
-    expect(plan.vegetarian).toBe(false);
-  });
 
   it('every day returns all four meal categories', () => {
     for (let offset = 0; offset < 7; offset++) {
@@ -129,19 +108,11 @@ describe('getDayMealPlan — schedule', () => {
     }
   });
 
-  it('on vegetarian days, no meal contains meat or fish or egg names', () => {
-    for (const offset of [2, 4]) {
-      const plan = getDayMealPlan(week(offset));
-      for (const category of MEAL_CATEGORIES) {
-        const meal = plan.meals[category];
-        const haystack =
-          meal.name + ' ' + Object.values(meal.components).join(' ');
-        const hit = containsMeatKeyword(haystack);
-        expect(
-          hit,
-          `${category} on day offset ${offset} contained "${hit}": ${meal.name}`
-        ).toBeNull();
-      }
+  it('every category draws from both plant and animal pools', () => {
+    for (const [index, category] of MEAL_CATEGORIES.entries()) {
+      const combined = poolFor(category);
+      for (const meal of PLANT_POOLS[index]) expect(combined).toContain(meal);
+      for (const meal of ANIMAL_POOLS[index]) expect(combined).toContain(meal);
     }
   });
 });
@@ -164,7 +135,7 @@ describe('getDayMealPlan — determinism + variety', () => {
   });
 
   it('different days within the same week produce some variety in breakfasts', () => {
-    const breakfasts = [0, 1, 3, 5, 6].map(
+    const breakfasts = [0, 1, 2, 3, 4, 5, 6].map(
       offset => getDayMealPlan(new Date(2026, 4, 10 + offset)).meals.breakfast.name
     );
     expect(new Set(breakfasts).size).toBeGreaterThan(1);
@@ -179,14 +150,14 @@ describe('getDayMealPlan — determinism + variety', () => {
 });
 
 describe('meal pool integrity', () => {
-  it('every vegetarian pool has at least 6 entries', () => {
-    for (const pool of VEG_POOLS) {
+  it('every plant pool has at least 6 entries', () => {
+    for (const pool of PLANT_POOLS) {
       expect(pool.length).toBeGreaterThanOrEqual(6);
     }
   });
 
-  it('every non-vegetarian pool has at least one entry', () => {
-    for (const pool of NONVEG_POOLS) {
+  it('every animal-protein pool has at least one entry', () => {
+    for (const pool of ANIMAL_POOLS) {
       expect(pool.length).toBeGreaterThanOrEqual(1);
     }
   });
@@ -211,20 +182,61 @@ describe('meal pool integrity', () => {
     }
   });
 
-  it('no duplicate meal names within a single category-vegetarian pool', () => {
-    for (const pool of ALL_POOLS) {
-      const names = pool.map(m => m.name);
+  it('no duplicate meal names within a category', () => {
+    for (const category of MEAL_CATEGORIES) {
+      const names = poolFor(category).map(meal => meal.name);
       expect(new Set(names).size).toBe(names.length);
     }
   });
 
-  it('no vegetarian-pool meal contains meat/fish/egg keywords', () => {
-    for (const pool of VEG_POOLS) {
+  it('plant pools contain no animal proteins', () => {
+    for (const pool of PLANT_POOLS) {
       for (const meal of pool) {
         const haystack =
           meal.name + ' ' + Object.values(meal.components).join(' ');
-        const hit = containsMeatKeyword(haystack);
-        expect(hit, `Veg pool entry "${meal.name}" contained "${hit}"`).toBeNull();
+        const hit = containsKeyword(haystack, ANIMAL_KEYWORDS);
+        expect(
+          hit,
+          `Plant pool entry "${meal.name}" contained "${hit}"`
+        ).toBeNull();
+      }
+    }
+  });
+
+  it('contains both Greek and Indian inspiration', () => {
+    const names = ALL_POOLS.flat().map(meal => meal.name).join(' ');
+    expect(names).toMatch(/Greek|pita|lamb|olive oil/i);
+    expect(names).toMatch(/paneer|dal|roti|chana|tikka/i);
+  });
+
+  it('contains no beef or veal', () => {
+    for (const pool of ALL_POOLS) {
+      for (const meal of pool) {
+        const haystack =
+          meal.name + ' ' + Object.values(meal.components).join(' ');
+        expect(containsKeyword(haystack, BEEF_KEYWORDS)).toBeNull();
+      }
+    }
+  });
+});
+
+describe('food shelf', () => {
+  it('keeps the approved category order', () => {
+    expect(FOOD_SHELF.map(category => category.label)).toEqual([
+      'Protein',
+      'Vegetables / fibre',
+      'Fat',
+      'Carb',
+      'Fruit — earlier',
+    ]);
+  });
+
+  it('has useful choices and no beef or veal', () => {
+    for (const category of FOOD_SHELF) {
+      expect(category.foods.length).toBeGreaterThanOrEqual(5);
+      for (const food of category.foods) {
+        expect(food.trim()).not.toBe('');
+        expect(containsKeyword(food, BEEF_KEYWORDS)).toBeNull();
       }
     }
   });
@@ -239,13 +251,13 @@ describe('djb2 + pickOne', () => {
   });
 
   it('pickOne returns a meal from the pool', () => {
-    const picked = pickOne(BREAKFAST_VEG, 12345);
-    expect(BREAKFAST_VEG).toContain(picked);
+    const picked = pickOne(BREAKFAST_PLANT, 12345);
+    expect(BREAKFAST_PLANT).toContain(picked);
   });
 
   it('pickOne is a deterministic function of (seed, pool)', () => {
-    const a = pickOne(LUNCH_VEG, 999);
-    const b = pickOne(LUNCH_VEG, 999);
+    const a = pickOne(LUNCH_PLANT, 999);
+    const b = pickOne(LUNCH_PLANT, 999);
     expect(a.name).toBe(b.name);
   });
 

@@ -53,13 +53,13 @@
     line-height: 1.4;
 }
 
-.food-idea {
+.food-disclosure {
     margin-top: 0.5rem;
     padding-top: 0.5rem;
     border-top: 1px solid var(--home-border, #e5e7eb);
 }
 
-.food-idea summary {
+.food-disclosure summary {
     display: flex;
     min-height: 2.75rem;
     align-items: center;
@@ -70,26 +70,57 @@
     list-style: none;
 }
 
-.food-idea summary::-webkit-details-marker {
+.food-disclosure summary::-webkit-details-marker {
     display: none;
 }
 
-.food-idea summary span {
+.food-disclosure summary span {
     font-size: 1.15rem;
     transition: transform 0.15s ease;
 }
 
-.food-idea[open] summary span {
+.food-disclosure[open] summary span {
     transform: rotate(90deg);
 }
 
-.food-idea summary:focus-visible {
+.food-disclosure summary:focus-visible {
     outline: 2px solid var(--home-text, #374151);
     outline-offset: 2px;
 }
 
 .food-idea__meal {
     padding: 0.35rem 0 0.65rem;
+}
+
+.food-shelf__groups {
+    padding: 0.1rem 0 0.65rem;
+}
+
+.food-shelf__group {
+    padding: 0.55rem 0;
+}
+
+.food-shelf__group + .food-shelf__group {
+    border-top: 1px solid var(--home-border, #e5e7eb);
+}
+
+.food-shelf__group h3,
+.food-shelf__group p {
+    margin: 0;
+}
+
+.food-shelf__group h3 {
+    color: var(--home-text, #374151);
+    font: inherit;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.food-shelf__group p {
+    margin-top: 0.25rem;
+    color: var(--home-muted, #6b7280);
+    font-size: 0.73rem;
+    line-height: 1.55;
 }
 
 .food-meal__components {

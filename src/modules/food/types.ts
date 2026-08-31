@@ -1,1 +1,6 @@
-export type { MealCategory, Meal, DayMealPlan } from './data';
+export type {
+  MealCategory,
+  Meal,
+  DayMealPlan,
+  FoodShelfCategory,
+} from './data';

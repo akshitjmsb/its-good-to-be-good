@@ -35,11 +35,29 @@ describe('renderFoodView', () => {
     const container = { innerHTML: '' } as HTMLElement;
     renderFoodView(container, new Date(2026, 7, 15, 13));
 
-    expect(container.innerHTML).toContain('<details class="food-idea">');
+    expect(container.innerHTML).toContain(
+      '<details class="food-disclosure food-idea">'
+    );
     expect(container.innerHTML).toContain('<summary>Meal idea');
     expect(container.innerHTML).not.toContain('Lunch');
     expect(container.innerHTML).toContain('food-meal__components');
     expect(container.innerHTML).not.toContain('food-view__name');
+  });
+
+  it('offers the approved Greek-Indian food shelf without beef', () => {
+    const container = { innerHTML: '' } as HTMLElement;
+    renderFoodView(container, new Date(2026, 7, 15, 13));
+
+    expect(container.innerHTML).toContain('Build a meal');
+    expect(container.innerHTML).toContain('Protein');
+    expect(container.innerHTML).toContain('Greek yogurt');
+    expect(container.innerHTML).toContain('Lamb');
+    expect(container.innerHTML).toContain('Vegetables &#x2F; fibre');
+    expect(container.innerHTML).toContain('Olive oil');
+    expect(container.innerHTML).toContain('Roti');
+    expect(container.innerHTML).toContain('Pita');
+    expect(container.innerHTML).toContain('Fruit — earlier');
+    expect(container.innerHTML.toLowerCase()).not.toContain('beef');
   });
 
   it('shows meal components in protein, fibre, carb order', () => {
