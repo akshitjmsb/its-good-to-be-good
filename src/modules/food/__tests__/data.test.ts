@@ -134,7 +134,8 @@ describe('getDayMealPlan — schedule', () => {
       const plan = getDayMealPlan(week(offset));
       for (const category of MEAL_CATEGORIES) {
         const meal = plan.meals[category];
-        const haystack = meal.name + ' ' + (meal.ingredients ?? []).join(' ');
+        const haystack =
+          meal.name + ' ' + Object.values(meal.components).join(' ');
         const hit = containsMeatKeyword(haystack);
         expect(
           hit,
@@ -198,14 +199,13 @@ describe('meal pool integrity', () => {
     }
   });
 
-  it('when ingredients are present, every entry is a non-empty string', () => {
+  it('every meal names protein first and fibre second', () => {
     for (const pool of ALL_POOLS) {
       for (const meal of pool) {
-        if (meal.ingredients) {
-          expect(meal.ingredients.length).toBeGreaterThan(0);
-          for (const ingredient of meal.ingredients) {
-            expect(ingredient.trim()).not.toBe('');
-          }
+        expect(meal.components.protein.trim()).not.toBe('');
+        expect(meal.components.fibre.trim()).not.toBe('');
+        if (meal.components.carb !== undefined) {
+          expect(meal.components.carb.trim()).not.toBe('');
         }
       }
     }
@@ -221,7 +221,8 @@ describe('meal pool integrity', () => {
   it('no vegetarian-pool meal contains meat/fish/egg keywords', () => {
     for (const pool of VEG_POOLS) {
       for (const meal of pool) {
-        const haystack = meal.name + ' ' + (meal.ingredients ?? []).join(' ');
+        const haystack =
+          meal.name + ' ' + Object.values(meal.components).join(' ');
         const hit = containsMeatKeyword(haystack);
         expect(hit, `Veg pool entry "${meal.name}" contained "${hit}"`).toBeNull();
       }

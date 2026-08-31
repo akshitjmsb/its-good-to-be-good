@@ -14,9 +14,11 @@ export function mealCategoryForHour(hour: number): MealCategory {
 export function renderFoodView(container: HTMLElement, today: Date): void {
   const category = mealCategoryForHour(today.getHours());
   const meal = getDayMealPlan(today).meals[category];
-  const ingredients = meal.ingredients?.length
-    ? `<p class="food-meal__ingredients">${meal.ingredients.map(item => createSafeHtml(item)).join(' · ')}</p>`
-    : '';
+  const components = [
+    meal.components.protein,
+    meal.components.fibre,
+    meal.components.carb,
+  ].filter((item): item is string => Boolean(item));
 
   container.innerHTML = `
     <section class="food-view" aria-label="Food pointers">
@@ -55,8 +57,7 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
       <details class="food-idea">
         <summary>Meal idea <span aria-hidden="true">›</span></summary>
         <div class="food-idea__meal">
-          <h3 class="food-view__name">${createSafeHtml(meal.name)}</h3>
-          ${ingredients}
+          <p class="food-meal__components">${components.map(item => createSafeHtml(item)).join(' · ')}</p>
         </div>
       </details>
     </section>

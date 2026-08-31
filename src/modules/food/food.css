@@ -92,17 +92,9 @@
     padding: 0.35rem 0 0.65rem;
 }
 
-.food-view__name {
+.food-meal__components {
     margin: 0;
-    color: var(--home-ink, #111111);
-    font: inherit;
-    font-size: 1rem;
-    line-height: 1.4;
-}
-
-.food-meal__ingredients {
-    margin: 0.35rem 0 0;
-    color: var(--home-muted, #6b7280);
-    font-size: 0.75rem;
+    color: var(--home-text, #374151);
+    font-size: 0.9rem;
     line-height: 1.5;
 }

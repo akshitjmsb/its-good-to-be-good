@@ -38,7 +38,16 @@ describe('renderFoodView', () => {
     expect(container.innerHTML).toContain('<details class="food-idea">');
     expect(container.innerHTML).toContain('<summary>Meal idea');
     expect(container.innerHTML).not.toContain('Lunch');
-    expect(container.innerHTML).toContain('food-view__name');
-    expect(container.innerHTML).toContain('food-meal__ingredients');
+    expect(container.innerHTML).toContain('food-meal__components');
+    expect(container.innerHTML).not.toContain('food-view__name');
+  });
+
+  it('shows meal components in protein, fibre, carb order', () => {
+    const container = { innerHTML: '' } as HTMLElement;
+    renderFoodView(container, new Date(2026, 7, 31, 8));
+
+    expect(container.innerHTML).toContain(
+      'Greek yogurt · carrot + peas · upma'
+    );
   });
 });

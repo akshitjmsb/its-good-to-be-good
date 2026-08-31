@@ -21,8 +21,11 @@ export const MEAL_CATEGORIES: ReadonlyArray<MealCategory> = [
 
 export interface Meal {
   name: string;
-  ingredients?: string[];
-  note?: string;
+  components: {
+    protein: string;
+    fibre: string;
+    carb?: string;
+  };
 }
 
 export interface DayMealPlan {
@@ -41,56 +44,101 @@ export function isVegDay(date: Date): boolean {
 
 const BREAKFAST_VEG: ReadonlyArray<Meal> = [
   {
-    name: 'Oats with banana and almonds',
-    ingredients: ['rolled oats', 'banana', 'almonds', 'cinnamon'],
+    name: 'Greek yogurt, banana and oats',
+    components: {
+      protein: 'Greek yogurt',
+      fibre: 'banana + almonds',
+      carb: 'oats',
+    },
   },
   {
-    name: 'Oats with berries and walnuts',
-    ingredients: ['rolled oats', 'mixed berries', 'walnuts'],
+    name: 'Greek yogurt, berries and oats',
+    components: {
+      protein: 'Greek yogurt',
+      fibre: 'berries + walnuts',
+      carb: 'oats',
+    },
   },
   {
-    name: 'Greek yogurt with fruit and honey',
-    ingredients: ['plain Greek yogurt', 'apple or pear', 'honey', 'pumpkin seeds'],
+    name: 'Greek yogurt with fruit and seeds',
+    components: {
+      protein: 'Greek yogurt',
+      fibre: 'apple or pear + pumpkin seeds',
+    },
   },
   {
-    name: 'Vegetable poha',
-    ingredients: ['flattened rice', 'onion', 'peas', 'peanuts', 'turmeric'],
+    name: 'Poha with paneer and vegetables',
+    components: {
+      protein: 'paneer',
+      fibre: 'peas + onion',
+      carb: 'poha',
+    },
   },
   {
-    name: 'Upma with vegetables',
-    ingredients: ['semolina', 'carrot', 'peas', 'mustard seeds', 'curry leaves'],
+    name: 'Upma with Greek yogurt and vegetables',
+    components: {
+      protein: 'Greek yogurt',
+      fibre: 'carrot + peas',
+      carb: 'upma',
+    },
   },
   {
-    name: 'Idli with sambar',
-    ingredients: ['idli', 'lentil sambar', 'coconut chutney'],
+    name: 'Idli with lentil sambar',
+    components: {
+      protein: 'lentil sambar',
+      fibre: 'sambar vegetables',
+      carb: 'idli',
+    },
   },
   {
-    name: 'Avocado toast with tomato',
-    ingredients: ['whole-grain bread', 'avocado', 'tomato', 'black pepper'],
+    name: 'Paneer, avocado and toast',
+    components: {
+      protein: 'paneer',
+      fibre: 'avocado + tomato',
+      carb: 'whole-grain toast',
+    },
   },
   {
-    name: 'Paneer paratha with curd',
-    ingredients: ['whole-wheat paratha', 'paneer', 'plain curd'],
-    note: 'Skip the butter on the paratha — a little ghee is enough.',
+    name: 'Paneer paratha with curd and cucumber',
+    components: {
+      protein: 'paneer + curd',
+      fibre: 'cucumber',
+      carb: 'whole-wheat paratha',
+    },
   },
   {
-    name: 'Banana-peanut-butter toast',
-    ingredients: ['whole-grain bread', 'peanut butter', 'banana'],
+    name: 'Peanut butter, banana and toast',
+    components: {
+      protein: 'peanut butter',
+      fibre: 'banana',
+      carb: 'whole-grain toast',
+    },
   },
 ];
 
 const BREAKFAST_NONVEG: ReadonlyArray<Meal> = [
   {
     name: 'Masala omelette with toast',
-    ingredients: ['eggs', 'onion', 'green chili', 'tomato', 'whole-grain bread'],
+    components: {
+      protein: 'eggs',
+      fibre: 'tomato + onion + spinach',
+      carb: 'whole-grain toast',
+    },
   },
   {
-    name: 'Scrambled eggs with spinach',
-    ingredients: ['eggs', 'spinach', 'olive oil', 'whole-grain bread'],
+    name: 'Scrambled eggs, spinach and toast',
+    components: {
+      protein: 'eggs',
+      fibre: 'spinach',
+      carb: 'whole-grain toast',
+    },
   },
   {
-    name: 'Boiled eggs with avocado',
-    ingredients: ['boiled eggs', 'avocado', 'sea salt', 'black pepper'],
+    name: 'Boiled eggs with avocado and tomato',
+    components: {
+      protein: 'boiled eggs',
+      fibre: 'avocado + tomato',
+    },
   },
 ];
 
@@ -99,63 +147,115 @@ const BREAKFAST_NONVEG: ReadonlyArray<Meal> = [
 const LUNCH_VEG: ReadonlyArray<Meal> = [
   {
     name: 'Dal with rice and roasted vegetables',
-    ingredients: ['toor dal', 'brown rice', 'roasted seasonal vegetables'],
+    components: {
+      protein: 'toor dal',
+      fibre: 'roasted vegetables',
+      carb: 'brown rice',
+    },
   },
   {
     name: 'Rajma chawal with cucumber salad',
-    ingredients: ['rajma (kidney beans)', 'basmati rice', 'cucumber', 'onion'],
+    components: {
+      protein: 'rajma',
+      fibre: 'cucumber salad',
+      carb: 'rice',
+    },
   },
   {
-    name: 'Chana masala with rice',
-    ingredients: ['chickpeas', 'tomato', 'onion', 'brown rice'],
+    name: 'Chana masala with vegetables and rice',
+    components: {
+      protein: 'chana',
+      fibre: 'tomato + greens',
+      carb: 'rice',
+    },
   },
   {
-    name: 'Vegetable khichdi with curd',
-    ingredients: ['moong dal', 'rice', 'carrot', 'peas', 'plain curd'],
-    note: 'Easy on the stomach — good for a slow afternoon.',
+    name: 'Curd and vegetables with moong khichdi',
+    components: {
+      protein: 'curd + moong dal',
+      fibre: 'carrot + peas',
+      carb: 'khichdi rice',
+    },
   },
   {
     name: 'Paneer bhurji with roti',
-    ingredients: ['paneer', 'onion', 'tomato', 'whole-wheat roti'],
+    components: {
+      protein: 'paneer',
+      fibre: 'tomato + onion',
+      carb: 'whole-wheat roti',
+    },
   },
   {
     name: 'Chickpea salad with olive oil',
-    ingredients: ['chickpeas', 'cucumber', 'tomato', 'red onion', 'olive oil', 'lemon'],
+    components: {
+      protein: 'chickpeas',
+      fibre: 'cucumber + tomato + olive oil',
+    },
   },
   {
-    name: 'Vegetable soup with whole-grain bread',
-    ingredients: ['mixed vegetables', 'vegetable stock', 'whole-grain bread'],
+    name: 'Vegetable soup with paneer and bread',
+    components: {
+      protein: 'paneer',
+      fibre: 'vegetable soup',
+      carb: 'whole-grain bread',
+    },
   },
   {
-    name: 'Mixed vegetable curry with quinoa',
-    ingredients: ['cauliflower', 'peas', 'carrot', 'quinoa'],
+    name: 'Tofu vegetable curry with quinoa',
+    components: {
+      protein: 'tofu',
+      fibre: 'cauliflower + peas',
+      carb: 'quinoa',
+    },
   },
   {
     name: 'Stir-fried tofu with vegetables',
-    ingredients: ['firm tofu', 'bell pepper', 'broccoli', 'soy sauce', 'ginger'],
+    components: {
+      protein: 'tofu',
+      fibre: 'bell pepper + broccoli',
+    },
   },
   {
-    name: 'Aloo gobi with roti',
-    ingredients: ['potato', 'cauliflower', 'turmeric', 'whole-wheat roti'],
+    name: 'Paneer with gobi and roti',
+    components: {
+      protein: 'paneer',
+      fibre: 'cauliflower',
+      carb: 'whole-wheat roti',
+    },
   },
 ];
 
 const LUNCH_NONVEG: ReadonlyArray<Meal> = [
   {
     name: 'Grilled chicken with brown rice and salad',
-    ingredients: ['chicken breast', 'brown rice', 'mixed greens', 'olive oil'],
+    components: {
+      protein: 'chicken',
+      fibre: 'mixed salad + olive oil',
+      carb: 'brown rice',
+    },
   },
   {
     name: 'Fish curry with rice',
-    ingredients: ['white fish', 'coconut milk', 'tomato', 'basmati rice'],
+    components: {
+      protein: 'fish',
+      fibre: 'tomato + greens',
+      carb: 'rice',
+    },
   },
   {
     name: 'Chicken stir-fry with vegetables',
-    ingredients: ['chicken breast', 'bell pepper', 'broccoli', 'soy sauce', 'ginger'],
+    components: {
+      protein: 'chicken',
+      fibre: 'bell pepper + broccoli',
+    },
   },
   {
     name: 'Tuna salad on whole-grain bread',
-    ingredients: ['canned tuna', 'olive oil', 'onion', 'whole-grain bread', 'lettuce'],
+    components: {
+      protein: 'tuna',
+      fibre: 'lettuce + onion + olive oil',
+      carb: 'whole-grain bread',
+    },
   },
 ];
 
@@ -163,59 +263,108 @@ const LUNCH_NONVEG: ReadonlyArray<Meal> = [
 
 const DINNER_VEG: ReadonlyArray<Meal> = [
   {
-    name: 'Steamed sweet potato with dal',
-    ingredients: ['sweet potato', 'masoor dal', 'cumin', 'cilantro'],
+    name: 'Dal and greens with sweet potato',
+    components: {
+      protein: 'masoor dal',
+      fibre: 'sautéed greens',
+      carb: 'sweet potato',
+    },
   },
   {
     name: 'Vegetable soup with paneer toast',
-    ingredients: ['mixed vegetables', 'vegetable stock', 'paneer', 'whole-grain bread'],
+    components: {
+      protein: 'paneer',
+      fibre: 'vegetable soup',
+      carb: 'whole-grain toast',
+    },
   },
   {
     name: 'Saag paneer with roti',
-    ingredients: ['spinach', 'paneer', 'garlic', 'whole-wheat roti'],
+    components: {
+      protein: 'paneer',
+      fibre: 'saag',
+      carb: 'whole-wheat roti',
+    },
   },
   {
     name: 'Dal tadka with rice and cucumber',
-    ingredients: ['yellow dal', 'cumin', 'rice', 'cucumber'],
+    components: {
+      protein: 'yellow dal',
+      fibre: 'cucumber salad',
+      carb: 'rice',
+    },
   },
   {
     name: 'Tofu and vegetable curry',
-    ingredients: ['firm tofu', 'tomato', 'spinach', 'brown rice'],
+    components: {
+      protein: 'tofu',
+      fibre: 'tomato + spinach',
+      carb: 'brown rice',
+    },
   },
   {
     name: 'Mixed dal with sautéed greens',
-    ingredients: ['mixed lentils', 'spinach or kale', 'garlic', 'olive oil'],
+    components: {
+      protein: 'mixed dal',
+      fibre: 'spinach or kale + olive oil',
+    },
   },
   {
     name: 'Lentil soup with whole-grain bread',
-    ingredients: ['red lentils', 'carrot', 'celery', 'whole-grain bread'],
+    components: {
+      protein: 'lentil soup',
+      fibre: 'carrot + celery',
+      carb: 'whole-grain bread',
+    },
   },
   {
-    name: 'Eggplant curry with roti',
-    ingredients: ['eggplant', 'tomato', 'onion', 'whole-wheat roti'],
+    name: 'Paneer with eggplant curry and roti',
+    components: {
+      protein: 'paneer',
+      fibre: 'eggplant curry',
+      carb: 'whole-wheat roti',
+    },
   },
   {
-    name: 'Steamed sweet potato with chickpea curry',
-    ingredients: ['sweet potato', 'chickpeas', 'tomato', 'cilantro'],
+    name: 'Chickpea curry and greens with sweet potato',
+    components: {
+      protein: 'chickpeas',
+      fibre: 'tomato + greens',
+      carb: 'sweet potato',
+    },
   },
 ];
 
 const DINNER_NONVEG: ReadonlyArray<Meal> = [
   {
     name: 'Grilled chicken with roasted vegetables',
-    ingredients: ['chicken breast', 'broccoli', 'carrot', 'olive oil'],
+    components: {
+      protein: 'chicken',
+      fibre: 'broccoli + carrot + olive oil',
+    },
   },
   {
     name: 'Baked fish with steamed vegetables',
-    ingredients: ['white fish', 'lemon', 'broccoli', 'green beans'],
+    components: {
+      protein: 'fish',
+      fibre: 'broccoli + green beans',
+    },
   },
   {
-    name: 'Steamed sweet potato with grilled fish',
-    ingredients: ['sweet potato', 'salmon or tilapia', 'lemon', 'olive oil'],
+    name: 'Grilled fish and greens with sweet potato',
+    components: {
+      protein: 'fish',
+      fibre: 'greens + olive oil',
+      carb: 'sweet potato',
+    },
   },
   {
     name: 'Chicken and vegetable stir-fry with rice',
-    ingredients: ['chicken breast', 'bell pepper', 'snow peas', 'brown rice'],
+    components: {
+      protein: 'chicken',
+      fibre: 'bell pepper + snow peas',
+      carb: 'brown rice',
+    },
   },
 ];
 
@@ -224,47 +373,76 @@ const DINNER_NONVEG: ReadonlyArray<Meal> = [
 const SNACK_VEG: ReadonlyArray<Meal> = [
   {
     name: 'Apple with peanut butter',
-    ingredients: ['apple', 'natural peanut butter'],
+    components: {
+      protein: 'peanut butter',
+      fibre: 'apple',
+    },
   },
   {
-    name: 'Mixed nuts and a banana',
-    ingredients: ['almonds', 'walnuts', 'cashews', 'banana'],
+    name: 'Greek yogurt with banana and nuts',
+    components: {
+      protein: 'Greek yogurt',
+      fibre: 'banana + mixed nuts',
+    },
   },
   {
-    name: 'Plain yogurt with seeds',
-    ingredients: ['plain yogurt', 'pumpkin seeds', 'chia seeds'],
+    name: 'Plain yogurt with berries and seeds',
+    components: {
+      protein: 'plain yogurt',
+      fibre: 'berries + pumpkin seeds',
+    },
   },
   {
-    name: 'Roasted chickpeas (chana)',
-    ingredients: ['roasted chickpeas', 'salt', 'chaat masala'],
+    name: 'Roasted chickpeas with cucumber',
+    components: {
+      protein: 'roasted chickpeas',
+      fibre: 'cucumber',
+    },
   },
   {
     name: 'Carrot sticks with hummus',
-    ingredients: ['carrots', 'hummus'],
+    components: {
+      protein: 'hummus',
+      fibre: 'carrot sticks',
+    },
   },
   {
     name: 'Dates with almonds',
-    ingredients: ['Medjool dates', 'almonds'],
+    components: {
+      protein: 'almonds',
+      fibre: 'dates',
+    },
   },
   {
     name: 'Cottage cheese with cucumber',
-    ingredients: ['cottage cheese', 'cucumber', 'black pepper'],
+    components: {
+      protein: 'cottage cheese',
+      fibre: 'cucumber',
+    },
   },
   {
-    name: 'A piece of fruit',
-    ingredients: ['orange, pear, or banana'],
-    note: 'Whatever is in the fridge.',
+    name: 'Greek yogurt with fruit',
+    components: {
+      protein: 'Greek yogurt',
+      fibre: 'orange, pear, or banana',
+    },
   },
   {
     name: 'Trail mix',
-    ingredients: ['almonds', 'walnuts', 'raisins', 'pumpkin seeds'],
+    components: {
+      protein: 'almonds + walnuts',
+      fibre: 'raisins + pumpkin seeds',
+    },
   },
 ];
 
 const SNACK_NONVEG: ReadonlyArray<Meal> = [
   {
-    name: 'Boiled egg with salt',
-    ingredients: ['egg', 'salt', 'black pepper'],
+    name: 'Boiled egg with cucumber and tomato',
+    components: {
+      protein: 'boiled egg',
+      fibre: 'cucumber + tomato',
+    },
   },
 ];
 
@@ -315,7 +493,10 @@ function djb2(input: string): number {
 function pickOne(pool: ReadonlyArray<Meal>, seed: number): Meal {
   if (pool.length === 0) {
     // Defensive — every (category, vegetarian) combo has at least one entry.
-    return { name: '—' };
+    return {
+      name: '—',
+      components: { protein: '—', fibre: '—' },
+    };
   }
   const indices = Array.from({ length: pool.length }, (_, i) => i);
   let state = seed === 0 ? 1 : seed;

@@ -12,6 +12,10 @@ the carb. One contextual meal idea sits behind progressive disclosure.
 Tuesdays and Thursdays are vegetarian-only; other days draw from the combined
 veg + non-veg pool.
 
+Every meal carries required `protein` and `fibre` components plus an optional
+`carb`. The disclosed meal idea renders only those fields in that order; the
+type and pool tests prevent a naked-carb suggestion from being added later.
+
 ## Files
 
 - `manifest.json` — module metadata (the manifest IS the registry).
