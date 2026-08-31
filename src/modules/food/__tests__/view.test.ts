@@ -17,18 +17,28 @@ describe('mealCategoryForHour', () => {
 });
 
 describe('renderFoodView', () => {
-  it('renders one meal and pointers without planning or tracking controls', () => {
+  it('leads with the two universal actions', () => {
     const container = { innerHTML: '' } as HTMLElement;
     renderFoodView(container, new Date(2026, 7, 15, 13));
 
-    expect(container.innerHTML).toContain('Lunch');
-    expect(container.innerHTML).toContain('Never eat a naked carb.');
-    expect(container.innerHTML).toContain(
-      'Protein + veg first · carb last.'
-    );
+    expect(container.innerHTML).toContain('Dress the carb');
+    expect(container.innerHTML).toContain('Protein · fat · fibre');
+    expect(container.innerHTML).toContain('Eat in order');
+    expect(container.innerHTML).toContain('Protein · veg · carb');
+    expect(container.innerHTML).not.toContain('Never eat a naked carb.');
     expect(container.innerHTML).not.toContain('<button');
-    expect(container.innerHTML).not.toContain('<details');
     expect(container.innerHTML).not.toContain('Mark eaten');
     expect(container.innerHTML).not.toContain('Rest of the day');
+  });
+
+  it('keeps one contextual meal idea behind disclosure', () => {
+    const container = { innerHTML: '' } as HTMLElement;
+    renderFoodView(container, new Date(2026, 7, 15, 13));
+
+    expect(container.innerHTML).toContain('<details class="food-idea">');
+    expect(container.innerHTML).toContain('<summary>Meal idea');
+    expect(container.innerHTML).not.toContain('Lunch');
+    expect(container.innerHTML).toContain('food-view__name');
+    expect(container.innerHTML).toContain('food-meal__ingredients');
   });
 });

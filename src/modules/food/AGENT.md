@@ -6,10 +6,11 @@
 
 ## Purpose
 
-A calm body-budget practice opened in the home activity stage. It shows only
-the meal relevant to the current time and two approved food pointers. Tuesdays
-and Thursdays are vegetarian-only; other days draw from the combined veg +
-non-veg pool.
+A calm body-budget practice opened in the home activity stage. It leads with
+two universal actions: dress the carb, then eat protein and vegetables before
+the carb. One contextual meal idea sits behind progressive disclosure.
+Tuesdays and Thursdays are vegetarian-only; other days draw from the combined
+veg + non-veg pool.
 
 ## Files
 
