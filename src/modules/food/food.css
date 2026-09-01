@@ -127,9 +127,6 @@
 
 .food-shelf__group h3 {
     margin: 0;
-}
-
-.food-shelf__group h3 {
     color: var(--home-text, #374151);
     font: inherit;
     font-size: 0.82rem;
@@ -144,6 +141,8 @@
 }
 
 .food-shelf__choice {
+    display: grid;
+    gap: 0.15rem;
     min-height: 2.75rem;
     padding: 0.45rem 0.6rem;
     border: 1px solid var(--home-border, #e5e7eb);
@@ -154,6 +153,12 @@
     font: inherit;
     font-size: 0.73rem;
     line-height: 1.3;
+    text-align: left;
+}
+
+.food-shelf__choice-gi {
+    font-size: 0.62rem;
+    opacity: 0.75;
 }
 
 .food-shelf__choice[aria-pressed='true'] {

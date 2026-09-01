@@ -14,6 +14,11 @@ it. The assembled meal appears immediately without save or submit. One
 contextual meal idea remains behind a second disclosure. Every day draws from
 plant and animal proteins. Beef is the only excluded meat.
 
+Each shelf choice carries a University of Sydney GI Database reference value
+or tested range. Foods with no or too little carbohydrate display `GI n/a`;
+they must never be represented as `GI 0`. Preparation-sensitive foods retain
+their tested range rather than a false single number.
+
 Every meal carries required `protein` and `fibre` components plus an optional
 `carb`. The disclosed meal idea renders only those fields in that order; the
 type and pool tests prevent a naked-carb suggestion from being added later.
@@ -34,4 +39,5 @@ type and pool tests prevent a naked-carb suggestion from being added later.
 - All meal names and ingredient strings render through
   `createSafeHtml` / `escapeHtml`.
 - The shelf and meal-pool tests reject beef or veal anywhere in Food data.
+- GI references stay in `data.ts`; tests enforce valid 0–100 values and ranges.
 - Meal building is intentionally ephemeral: no persistence, history, or save.

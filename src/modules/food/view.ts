@@ -1,7 +1,12 @@
 /** Food — two universal actions, a tap-to-build meal, and one meal idea. */
 
 import { createSafeHtml } from '../../utils/escapeHtml';
-import { FOOD_SHELF, type MealCategory, getDayMealPlan } from './data';
+import {
+  FOOD_SHELF,
+  type GlycemicIndexReference,
+  type MealCategory,
+  getDayMealPlan,
+} from './data';
 
 /** The meal window is deliberately broad; this is a cue, not a schedule. */
 export function mealCategoryForHour(hour: number): MealCategory {
@@ -19,6 +24,13 @@ export function toggleMealChoice(
   const next = [...current];
   next[categoryIndex] = current[categoryIndex] === food ? undefined : food;
   return next;
+}
+
+export function formatGlycemicIndex(
+  gi: GlycemicIndexReference | null
+): string {
+  if (!gi) return 'n/a';
+  return gi.high === undefined ? String(gi.low) : `${gi.low}–${gi.high}`;
 }
 
 export function renderFoodView(container: HTMLElement, today: Date): void {
@@ -43,7 +55,10 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
                   aria-pressed="false"
                   data-category-index="${categoryIndex}"
                   data-food-index="${foodIndex}"
-                >${createSafeHtml(food)}</button>
+                >
+                  <span class="food-shelf__choice-name">${createSafeHtml(food.name)}</span>
+                  <span class="food-shelf__choice-gi">GI ${formatGlycemicIndex(food.gi)}</span>
+                </button>
               `
             )
             .join('')}
@@ -125,7 +140,7 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
     const food = FOOD_SHELF[categoryIndex]?.foods[foodIndex];
     if (!food) return;
 
-    selection = toggleMealChoice(selection, categoryIndex, food);
+    selection = toggleMealChoice(selection, categoryIndex, food.name);
     const selectedFoods = selection.filter(
       (item): item is string => Boolean(item)
     );
@@ -136,7 +151,7 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
         const choiceCategory = Number(choice.dataset.categoryIndex);
         const choiceFood = Number(choice.dataset.foodIndex);
         const isSelected =
-          FOOD_SHELF[choiceCategory]?.foods[choiceFood] ===
+          FOOD_SHELF[choiceCategory]?.foods[choiceFood]?.name ===
           selection[choiceCategory];
         choice.setAttribute('aria-pressed', String(isSelected));
       });

@@ -21,72 +21,92 @@ export const MEAL_CATEGORIES: ReadonlyArray<MealCategory> = [
 
 export interface FoodShelfCategory {
   label: string;
-  foods: ReadonlyArray<string>;
+  foods: ReadonlyArray<FoodShelfItem>;
 }
 
+export interface GlycemicIndexReference {
+  low: number;
+  high?: number;
+}
+
+export interface FoodShelfItem {
+  name: string;
+  gi: GlycemicIndexReference | null;
+}
+
+// GI values are reference results from https://glycemicindex.com/gi-search/
+// and its FAQ, reviewed 2026-09-01.
+// Ranges preserve real variation across preparation, variety, and testing.
+// null means GI cannot be measured because the food has no or very little carb.
 export const FOOD_SHELF: ReadonlyArray<FoodShelfCategory> = [
   {
     label: 'Protein',
     foods: [
-      'Eggs',
-      'Greek yogurt',
-      'Chicken',
-      'Fish',
-      'Salmon',
-      'Tuna',
-      'Lamb',
-      'Paneer',
-      'Tofu',
-      'Dal',
-      'Chickpeas',
-      'Rajma',
+      { name: 'Eggs', gi: null },
+      { name: 'Greek yogurt', gi: { low: 12 } },
+      { name: 'Chicken', gi: null },
+      { name: 'Fish', gi: null },
+      { name: 'Salmon', gi: null },
+      { name: 'Tuna', gi: null },
+      { name: 'Lamb', gi: null },
+      { name: 'Paneer', gi: null },
+      { name: 'Tofu', gi: null },
+      { name: 'Dal', gi: { low: 18, high: 32 } },
+      { name: 'Chickpeas', gi: { low: 35, high: 38 } },
+      { name: 'Rajma', gi: { low: 23, high: 43 } },
     ],
   },
   {
     label: 'Vegetables / fibre',
     foods: [
-      'Spinach / saag',
-      'Greek salad',
-      'Broccoli',
-      'Gobi',
-      'Cucumber',
-      'Tomato',
-      'Eggplant',
-      'Peppers',
-      'Okra',
-      'Greens',
+      { name: 'Spinach / saag', gi: null },
+      { name: 'Greek salad', gi: null },
+      { name: 'Broccoli', gi: null },
+      { name: 'Gobi', gi: null },
+      { name: 'Cucumber', gi: null },
+      { name: 'Tomato', gi: null },
+      { name: 'Eggplant', gi: null },
+      { name: 'Peppers', gi: null },
+      { name: 'Okra', gi: null },
+      { name: 'Greens', gi: null },
     ],
   },
   {
     label: 'Fat',
     foods: [
-      'Olive oil',
-      'Tahini',
-      'Nuts',
-      'Seeds',
-      'Peanut butter',
-      'Avocado',
-      'Ghee',
+      { name: 'Olive oil', gi: null },
+      { name: 'Tahini', gi: null },
+      { name: 'Nuts', gi: null },
+      { name: 'Seeds', gi: null },
+      { name: 'Peanut butter', gi: null },
+      { name: 'Avocado', gi: null },
+      { name: 'Ghee', gi: null },
     ],
   },
   {
     label: 'Carb',
     foods: [
-      'Roti',
-      'Rice',
-      'Pita',
-      'Oats',
-      'Potato',
-      'Sweet potato',
-      'Poha',
-      'Upma',
-      'Idli',
-      'Quinoa',
+      { name: 'Roti', gi: { low: 63 } },
+      { name: 'Rice', gi: { low: 48, high: 80 } },
+      { name: 'Pita', gi: { low: 58, high: 69 } },
+      { name: 'Oats', gi: { low: 55, high: 58 } },
+      { name: 'Potato', gi: { low: 70, high: 80 } },
+      { name: 'Sweet potato', gi: { low: 46, high: 61 } },
+      { name: 'Poha', gi: { low: 43, high: 74 } },
+      { name: 'Upma', gi: { low: 58, high: 71 } },
+      { name: 'Idli', gi: { low: 48, high: 85 } },
+      { name: 'Quinoa', gi: { low: 53 } },
     ],
   },
   {
     label: 'Fruit — earlier',
-    foods: ['Berries', 'Apple', 'Pear', 'Orange', 'Banana'],
+    foods: [
+      { name: 'Berries', gi: null },
+      { name: 'Apple', gi: { low: 44 } },
+      { name: 'Pear', gi: { low: 33, high: 43 } },
+      { name: 'Orange', gi: { low: 45 } },
+      { name: 'Banana', gi: { low: 47, high: 57 } },
+    ],
   },
 ];
 

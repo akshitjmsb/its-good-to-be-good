@@ -235,10 +235,31 @@ describe('food shelf', () => {
     for (const category of FOOD_SHELF) {
       expect(category.foods.length).toBeGreaterThanOrEqual(5);
       for (const food of category.foods) {
-        expect(food.trim()).not.toBe('');
-        expect(containsKeyword(food, BEEF_KEYWORDS)).toBeNull();
+        expect(food.name.trim()).not.toBe('');
+        expect(containsKeyword(food.name, BEEF_KEYWORDS)).toBeNull();
+        if (food.gi) {
+          expect(food.gi.low).toBeGreaterThanOrEqual(0);
+          expect(food.gi.high ?? food.gi.low).toBeLessThanOrEqual(100);
+          expect(food.gi.high ?? food.gi.low).toBeGreaterThanOrEqual(
+            food.gi.low
+          );
+        }
       }
     }
+  });
+
+  it('keeps tested GI values for the core low-GI choices', () => {
+    const foods = new Map(
+      FOOD_SHELF.flatMap(category =>
+        category.foods.map(food => [food.name, food.gi] as const)
+      )
+    );
+
+    expect(foods.get('Greek yogurt')).toEqual({ low: 12 });
+    expect(foods.get('Chickpeas')).toEqual({ low: 35, high: 38 });
+    expect(foods.get('Quinoa')).toEqual({ low: 53 });
+    expect(foods.get('Apple')).toEqual({ low: 44 });
+    expect(foods.get('Eggs')).toBeNull();
   });
 });
 
