@@ -261,6 +261,15 @@ describe('food shelf', () => {
     expect(foods.get('Apple')).toEqual({ low: 44 });
     expect(foods.get('Eggs')).toBeNull();
   });
+
+  it('ranks every category from lowest to highest GI', () => {
+    for (const category of FOOD_SHELF) {
+      const ranks = category.foods.map(food =>
+        food.gi ? (food.gi.high ?? food.gi.low) : -1
+      );
+      expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+    }
+  });
 });
 
 describe('djb2 + pickOne', () => {
