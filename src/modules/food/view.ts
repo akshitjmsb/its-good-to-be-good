@@ -29,7 +29,7 @@ export function toggleMealChoice(
 export function formatGlycemicIndex(
   gi: GlycemicIndexReference | null
 ): string {
-  if (!gi) return 'n/a';
+  if (!gi) return '';
   return gi.high === undefined ? String(gi.low) : `${gi.low}–${gi.high}`;
 }
 
@@ -57,7 +57,7 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
                   data-food-index="${foodIndex}"
                 >
                   <span class="food-shelf__choice-name">${createSafeHtml(food.name)}</span>
-                  <span class="food-shelf__choice-gi">GI ${formatGlycemicIndex(food.gi)}</span>
+                  ${food.gi ? `<span class="food-shelf__choice-gi">GI ${formatGlycemicIndex(food.gi)}</span>` : ''}
                 </button>
               `
             )

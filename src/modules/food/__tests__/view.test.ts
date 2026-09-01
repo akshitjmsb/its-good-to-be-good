@@ -66,7 +66,7 @@ describe('renderFoodView', () => {
     expect(container.innerHTML).toContain('Greek yogurt');
     expect(container.innerHTML).toContain('GI 12');
     expect(container.innerHTML).toContain('Lamb');
-    expect(container.innerHTML).toContain('GI n/a');
+    expect(container.innerHTML).not.toContain('GI n/a');
     expect(container.innerHTML).toContain('Vegetables &#x2F; fibre');
     expect(container.innerHTML).toContain('Olive oil');
     expect(container.innerHTML).toContain('Roti');
@@ -111,9 +111,9 @@ describe('toggleMealChoice', () => {
 });
 
 describe('formatGlycemicIndex', () => {
-  it('renders measured values, measured ranges, and non-applicable foods', () => {
+  it('renders measured values and leaves non-applicable foods blank', () => {
     expect(formatGlycemicIndex({ low: 44 })).toBe('44');
     expect(formatGlycemicIndex({ low: 43, high: 74 })).toBe('43–74');
-    expect(formatGlycemicIndex(null)).toBe('n/a');
+    expect(formatGlycemicIndex(null)).toBe('');
   });
 });
