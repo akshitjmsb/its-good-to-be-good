@@ -4,5 +4,4 @@ export type {
   DayMealPlan,
   FoodShelfCategory,
   FoodShelfItem,
-  GlycemicIndexReference,
 } from './data';

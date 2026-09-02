@@ -1,12 +1,7 @@
 /** Food — two universal actions, a tap-to-build meal, and one meal idea. */
 
 import { createSafeHtml } from '../../utils/escapeHtml';
-import {
-  FOOD_SHELF,
-  type GlycemicIndexReference,
-  type MealCategory,
-  getDayMealPlan,
-} from './data';
+import { FOOD_SHELF, type MealCategory, getDayMealPlan } from './data';
 
 /** The meal window is deliberately broad; this is a cue, not a schedule. */
 export function mealCategoryForHour(hour: number): MealCategory {
@@ -24,13 +19,6 @@ export function toggleMealChoice(
   const next = [...current];
   next[categoryIndex] = current[categoryIndex] === food ? undefined : food;
   return next;
-}
-
-export function formatGlycemicIndex(
-  gi: GlycemicIndexReference | null
-): string {
-  if (!gi) return '';
-  return gi.high === undefined ? String(gi.low) : `${gi.low}–${gi.high}`;
 }
 
 export function renderFoodView(container: HTMLElement, today: Date): void {
@@ -57,7 +45,6 @@ export function renderFoodView(container: HTMLElement, today: Date): void {
                   data-food-index="${foodIndex}"
                 >
                   <span class="food-shelf__choice-name">${createSafeHtml(food.name)}</span>
-                  ${food.gi ? `<span class="food-shelf__choice-gi">GI ${formatGlycemicIndex(food.gi)}</span>` : ''}
                 </button>
               `
             )

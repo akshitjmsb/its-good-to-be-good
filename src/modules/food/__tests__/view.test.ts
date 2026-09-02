@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   mealCategoryForHour,
-  formatGlycemicIndex,
   renderFoodView,
   toggleMealChoice,
 } from '../view';
@@ -64,9 +63,8 @@ describe('renderFoodView', () => {
     expect(container.innerHTML).toContain('Your meal');
     expect(container.innerHTML).toContain('Protein');
     expect(container.innerHTML).toContain('Greek yogurt');
-    expect(container.innerHTML).toContain('GI 12');
     expect(container.innerHTML).toContain('Lamb');
-    expect(container.innerHTML).not.toContain('GI n/a');
+    expect(container.innerHTML).not.toContain('GI ');
     expect(container.innerHTML).toContain('Vegetables &#x2F; fibre');
     expect(container.innerHTML).toContain('Olive oil');
     expect(container.innerHTML).toContain('Roti');
@@ -107,13 +105,5 @@ describe('toggleMealChoice', () => {
     const removed = toggleMealChoice(selected, 0, 'Chicken');
 
     expect(removed).toEqual([undefined]);
-  });
-});
-
-describe('formatGlycemicIndex', () => {
-  it('renders measured values and leaves non-applicable foods blank', () => {
-    expect(formatGlycemicIndex({ low: 44 })).toBe('44');
-    expect(formatGlycemicIndex({ low: 43, high: 74 })).toBe('43–74');
-    expect(formatGlycemicIndex(null)).toBe('');
   });
 });

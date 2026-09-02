@@ -156,11 +156,6 @@
     text-align: left;
 }
 
-.food-shelf__choice-gi {
-    font-size: 0.62rem;
-    opacity: 0.75;
-}
-
 .food-shelf__choice[aria-pressed='true'] {
     border-color: var(--home-text, #374151);
     background: var(--home-text, #374151);
