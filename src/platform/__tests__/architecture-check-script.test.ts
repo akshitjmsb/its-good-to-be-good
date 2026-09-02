@@ -30,6 +30,11 @@ const MINDFULNESS_HOOKS = [
   'data-mode="focus"',
 ];
 
+const CIRCLE_ROUTES: Record<string, string[]> = {
+  being: ['sleep.html', 'movement.html', 'mindfulness.html', 'rooh.html'],
+  food: ['food.html'],
+};
+
 function writeFixtureFile(root: string, relativePath: string, content: string) {
   const fullPath = path.join(root, relativePath);
   mkdirSync(path.dirname(fullPath), { recursive: true });
@@ -41,16 +46,20 @@ function homeHtml(): string {
     .filter(([, ring]) => ring === 'square')
     .map(([id]) => `<a class="orbit-tool" href="${id}.html">${id}</a>`)
     .join('\n');
-  const soulHooks = SOUL_HOOKS.map(hook => `<button ${hook}></button>`).join('\n');
-  return `<html><body>${toolLinks}${soulHooks}</body></html>`;
+  const soulLinks = SOUL_HOOKS.map((hook, index) => {
+    const routes = [...CIRCLE_ROUTES.being, ...CIRCLE_ROUTES.food];
+    return `<a ${hook} href="${routes[index]}"></a>`;
+  }).join('\n');
+  return `<html><body>${toolLinks}${soulLinks}</body></html>`;
 }
 
 function createFixture(root: string) {
   writeFixtureFile(root, 'index.html', homeHtml());
+  writeFixtureFile(root, 'src/modules/being/orbit.ts', 'export {};\n');
   writeFixtureFile(
     root,
-    'src/modules/being/orbit.ts',
-    MINDFULNESS_HOOKS.map(hook => `<button ${hook}></button>`).join('\n')
+    'mindfulness.html',
+    `${MINDFULNESS_HOOKS.map(hook => `<button ${hook}></button>`).join('\n')}<script type="module" src="src/modules/being/mindfulness-entry.ts"></script>`
   );
   writeFixtureFile(
     root,
@@ -76,6 +85,18 @@ function createFixture(root: string) {
         `<html><body><script type="module" src="${baseDir}/entry.ts"></script></body></html>`
       );
       writeFixtureFile(root, `${baseDir}/entry.ts`, 'export {};\n');
+    } else {
+      manifest.routeHrefs = CIRCLE_ROUTES[id];
+      for (const routeHref of CIRCLE_ROUTES[id]) {
+        const entryName =
+          id === 'food' ? 'entry.ts' : routeHref.replace('.html', '-entry.ts');
+        const pageSource =
+          routeHref === 'mindfulness.html'
+            ? `${MINDFULNESS_HOOKS.map(hook => `<button ${hook}></button>`).join('\n')}<script type="module" src="${baseDir}/${entryName}"></script>`
+            : `<html><body><script type="module" src="${baseDir}/${entryName}"></script></body></html>`;
+        writeFixtureFile(root, routeHref, pageSource);
+        writeFixtureFile(root, `${baseDir}/${entryName}`, 'export {};\n');
+      }
     }
     writeFixtureFile(
       root,
@@ -112,7 +133,7 @@ describe('architecture check script', () => {
     }
   });
 
-  it('fails when a circle module carries a routeHref', () => {
+  it('fails when a circle module carries the legacy singular routeHref', () => {
     const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'arch-check-circle-fail-'));
     try {
       createFixture(fixtureRoot);
@@ -125,6 +146,7 @@ describe('architecture check script', () => {
             displayName: 'being',
             ring: 'circle',
             routeHref: 'being.html',
+            routeHrefs: CIRCLE_ROUTES.being,
             icon: './icon.svg',
             version: '0.1.0',
           },
@@ -135,7 +157,7 @@ describe('architecture check script', () => {
 
       const result = runArchitectureCheck(fixtureRoot);
       expect(result.status).toBe(1);
-      expect(result.stderr).toContain('never navigate');
+      expect(result.stderr).toContain('must use routeHrefs');
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }

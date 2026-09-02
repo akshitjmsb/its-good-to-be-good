@@ -1,14 +1,14 @@
 # Being module
 
 - **id:** `being`
-- **ring:** circle (soul — acts in place on the home, never navigates)
+- **ring:** circle (soul — opens a quiet page, leaves no record by default)
 - **renderer:** dom
 - **permissions:** timer, storage
 
 ## Purpose
 
-Being IS the home page's resting state: the Vitruvian Man at the centre
-with five Sukoon pillars riding the circle —
+Being owns the home orbit's Vitruvian reset and four dedicated Sukoon pillar
+pages. Food owns the fifth page.
 
 - **Centre reset** — tapping the Vitruvian Man immediately starts a continuous
   4-second inhale / 6-second exhale guide with the existing OM loop at quiet
@@ -30,14 +30,15 @@ with five Sukoon pillars riding the circle —
   Audio uses HTMLAudioElement for iOS autoplay reliability.
 - **Rooh** — relationships, safety, and co-regulation.
 
-Every pillar panel contains only its approved icon-led action pointers. Do
+Every pillar page contains only its approved icon-led action pointers. Do
 not add teaching or supporting prose without explicit Product Owner approval.
 
 ## Files
 
-- `manifest.json` — module metadata (ring: circle, so no routeHref).
-- `orbit.ts` — `initBeingOrbit()`: orbit icon wiring, the activity stage,
-  practice panels. Mounted by `src/home/bootstrap.ts`.
+- `manifest.json` — module metadata and the four owned `routeHrefs`.
+- `orbit.ts` — central reset wiring mounted by `src/home/bootstrap.ts`.
+- `*-entry.ts` — dedicated Sleep, Movement, Mindfulness, and Rooh entries.
+- `movement-view.ts` — the Stretch Now, chooser, and Weights page flow.
 - `sleep.ts` / `sleep.css` — contextual Sleep action and temporary dim state.
 - `meditate.ts` — `initMeditate()`: timer + breath ring + ambient audio.
 - `exercise-view.ts` — today's three Weights pointers.

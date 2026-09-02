@@ -44,8 +44,8 @@
 
         <!-- The orbit — the circle holds the soul, the square holds the work.
              The Vitruvian Man sits at the centre (da Vinci's own circle and
-             square). Soul practices ride the circle and act in place; purpose
-             tools sit at the corners of the square and open their own page. -->
+             square). Each pillar and tool opens its own quiet page; the centre
+             reset is the one action that stays in place. -->
         <section class="being-orbit" role="group" aria-label="Sukoon and Junoon — practices and tools">
             <button id="being-reset" type="button" class="being-orbit__figure" aria-label="Three-breath reset" aria-pressed="false">
                 <img class="being-figure" src="/vitruvian-man-mono.png"
@@ -60,18 +60,18 @@
             <span class="orbit-ring-name orbit-ring-name--sukoon" aria-hidden="true">Sukoon</span>
             <span class="orbit-ring-name orbit-ring-name--junoon" aria-hidden="true">Junoon</span>
 
-            <!-- Sukoon's five pillars. Each opens quietly in place; Breathe,
-                 OM, and Focus live inside the Mindfulness pillar. -->
-            <button type="button" class="orbit-icon" data-panel="sleep" style="--a:0deg" aria-expanded="false" aria-controls="being-panel" aria-label="Sleep pillar">
+            <!-- Sukoon's five pillars. Each opens its own page; Breathe, OM,
+                 and Focus live inside the Mindfulness pillar. -->
+            <a class="orbit-icon" href="sleep.html" data-panel="sleep" style="--a:0deg" aria-label="Sleep pillar">
                 <span class="orbit-icon__glyph">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                         <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"></path>
                     </svg>
                 </span>
                 <span class="orbit-icon__label">Sleep</span>
-            </button>
+            </a>
 
-            <button type="button" class="orbit-icon" data-panel="food" style="--a:72deg" aria-expanded="false" aria-controls="being-panel" aria-label="Food pillar">
+            <a class="orbit-icon" href="food.html" data-panel="food" style="--a:72deg" aria-label="Food pillar">
                 <span class="orbit-icon__glyph">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                         <circle cx="12" cy="12" r="8"></circle>
@@ -81,9 +81,9 @@
                     </svg>
                 </span>
                 <span class="orbit-icon__label">Food</span>
-            </button>
+            </a>
 
-            <button type="button" class="orbit-icon" data-panel="movement" style="--a:144deg" aria-expanded="false" aria-controls="being-panel" aria-label="Movement pillar">
+            <a class="orbit-icon" href="movement.html" data-panel="movement" style="--a:144deg" aria-label="Movement pillar">
                 <span class="orbit-icon__glyph">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                         <circle cx="6" cy="12" r="3"></circle>
@@ -94,9 +94,9 @@
                     </svg>
                 </span>
                 <span class="orbit-icon__label">Movement</span>
-            </button>
+            </a>
 
-            <button type="button" class="orbit-icon" data-panel="mindfulness" style="--a:216deg" aria-expanded="false" aria-controls="being-panel" aria-label="Mindfulness pillar">
+            <a class="orbit-icon" href="mindfulness.html" data-panel="mindfulness" style="--a:216deg" aria-label="Mindfulness pillar">
                 <span class="orbit-icon__glyph">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                         <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.5 -2.5"></path>
@@ -105,9 +105,9 @@
                     </svg>
                 </span>
                 <span class="orbit-icon__label orbit-icon__label--long">Mindfulness</span>
-            </button>
+            </a>
 
-            <button type="button" class="orbit-icon" data-panel="rooh" style="--a:288deg" aria-expanded="false" aria-controls="being-panel" aria-label="Rooh pillar">
+            <a class="orbit-icon" href="rooh.html" data-panel="rooh" style="--a:288deg" aria-label="Rooh pillar">
                 <span class="orbit-icon__glyph">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                         <circle cx="8" cy="8" r="2.5"></circle>
@@ -117,7 +117,7 @@
                     </svg>
                 </span>
                 <span class="orbit-icon__label">Rooh</span>
-            </button>
+            </a>
 
             <!-- Square — purpose tools. Plain links; each opens its own page
                  and accumulates a record. -->

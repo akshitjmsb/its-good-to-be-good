@@ -2,6 +2,9 @@
   "id": "food",
   "displayName": "Food",
   "ring": "circle",
+  "routeHrefs": [
+    "food.html"
+  ],
   "icon": "./icon.svg",
   "version": "0.1.0",
   "renderer": "dom",

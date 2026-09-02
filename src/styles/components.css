@@ -1682,6 +1682,7 @@ button.preview-card {
     border-radius: 999px;
     color: #6b7280;
     font-family: 'Special Elite', monospace;
+    text-decoration: none;
     cursor: pointer;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     transform:
@@ -1982,6 +1983,23 @@ button.preview-card {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+}
+
+.stretch-btn {
+    min-height: 44px;
+    padding: 0.55rem 0.75rem;
+    background: var(--home-surface, #ffffff);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.5rem;
+    color: var(--home-text, #374151);
+    font-family: 'Special Elite', monospace;
+    font-size: 0.76rem;
+    cursor: pointer;
+}
+
+.stretch-btn:focus-visible {
+    outline: 2px solid var(--home-text, #374151);
+    outline-offset: 2px;
 }
 
 .pillar-copy__title {

@@ -1,12 +1,12 @@
 # Food module
 
 - **id:** `food`
-- **ring:** circle (soul practice — acts in place on the home)
+- **ring:** circle (soul practice — opens a quiet page, leaves no record)
 - **renderer:** dom
 
 ## Purpose
 
-A calm body-budget practice opened in the home activity stage. It leads with
+A calm body-budget practice on its own page. It leads with
 two universal actions: dress the carb, then eat protein and vegetables before
 the carb. “Build a meal” reveals a small Greek–Indian food shelf by category.
 One tap selects or replaces a food in that category; tapping it again removes
@@ -20,12 +20,12 @@ type and pool tests prevent a naked-carb suggestion from being added later.
 
 ## Files
 
-- `manifest.json` — module metadata (the manifest IS the registry).
-- `view.ts` — next-meal cue and food pointers; mounted
-  by `src/modules/being/orbit.ts` into the home activity stage.
+- `manifest.json` — module metadata and `food.html` route.
+- `entry.ts` — page entry.
+- `view.ts` — meal builder and food pointers mounted on `food.html`.
 - `data.ts` — meal pool and the deterministic per-week shuffle.
 - `types.ts` — re-exports the public types from `data.ts`.
-- `food.css` — panel styles (imported by `orbit.ts`).
+- `food.css` — page styles imported by `entry.ts`.
 - `icon.svg` — module icon.
 - `__tests__/` — data pool integrity.
 

@@ -19,11 +19,11 @@ design system; this file is the operating contract.
 
 1. The home design lock: `index.html` uses `body.home-vintage-lock`;
    `src/styles/home-lock.css` is the visual guardrail. The home is the
-   orbit — circle practices act in place, square tools navigate to their
-   own page. No dashboard chrome.
-2. The ring contract (machine-checked): a `circle` module never has a
-   `routeHref`; a `square` module always does, with a real page linked
-   from the home and mounted by its `entry.ts`.
+   orbit — circle pillars and square tools navigate to their own quiet
+   pages; only the central reset acts in place. No dashboard chrome.
+2. The ring contract (machine-checked): a `circle` module declares one or
+   more `routeHrefs`; a `square` module declares one `routeHref`. Every route
+   is linked from the home and mounted by an entry in its owning module.
 3. Layering (machine-checked): `platform/`, `sdk/`, `utils/` never import
    `home/` or `modules/`; modules import only their own folder + the
    foundation.
@@ -43,7 +43,7 @@ design system; this file is the operating contract.
 10. The Jadugar contemplation verse (`index.html .being-verse`) is protected
     Product Owner-approved copy. Do not shorten, rewrite, translate, relocate,
     or remove it without explicit Product Owner direction. Keep it visible in
-    the home resting state and hidden while a Sukoon module is open.
+    the home resting state and never show it on a Sukoon module page.
 
 ## Data Safety
 

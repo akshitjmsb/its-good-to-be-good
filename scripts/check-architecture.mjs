@@ -6,8 +6,8 @@
  * The manifest IS the registry: every folder under `src/modules/` carries a
  * manifest.json whose `ring` encodes the home's geometry.
  *
- *   • circle — a soul practice. Acts in place on the home, never navigates.
- *     No routeHref, no page, no entry.
+ *   • circle — a soul practice. Opens its own quiet page from the home orbit.
+ *     A module may own more than one pillar page through routeHrefs.
  *   • square — a purpose tool. Has its own page (routeHref) mounted by the
  *     module's entry.ts and linked from a corner tile on the home.
  *
@@ -34,8 +34,8 @@ const EXPECTED_MODULES = {
   tennis: 'square',
 };
 
-// The five Sukoon pillars act on the home; the three practices are rendered
-// only after Mindfulness opens.
+// The five Sukoon pillars leave the home for their own quiet page; the three
+// practices are grouped only inside Mindfulness.
 const EXPECTED_SOUL_HOOKS = [
   'data-panel="sleep"',
   'data-panel="food"',
@@ -185,8 +185,29 @@ async function validateModules() {
     if (manifest.ring === 'circle') {
       if (manifest.routeHref !== undefined) {
         fail(
-          `Circle module "${dirName}" must not have a routeHref — circle practices act in place and never navigate.`
+          `Circle module "${dirName}" must use routeHrefs; singular routeHref is reserved for square tools.`
         );
+      }
+      if (!Array.isArray(manifest.routeHrefs) || manifest.routeHrefs.length === 0) {
+        fail(`Circle module "${dirName}" must declare at least one page in routeHrefs.`);
+      } else {
+        for (const routeHref of manifest.routeHrefs) {
+          if (typeof routeHref !== 'string' || !routeHref.endsWith('.html')) {
+            fail(`Circle module "${dirName}" has an invalid routeHref "${routeHref}".`);
+            continue;
+          }
+          if (!(await fileExists(routeHref))) {
+            fail(`Circle module "${dirName}" page "${routeHref}" does not exist.`);
+            continue;
+          }
+          if (!indexHtml.includes(`href="${routeHref}"`)) {
+            fail(`Circle module "${dirName}" page "${routeHref}" is not linked from the home orbit.`);
+          }
+          const pageHtml = await readText(routeHref);
+          if (!pageHtml.includes(`${baseDir}/`) || !pageHtml.includes('entry.ts')) {
+            fail(`Page "${routeHref}" does not load an entry from ${baseDir}.`);
+          }
+        }
       }
     }
 
@@ -244,15 +265,15 @@ async function validateModules() {
     }
   }
 
-  let orbitSource = '';
+  let mindfulnessPage = '';
   try {
-    orbitSource = await readText('src/modules/being/orbit.ts');
+    mindfulnessPage = await readText('mindfulness.html');
   } catch {
-    fail('src/modules/being/orbit.ts is missing.');
+    fail('mindfulness.html is missing.');
   }
   for (const hook of EXPECTED_MINDFULNESS_HOOKS) {
-    if (orbitSource && !orbitSource.includes(hook)) {
-      fail(`Mindfulness practice hook ${hook} is missing from its panel.`);
+    if (mindfulnessPage && !mindfulnessPage.includes(hook)) {
+      fail(`Mindfulness practice hook ${hook} is missing from its page.`);
     }
   }
 }

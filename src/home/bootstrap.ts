@@ -3,14 +3,12 @@
  *
  * The home is mostly static markup (the orbit paints with the document).
  * This file owns the thin runtime around it: the auth gate, the user chip,
- * the header clock, the quantum timer widget, and the orbit interactions
- * (meditation timer + practice panels) via `initBeingOrbit()`.
+ * the header clock, the quantum timer widget, and the centre reset via
+ * `initBeingOrbit()`.
  */
 
 import { initializeQuantumTimer } from './quantumTimer';
 import { initBeingOrbit } from '../modules/being/orbit';
-import { renderFoodView } from '../modules/food/view';
-import '../modules/food/food.css';
 import { initAuthStore, getAuthState } from '../platform/auth/store';
 import { onAuthStateChange } from '../platform/auth/session';
 import { mountLoginGate } from './loginGate';
@@ -60,7 +58,7 @@ export async function bootstrapApp(): Promise<void> {
   });
 
   attempt('quantum timer', () => initializeQuantumTimer());
-  attempt('orbit', () => initBeingOrbit({ renderFoodView }));
+  attempt('orbit', () => initBeingOrbit());
 
   if (failures.length > 0) {
     const note = document.createElement('p');

@@ -1,0 +1,51 @@
+.sukoon-page {
+    min-height: 100vh;
+}
+
+.sukoon-page__header,
+.sukoon-page__surface {
+    width: min(100%, 32rem);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.sukoon-page__header {
+    margin-bottom: 1.25rem;
+}
+
+.sukoon-page__header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: normal;
+}
+
+.sukoon-page__surface {
+    padding: 0.25rem 0;
+}
+
+.sukoon-page .orbit-icon,
+.sukoon-page .pillar-action,
+.sukoon-page .food-shelf__choice,
+.sukoon-page .meditate-preset {
+    touch-action: manipulation;
+}
+
+.mindfulness-runtime[data-mode='om'] .meditate-stage,
+.mindfulness-runtime:not([data-mode]) .meditate-stage,
+.mindfulness-runtime:not([data-mode]) .meditate-breath {
+    display: none;
+}
+
+.mindfulness-runtime {
+    margin-top: 1.25rem;
+}
+
+.rooh-page .pillar-cues {
+    grid-template-columns: 1fr;
+}
+
+@media (max-width: 768px) {
+    .sukoon-page__header h1 {
+        font-size: 1.5rem !important;
+    }
+}

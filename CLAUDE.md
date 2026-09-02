@@ -63,8 +63,8 @@ an important Product Owner-approved pointer and part of the home's emotional
 centre. Minimalism does not mean removing it. Preserve its complete wording,
 line order, Hindi language, placement below the orbit, and quiet visual
 emphasis unless the Product Owner explicitly requests a change to the quote.
-It belongs to the home's resting state and is hidden while a Sukoon module is
-open, then restored on return to Stillness.
+It belongs only to the home's resting state and never appears on a Sukoon
+module page.
 
 ## Aesthetic
 
@@ -102,17 +102,19 @@ Stick to that ramp. New shades or accent colors need an explicit reason.
 Every module's manifest declares its `ring`, and the architecture guard
 enforces the contract:
 
-- **`circle`** — a soul practice. Acts in place on the home, leaves
-  nothing behind, **never navigates** (no `routeHref`). Sukoon has five
-  pillars: Sleep, Food, Movement, Mindfulness, and Rooh. Breathe, OM, and
-  Focus appear inside Mindfulness. Every pillar presents only its approved
-  icon-led action pointers; supporting prose is absent by default.
+- **`circle`** — a soul practice. Opens its own quiet page from the home and
+  leaves nothing behind by default. A circle module declares one or more
+  `routeHrefs`. Sukoon has five pillars: Sleep, Food, Movement, Mindfulness,
+  and Rooh. Breathe, OM, and Focus appear inside Mindfulness. Every pillar
+  presents only its approved icon-led action pointers; supporting prose is
+  absent by default. Only the central Vitruvian reset acts on the home.
 - **`square`** — a purpose tool. Opens its own page (`routeHref`) from a
   corner tile on the home and accumulates a record. Current tools:
   `todo`, `khyaali-bhoot`, `tennis`.
 
 The membership test for anything new: _does using it leave something
-behind?_ Nothing remains → circle. A record accumulates → square.
+behind?_ Nothing remains → circle. A record accumulates → square. Navigation
+no longer defines the ring.
 
 ## Repository shape
 

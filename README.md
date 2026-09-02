@@ -15,9 +15,10 @@ centre — da Vinci's Vitruvian Man, inscribed in a circle and a square:
 
 > **The circle holds the soul. The square holds the work.**
 
-The home page is the orbit. Sukoon's five pillars ride the circle and act in
-place — Sleep, Food, Movement, Mindfulness, and Rooh. Breathe, OM, and Focus
-live inside Mindfulness. Purpose tools sit on the square's corners
+The home page is the orbit. Sukoon's five pillars ride the circle and open
+their own quiet pages — Sleep, Food, Movement, Mindfulness, and Rooh. Breathe,
+OM, and Focus live inside Mindfulness. The central reset acts in place.
+Purpose tools sit on the square's corners
 and open their own page — each one accumulates a record.
 
 Not a product. Not a showcase. A place to be.
@@ -56,7 +57,7 @@ review every change. The agents write the code.
 
 The repo ships with an agent governance layer, and the interesting part is
 that the philosophy is machine-checked: `npm run check:architecture` fails
-the build if a circle practice tries to navigate or a square tool loses
+the build if a circle pillar loses its declared page or a square tool loses
 its page.
 
 | File | Purpose |

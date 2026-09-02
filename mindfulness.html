@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindfulness — It's Good to Be Good</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/index.css">
+    <link rel="stylesheet" href="src/styles/home-lock.css">
+    <link rel="stylesheet" href="src/styles/sukoon-page.css">
+    <link rel="icon" href="/vitruvian-logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111111">
+</head>
+<body class="home-vintage-lock">
+    <div id="app-container" class="app-container sukoon-page meditate-page mindfulness-page">
+        <nav class="page-back-nav"><a href="index.html" class="home-link">← Home</a></nav>
+        <header class="sukoon-page__header"><h1>Mindfulness</h1></header>
+        <main class="sukoon-page__surface">
+            <div class="pillar-actions pillar-actions--icons" role="group" aria-label="Mindfulness practices">
+                <button type="button" class="pillar-action pillar-action--icon" data-mode="breathe" aria-pressed="false">
+                    <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h8.5a2.5 2.5 0 1 0-2.5-2.5"></path><path d="M3 12h15a3 3 0 1 1-3 3"></path><path d="M4 16h6.5a2 2 0 1 1-2 2"></path></svg></span>
+                    <span>Breathe</span>
+                </button>
+                <button type="button" class="pillar-action pillar-action--icon" data-mode="om" aria-pressed="false">
+                    <span class="pillar-action__glyph pillar-action__glyph--om" aria-hidden="true">ॐ</span>
+                    <span>OM</span>
+                </button>
+                <button type="button" class="pillar-action pillar-action--icon" data-mode="focus" aria-pressed="false">
+                    <span class="pillar-action__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg></span>
+                    <span>Focus</span>
+                </button>
+            </div>
+
+            <div id="mindfulness-runtime" class="mindfulness-runtime">
+                <div class="meditate-stage">
+                    <div id="meditate-display" class="meditate-display" role="timer" aria-live="polite">10:00</div>
+                    <button id="meditate-toggle" type="button" class="panel-btn meditate-btn" aria-pressed="false">Start</button>
+                    <p id="meditate-status" class="sr-only">10 minute session</p>
+                    <div class="meditate-options">
+                        <section class="meditate-presets" aria-label="Session length">
+                            <button type="button" class="meditate-preset" data-duration="5" aria-pressed="false">5 min</button>
+                            <button type="button" class="meditate-preset" data-duration="10" aria-pressed="true">10 min</button>
+                            <button type="button" class="meditate-preset" data-duration="15" aria-pressed="false">15 min</button>
+                            <button type="button" class="meditate-preset" data-duration="30" aria-pressed="false">30 min</button>
+                        </section>
+                        <button id="meditate-breathe-toggle" type="button" class="being-sound-toggle" aria-pressed="true" aria-label="Breath chime">
+                            <span class="being-sound-toggle__glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M19 5a9 9 0 0 1 0 14"></path></svg></span>
+                        </button>
+                    </div>
+                </div>
+                <section id="meditate-breath" class="meditate-breath" aria-hidden="true">
+                    <div class="meditate-breath__stage">
+                        <div class="meditate-breath__ring"></div>
+                        <span class="meditate-breath__label meditate-breath__label--inhale">Breathe in</span>
+                        <span class="meditate-breath__label meditate-breath__label--hold-1">Hold</span>
+                        <span class="meditate-breath__label meditate-breath__label--exhale">Breathe out</span>
+                        <span class="meditate-breath__label meditate-breath__label--hold-2">Hold</span>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script type="module" src="src/modules/being/mindfulness-entry.ts"></script>
+</body>
+</html>

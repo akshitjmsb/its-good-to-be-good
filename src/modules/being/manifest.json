@@ -2,6 +2,12 @@
   "id": "being",
   "displayName": "Being",
   "ring": "circle",
+  "routeHrefs": [
+    "sleep.html",
+    "movement.html",
+    "mindfulness.html",
+    "rooh.html"
+  ],
   "icon": "./icon.svg",
   "version": "0.1.0",
   "renderer": "dom",
