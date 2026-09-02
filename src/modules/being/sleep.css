@@ -1,0 +1,15 @@
+.sleep-now {
+    margin-top: 1rem;
+}
+
+.sleep-now__action {
+    width: 100%;
+}
+
+body.home-vintage-lock.sleep-dimmed {
+    background-color: #17130f;
+}
+
+body.home-vintage-lock.sleep-dimmed .app-container {
+    filter: brightness(0.44) sepia(0.18);
+}

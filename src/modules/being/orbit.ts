@@ -17,11 +17,17 @@
  */
 
 import './exercise.css';
+import './sleep.css';
 import { initMeditate } from './meditate';
 import { renderExerciseView } from './exercise-view';
 import { getStretchLinks, getStretchNow } from './exercise-data';
 import { escapeHtml } from '../../utils/escapeHtml';
 import { initBreathReset } from './breath-reset';
+import {
+  createCountdownTimer,
+  formatCountdownTime,
+} from '../../platform/countdownTimer';
+import { OUTSIDE_DURATION_MS, sleepActionForHour } from './sleep';
 
 interface PracticeLink {
   label: string;
@@ -56,6 +62,13 @@ export function initBeingOrbit({
 }): void {
   // Timer + breath ring + ambient audio used by the Mindfulness practices.
   const meditation = initMeditate();
+  // Sleep's daylight timer is session-only: it survives closing the panel but
+  // leaves no history or local-storage row behind.
+  const outsideTimer = createCountdownTimer({
+    namespace: 'sleep-outside',
+    defaultDurationMs: OUTSIDE_DURATION_MS,
+    storage: null,
+  });
 
   const stage = document.getElementById('being-stage');
   const meditate = document.getElementById('being-meditate');
@@ -126,24 +139,53 @@ export function initBeingOrbit({
       .join('')}</div>`;
   }
 
-  function sleepOverview(): string {
+  function sleepOverview(now: Date): string {
+    const action = sleepActionForHour(now.getHours());
+    const timerState = outsideTimer.store.getState();
+    const outsideLabel =
+      timerState.status === 'running'
+        ? formatCountdownTime(timerState.remainingMs)
+        : timerState.status === 'break'
+          ? 'Done'
+          : 'Outside';
+    const isDimmed = document.body.classList.contains('sleep-dimmed');
+    const isOutside = action === 'outside';
     return `
       <section class="pillar-action-layer" aria-labelledby="sleep-title">
         ${renderActionHeader('Sleep', 'sleep-title')}
-        ${renderActionCues([
-          {
-            label: 'Morning light',
-            detail: 'Outside within one hour',
-            icon: ACTION_ICONS.sunrise,
-          },
-          {
-            label: 'Dim the night',
-            detail: 'Keep wake-ups warm and low',
-            icon: ACTION_ICONS.moon,
-          },
-        ])}
+        <div class="sleep-now">
+          <button
+            type="button"
+            class="pillar-action pillar-action--icon sleep-now__action"
+            data-sleep-action="${action}"
+            aria-pressed="${isOutside ? timerState.status === 'running' : isDimmed}"
+            aria-label="${isOutside ? 'Outside — ten minute light timer' : 'Dim the app'}"
+          >
+            <span class="pillar-action__glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${isOutside ? ACTION_ICONS.sunrise : ACTION_ICONS.moon}</svg>
+            </span>
+            <span data-sleep-label${isOutside ? ' role="timer"' : ''}>${isOutside ? outsideLabel : 'Dim'}</span>
+          </button>
+        </div>
       </section>
     `;
+  }
+
+  function paintOutsideTimer(): void {
+    const button = panel?.querySelector<HTMLButtonElement>(
+      '[data-sleep-action="outside"]'
+    );
+    const label = button?.querySelector<HTMLElement>('[data-sleep-label]');
+    if (!button || !label) return;
+
+    const state = outsideTimer.store.getState();
+    button.setAttribute('aria-pressed', String(state.status === 'running'));
+    label.textContent =
+      state.status === 'running'
+        ? formatCountdownTime(state.remainingMs)
+        : state.status === 'break'
+          ? 'Done'
+          : 'Outside';
   }
 
   function movementOverview(): string {
@@ -251,7 +293,7 @@ export function initBeingOrbit({
     } else if (name === 'mindfulness') {
       panel.innerHTML = mindfulnessOverview();
     } else if (name === 'sleep') {
-      panel.innerHTML = sleepOverview();
+      panel.innerHTML = sleepOverview(new Date());
     } else {
       panel.innerHTML = roohOverview();
     }
@@ -282,6 +324,7 @@ export function initBeingOrbit({
   function enter(mode: Mode): void {
     if (!stage || !meditate || !panel) return;
     breathReset?.stop();
+    if (mode !== 'sleep') document.body.classList.remove('sleep-dimmed');
     if (mode !== 'breathe' && meditation?.isBreathePlaying()) {
       meditation.stopBreathe();
     }
@@ -308,6 +351,7 @@ export function initBeingOrbit({
   function close(): void {
     if (!stage || !meditate || !panel) return;
     if (meditation?.isBreathePlaying()) meditation.stopBreathe();
+    document.body.classList.remove('sleep-dimmed');
     stage.setAttribute('hidden', '');
     verse?.removeAttribute('hidden');
     meditate.setAttribute('hidden', '');
@@ -353,10 +397,44 @@ export function initBeingOrbit({
 
   closeBtn?.addEventListener('click', close);
 
+  const outsideTimerInterval = window.setInterval(() => {
+    if (outsideTimer.store.getState().status === 'running') {
+      outsideTimer.refresh();
+    }
+  }, 1_000);
+  const unsubscribeOutsideTimer = outsideTimer.store.subscribe(
+    paintOutsideTimer
+  );
+  window.addEventListener('beforeunload', () => {
+    window.clearInterval(outsideTimerInterval);
+    unsubscribeOutsideTimer();
+    outsideTimer.destroy();
+  });
+
   // Open practice links in a new tab. Scoped to the link buttons this file
   // renders (data-link); the exercise view owns its own clicks separately.
   panel.addEventListener('click', event => {
     const target = event.target as HTMLElement | null;
+    const sleepAction = target?.closest<HTMLButtonElement>(
+      '[data-sleep-action]'
+    );
+    if (sleepAction?.dataset.sleepAction === 'outside') {
+      const status = outsideTimer.store.getState().status;
+      if (status === 'running') {
+        outsideTimer.cancel();
+      } else {
+        if (status === 'break') outsideTimer.skipBreak();
+        outsideTimer.start();
+      }
+      paintOutsideTimer();
+      return;
+    }
+    if (sleepAction?.dataset.sleepAction === 'dim') {
+      const isDimmed = document.body.classList.toggle('sleep-dimmed');
+      sleepAction.setAttribute('aria-pressed', String(isDimmed));
+      return;
+    }
+
     const stretchNow = target?.closest<HTMLButtonElement>('[data-stretch-now]');
     if (stretchNow?.dataset.stretchNow) {
       window.open(stretchNow.dataset.stretchNow, '_blank', 'noopener');
