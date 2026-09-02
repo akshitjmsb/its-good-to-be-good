@@ -1,6 +1,8 @@
 import './khyaali-bhoot.css';
 import { registerAppWorker } from '../../platform/pwa/service-worker';
+import { initializeAutomaticDim } from '../../platform/automaticDim';
 
+initializeAutomaticDim();
 void registerAppWorker();
 
 /** Write the fear, then let it go. Nothing is stored. */

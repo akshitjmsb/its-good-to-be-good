@@ -15,9 +15,9 @@ with five Sukoon pillars riding the circle —
   volume. It continues through screen lock; a second tap stops it and it
   retains nothing.
 
-- **Sleep** — one contextual light action. From 5:00–17:59, Outside starts a
-  session-only ten-minute timer. From 18:00–4:59, opening Sleep automatically
-  warms and lowers the app until Sleep closes. Neither action leaves a record.
+- **Sleep** — from 5:00–17:59, Outside starts a session-only ten-minute timer.
+  At night the shared system dim is already automatic, so Sleep adds no second
+  control. Neither behavior leaves a record.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food
   module, keeping the module boundary intact.
 - **Movement** — Stretch Now opens one deterministic curated stretch for the

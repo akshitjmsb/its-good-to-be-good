@@ -326,9 +326,6 @@ export function initBeingOrbit({
   function enter(mode: Mode): void {
     if (!stage || !meditate || !panel) return;
     breathReset?.stop();
-    const shouldDim =
-      mode === 'sleep' && sleepActionForHour(new Date().getHours()) === 'dim';
-    document.body.classList.toggle('sleep-dimmed', shouldDim);
     if (mode !== 'breathe' && meditation?.isBreathePlaying()) {
       meditation.stopBreathe();
     }
@@ -355,7 +352,6 @@ export function initBeingOrbit({
   function close(): void {
     if (!stage || !meditate || !panel) return;
     if (meditation?.isBreathePlaying()) meditation.stopBreathe();
-    document.body.classList.remove('sleep-dimmed');
     stage.setAttribute('hidden', '');
     verse?.removeAttribute('hidden');
     meditate.setAttribute('hidden', '');

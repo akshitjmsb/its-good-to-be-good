@@ -68,6 +68,7 @@ import {
   ensureTodoReminderDelivery,
 } from '../../platform/convex/todo-reminders';
 import { registerAppWorker } from '../../platform/pwa/service-worker';
+import { initializeAutomaticDim } from '../../platform/automaticDim';
 import {
   formatReminder,
   oneHourFrom,
@@ -75,6 +76,8 @@ import {
   toLocalDateTimeValue,
 } from './reminder-model';
 import './todo.css';
+
+initializeAutomaticDim();
 
 const LIST_ID = 'tasks-list-todo';
 const SYNC_INTERVAL_MS = 30_000;

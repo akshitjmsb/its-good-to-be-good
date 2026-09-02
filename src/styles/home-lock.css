@@ -24,6 +24,14 @@ body.home-vintage-lock .app-container {
     background-color: var(--home-surface);
 }
 
+body.home-vintage-lock.system-dimmed {
+    background-color: #17130f;
+}
+
+body.home-vintage-lock.system-dimmed .app-container {
+    filter: brightness(0.44) sepia(0.18);
+}
+
 body.home-vintage-lock h1,
 body.home-vintage-lock h2,
 body.home-vintage-lock h3 {
