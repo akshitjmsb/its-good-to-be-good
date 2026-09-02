@@ -47,7 +47,6 @@ interface ActionCue {
 
 const ACTION_ICONS = {
   sunrise: '<path d="M4 18h16"></path><path d="M6 14a6 6 0 0 1 12 0"></path><path d="M12 3v3"></path><path d="m4.9 7.9 2.1 2.1"></path><path d="m19.1 7.9-2.1 2.1"></path>',
-  moon: '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z"></path>',
   soften: '<path d="M7 9h10"></path><path d="M8 14c1.2 1.3 2.5 2 4 2s2.8-.7 4-2"></path><circle cx="12" cy="12" r="9"></circle>',
   breath: '<path d="M5 8h8.5a2.5 2.5 0 1 0-2.5-2.5"></path><path d="M3 12h15a3 3 0 1 1-3 3"></path><path d="M4 16h6.5a2 2 0 1 1-2 2"></path>',
   connect: '<circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3 19c.6-3.3 2.6-5 6-5s5.4 1.7 6 5"></path><path d="M15 14c3.1 0 5 1.7 5.5 5"></path>',
@@ -148,25 +147,28 @@ export function initBeingOrbit({
         : timerState.status === 'break'
           ? 'Done'
           : 'Outside';
-    const isDimmed = document.body.classList.contains('sleep-dimmed');
     const isOutside = action === 'outside';
     return `
       <section class="pillar-action-layer" aria-labelledby="sleep-title">
         ${renderActionHeader('Sleep', 'sleep-title')}
-        <div class="sleep-now">
+        ${
+          isOutside
+            ? `<div class="sleep-now">
           <button
             type="button"
             class="pillar-action pillar-action--icon sleep-now__action"
-            data-sleep-action="${action}"
-            aria-pressed="${isOutside ? timerState.status === 'running' : isDimmed}"
-            aria-label="${isOutside ? 'Outside — ten minute light timer' : 'Dim the app'}"
+            data-sleep-action="outside"
+            aria-pressed="${timerState.status === 'running'}"
+            aria-label="Outside — ten minute light timer"
           >
             <span class="pillar-action__glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${isOutside ? ACTION_ICONS.sunrise : ACTION_ICONS.moon}</svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ACTION_ICONS.sunrise}</svg>
             </span>
-            <span data-sleep-label${isOutside ? ' role="timer"' : ''}>${isOutside ? outsideLabel : 'Dim'}</span>
+            <span data-sleep-label role="timer">${outsideLabel}</span>
           </button>
-        </div>
+        </div>`
+            : ''
+        }
       </section>
     `;
   }
@@ -324,7 +326,9 @@ export function initBeingOrbit({
   function enter(mode: Mode): void {
     if (!stage || !meditate || !panel) return;
     breathReset?.stop();
-    if (mode !== 'sleep') document.body.classList.remove('sleep-dimmed');
+    const shouldDim =
+      mode === 'sleep' && sleepActionForHour(new Date().getHours()) === 'dim';
+    document.body.classList.toggle('sleep-dimmed', shouldDim);
     if (mode !== 'breathe' && meditation?.isBreathePlaying()) {
       meditation.stopBreathe();
     }
@@ -429,12 +433,6 @@ export function initBeingOrbit({
       paintOutsideTimer();
       return;
     }
-    if (sleepAction?.dataset.sleepAction === 'dim') {
-      const isDimmed = document.body.classList.toggle('sleep-dimmed');
-      sleepAction.setAttribute('aria-pressed', String(isDimmed));
-      return;
-    }
-
     const stretchNow = target?.closest<HTMLButtonElement>('[data-stretch-now]');
     if (stretchNow?.dataset.stretchNow) {
       window.open(stretchNow.dataset.stretchNow, '_blank', 'noopener');
